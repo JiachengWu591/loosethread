@@ -82,3 +82,38 @@ directly.
   - `.gitattributes` forces LF so result rows are byte-identical across OSes.
 - **Consequences**: contributors need uv. A stdlib-only guard test (`tests/test_package.py`) fails if
   a core module imports a third-party package; `loosethread.llm` and `loosethread.web` are exempt.
+
+## D-007 — Data contract shape (first draft)
+
+- **Date**: 2026-10-30 · **Type**: tactical
+- **Context**: the brief lists Person, Location, TimeSlot, Item, Event, Fact, Statement, Evidence, Case,
+  Query, AllowedFacts. The solver must not read truth, and the line LLM must only see `AllowedFacts`.
+- **Decision**
+  - All contracts live in `loosethread.model` as `@dataclass(frozen=True)`; collections are `tuple`
+    or `frozenset`, so values are immutable and hashable. IDs are `NewType`s over `str`/`int`.
+  - `Fact` is a PEP 695 union of small fact classes (`PersonAt`, `Occupants`, `ItemAt`) instead of one
+    class with optional fields, so mypy and `match` see exact shapes.
+  - `Case` is split into `PlayerView` (public; the solver's only input) and `Truth` (culprit, timeline,
+    `Event`s, `Knowledge`, `Lie`s). Added types beyond the brief: `LocalizedText`, `World`, `Motive`,
+    `CrimeReport`, `PlayerView`, `Truth`, `Knowledge`, `Lie`, and enums `Basis`, `Stance`, `Tone`.
+  - `Statement` has no "is lie" field; lies are recorded only in `Truth.lies`.
+  - Validation runs in `__post_init__` and raises `ValueError` (fail closed): e.g. a `Query` with
+    missing or extra fields for its kind cannot be constructed.
+  - Isolation is tested structurally: `tests/test_model.py` walks type annotations from `PlayerView`
+    and `AllowedFacts` and asserts no truth type is reachable; a companion test checks that the walker
+    does find truth types from `Case`.
+- **Consequences**: the walker checks *types*, not values. It cannot catch truth leaking through a
+  `str` field (e.g. a persona text that mentions the theft) or through code that reads `Truth` and
+  copies facts into `AllowedFacts` incorrectly. Those need the P1 lie-policy tests and the P2
+  prompt-interception tests.
+
+## D-008 — Positioning: daily / solvable / share card are not differentiators
+
+- **Date**: 2026-10-30 · **Type**: tactical (wording only; scope unchanged)
+- **Context**: the name check surfaced non-LLM daily deduction puzzles (Alibi Grid, Alibi — Spot the
+  Lie) that already offer a daily case, logic-solvable cases and an emoji share grid.
+- **Decision**: keep these features (they serve players) but never present them as distinguishing.
+  Positioning rests on natural-language interrogation over a solver-verified world model, structural
+  isolation, and measured leakage and cost.
+- **Consequences**: BRIEF §4 and RELATED_WORK updated. No change proposal needed because scope, phases
+  and exit criteria are unchanged.
