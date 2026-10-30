@@ -243,3 +243,18 @@ directly.
 - **Consequences**: case data is unchanged (same seeds, same facts); only the sheet text differs.
   English grids are about 110 columns wide. Alignment assumes a monospace font where CJK characters
   are exactly two columns wide; proportional fallback fonts may drift.
+
+## D-017 — CP-4 approved: sub-agent review for cases 214 and 222
+
+- **Date**: 2026-10-30 · **Type**: strategic (lowers a P1 exit criterion) · **Approved by owner**
+  (chat: "批准 B")
+- **Context**: `docs/CHANGE_PROPOSALS.md` CP-4. The owner solved case 213 by hand and judged that
+  patient tabulation of the testimony finds the contradiction; 992/1000 cases need exactly one.
+- **Decision**: for 214 and 222, one sub-agent per case with a fresh context and only the
+  `-player.txt` text in its prompt, told to use no tools. It must give the culprit and a pair of
+  items that cannot both be true, one a statement by the culprit. Pass = right culprit and the pair
+  exposes one of the culprit's lies (checked against `-full.txt`); anything else fails and the
+  owner solves that case.
+- **Consequences**: human evidence on sheet readability comes from one case. "No tools" is an
+  instruction, not an enforced sandbox. Readability, fun and variety ("do cases feel formulaic?")
+  move to the P2 playability gate.

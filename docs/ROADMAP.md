@@ -7,7 +7,7 @@ All numeric thresholds are provisional and may only change through the process i
 | Phase | Title | Status |
 |---|---|---|
 | P0 | Skeleton and design | done |
-| P1 | Case generator and solver | in progress |
+| P1 | Case generator and solver | done |
 | P2 | NPC pipeline and CLI playable | planned |
 | P3 | Evaluation study | planned |
 | P4 | Web version, daily case, sharing | planned |
@@ -36,7 +36,7 @@ Commands below use the package name `loosethread` (originally `alibi`; renamed b
   `github.com/JiachengWu591/loosethread`; CI green on ubuntu and windows. DESIGN.md reviewed; all
   open questions resolved as proposed (D-009). All exit criteria met.
 
-## P1 — Case generator and solver · `in progress`
+## P1 — Case generator and solver · `done`
 
 - **Goal**: for any seed, generate a case proven uniquely solvable by an independent solver, with
   controllable difficulty.
@@ -57,7 +57,10 @@ Commands below use the package name `loosethread` (originally `alibi`; renamed b
     report the rejection rate.
   - Generation time < 1 s per case.
   - Property tests based on stdlib `random`.
-  - The owner reviews 3 cases by hand and can deduce the culprit.
+  - ~~The owner reviews 3 cases by hand and can deduce the culprit.~~ **Changed by CP-4
+    (2026-10-30, D-017):** the owner solves one review case by hand; for the other two, a fresh
+    sub-agent given only the player sheet names the culprit and a pair of items that exposes one of
+    the culprit's lies. If a sub-agent fails, the owner solves that case by hand.
 - **Progress (2026-10-30, branch `p1-generator-solver`)**
   - Done: content pack + loader, generator, answer lookup, independent solver, audit, difficulty
     metrics, `python -m loosethread.case` (single case, `--hide-truth`, `--metrics`, `--batch N`).
@@ -69,7 +72,10 @@ Commands below use the package name `loosethread` (originally `alibi`; renamed b
   - CP-1, CP-2, CP-3 approved (D-015): trusting acceptance is the default; daily preset
     `generator.DAILY` (min questions 3–6) generates in ≤ 0.63 s on seeds 0–299.
   - Owner review: case 213 solved correctly, no problems found; the sheet was "too rigid", so the
-    debug CLI now prints a case-sheet layout (D-016). Open: cases 214 and 222.
+    debug CLI now prints a case-sheet layout (D-016).
+- **Outcome (2026-10-30)**: cases 214 and 222 solved by fresh sub-agents with valid accusation
+  pairs under CP-4 (`docs/review/p1/REVIEW.md`, which also reports case variety over 1,000 seeds).
+  All exit criteria met, the review criterion as changed by CP-4.
 
 ## P2 — NPC pipeline and CLI playable · `planned`
 
@@ -97,7 +103,8 @@ Commands below use the package name `loosethread` (originally `alibi`; renamed b
   - All offline tests pass.
   - Parser accuracy ≥ 85% (provisional); if not reached, submit a change proposal.
 - **Playability gate**: after P2, a playtest review with the owner and ideally 2–3 friends: "is it fun,
-  where do you get stuck?" If not fun, iterate on P1/P2 before entering P3.
+  where do you get stuck?" — and, added by CP-4, "do cases feel formulaic?" (99.2% of cases need
+  exactly one contradiction). If not fun, iterate on P1/P2 before entering P3.
 
 ## P3 — Evaluation study · `planned`
 
