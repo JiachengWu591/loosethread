@@ -1,7 +1,7 @@
 # Game design — first draft
 
-Status: **draft for owner review** (P0). Numbers are starting points; P1 metrics and the P2 playtest
-will tune them. Open questions are collected in §11.
+Status: **reviewed** — the owner accepted every proposal in §11 on 2026-10-30 (D-009). Numbers are
+starting points; P1 metrics and the P2 playtest will tune them.
 
 ## 1. Premise and setting
 
@@ -70,8 +70,8 @@ These are shown on the rules screen; the solver uses exactly these and nothing e
 
 Why this contract: without some rule about who may lie, any hypothesis can be explained away and no
 case is uniquely solvable. T2/T3 keep innocents' red herrings fair (they are always catchable by
-evidence) while T4 leaves the culprit free. A harder variant (innocents may lie inside the window) is
-an open question (§11).
+evidence) while T4 leaves the culprit free. A harder variant (innocents may lie inside the window) was
+considered and deferred (§11).
 
 ## 5. Lies
 
@@ -89,7 +89,7 @@ an open question (§11).
 ## 6. Evidence (setting-specific examples)
 
 Evidence is a list of always-true facts with a short description, given to the player as a case file at
-the start (v0.1; see §11 for searchable rooms).
+the start (searchable rooms were considered and deferred, §11).
 
 - **Records**: tea-room bar tab signed at 21:10; kitchen order slip; key-card log on the guest-wing
   door (never on the study).
@@ -166,22 +166,23 @@ Disjunctive evidence ("someone came in from the terrace") is a later extension.
   evidence) already make the solution unique; inference steps in the solver's proof. Daily cases target
   a minimum of 6–10 questions; budget ≈ 2 × minimum, clamped to 12–30.
 
-## 11. Open questions for owner review
+## 11. Review outcomes (2026-10-30)
 
-1. **Truthfulness contract** (§4): accept T2/T3 (innocents never lie inside the window; their other lies
-   are always exposed by evidence)? The alternative, letting innocents lie inside the window, is more
-   realistic but harder to solve and to explain.
-2. **Evidence**: full case file at the start (proposed) vs searchable rooms where each search costs a
+The owner accepted every proposal (D-009). Deferred alternatives are listed so they can be revisited
+after the P2 playtest.
+
+1. **Truthfulness contract**: T2/T3 as written. Deferred: innocents may also lie inside the window
+   (more realistic, harder to solve and to explain).
+2. **Evidence**: full case file at the start. Deferred: searchable rooms where each search costs a
    question.
-3. **Question costs**: should opinion and small talk cost 1 like factual questions (proposed), or be
-   free with a cap?
-4. **Contradiction hints** on by default (proposed) or off?
-5. **Accusation proof**: must the attached contradiction concern the theft window, or is exposing any
-   lie of the culprit enough (proposed)?
-6. **Accusations**: one (proposed) vs two attempts.
-7. **Time granularity**: 15-minute slots over 20:00–22:00 (proposed) vs 30-minute slots over
-   19:00–23:00. Finer slots make one-step moves more believable.
-8. **Setting and roster**: is Mistpine Lodge with the roles in §1 the right tone?
+3. **Question costs**: opinion and small talk cost 1 like factual questions; parse failures and exact
+   repeats are free. Deferred: free small talk with a cap.
+4. **Contradiction hints**: on by default; off in hard mode.
+5. **Accusation proof**: exposing any lie of the culprit is enough; it need not concern the window.
+6. **Accusations**: one per case. Deferred: two attempts.
+7. **Time granularity**: 8 slots × 15 minutes, 20:00–22:00. Deferred: 30-minute slots over
+   19:00–23:00.
+8. **Setting and roster**: Mistpine Lodge with the roles in §1.
 
 ## 12. Data contracts
 

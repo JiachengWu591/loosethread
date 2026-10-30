@@ -6,7 +6,7 @@ All numeric thresholds are provisional and may only change through the process i
 
 | Phase | Title | Status |
 |---|---|---|
-| P0 | Skeleton and design | in progress |
+| P0 | Skeleton and design | done |
 | P1 | Case generator and solver | planned |
 | P2 | NPC pipeline and CLI playable | planned |
 | P3 | Evaluation study | planned |
@@ -17,7 +17,7 @@ Commands below use the package name `loosethread` (originally `alibi`; renamed b
 
 ---
 
-## P0 — Skeleton and design · `in progress`
+## P0 — Skeleton and design · `done`
 
 - **Goal**: turn the project prompt into long-lived repo docs and set up an empty project whose tests run.
 - **Work**
@@ -32,9 +32,9 @@ Commands below use the package name `loosethread` (originally `alibi`; renamed b
   6. Data contracts first draft: Person, Location, TimeSlot, Item, Event, Fact, Statement, Evidence,
      Case, Query, AllowedFacts.
 - **Exit criteria**: pytest, ruff, mypy all pass; CI is green; the owner has reviewed DESIGN.md.
-- **Progress**: items 1–6 done on branch `p0-skeleton`. Pushed to
-  `github.com/JiachengWu591/loosethread` on 2026-10-30 (`main` = `p0-skeleton` = `fe7ee9f`); CI green
-  on ubuntu and windows for both branches. Remaining: owner review of DESIGN.md.
+- **Outcome (2026-10-30)**: items 1–6 done on branch `p0-skeleton`. Repo
+  `github.com/JiachengWu591/loosethread`; CI green on ubuntu and windows. DESIGN.md reviewed; all
+  open questions resolved as proposed (D-009). All exit criteria met.
 
 ## P1 — Case generator and solver · `planned`
 

@@ -117,3 +117,23 @@ directly.
   isolation, and measured leakage and cost.
 - **Consequences**: BRIEF §4 and RELATED_WORK updated. No change proposal needed because scope, phases
   and exit criteria are unchanged.
+
+## D-009 — Game design review: all DESIGN §11 proposals accepted
+
+- **Date**: 2026-10-30 · **Type**: strategic · **Approved by owner** (chat: "1–8 按建议")
+- **Context**: DESIGN.md first draft listed eight open questions with a proposal for each.
+- **Decision**
+  1. Truthfulness contract T1–T5: innocents never lie inside the theft window; every innocent lie
+     outside it is exposed by evidence; the culprit may lie freely, with at least one exposable lie.
+  2. The full evidence file is given at the start.
+  3. Every parsed question costs 1, including opinion and small talk; parse failures and exact repeats
+     are free.
+  4. Contradiction hints are on by default and off in hard mode.
+  5. A valid accusation proof exposes any lie of the culprit.
+  6. One accusation per case.
+  7. 8 slots × 15 minutes, 20:00–22:00.
+  8. Setting: Mistpine Lodge with the roster in DESIGN §1.
+- **Consequences**: P1's solver implements the consistency rule in DESIGN §10 exactly, and the
+  generator must guarantee T3 (each innocent lie has an evidence item that contradicts it). Deferred
+  alternatives (innocent lies inside the window, searchable rooms, free small talk, two accusations,
+  30-minute slots) can be revived after the P2 playtest by a new decision with owner approval.
