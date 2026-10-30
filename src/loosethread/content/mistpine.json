@@ -15,6 +15,46 @@
     {"id": "terrace", "name": {"zh": "露台", "en": "terrace"}, "neighbors": ["tea_room"]}
   ],
   "optional_locations": ["terrace"],
+  "intro": {
+    "zh": [
+      "暴雨夜。八点整，山下传来塌方预警，",
+      "通往{setting}的唯一山路被封：谁也进不来，谁也出不去。",
+      "",
+      "{found}，{client}回到书房，发现{item}不见了。",
+      "最后一次确认它还在架子上，是 {seen}。",
+      "",
+      "你是一位早早睡下的退休侦探，被一阵敲门声叫醒。",
+      "所有人都在大堂等你。"
+    ],
+    "en": [
+      "A night of driving rain. At eight o'clock a landslide warning closed the only road up to {setting}: nobody gets in, nobody gets out.",
+      "",
+      "At {found}, {client} returned to the study and found the {item} gone. It was last confirmed on the shelf during {seen}.",
+      "",
+      "You are a retired detective who turned in early. A knock at the door wakes you. Everyone is waiting in the lobby."
+    ]
+  },
+  "map_art": {
+    "zh": [
+      "厨房 ── 餐厅 ── 大堂 ── 茶室{terrace}",
+      " │               │",
+      " └──── 走廊 ─────┘",
+      "     ┌───┴───┐",
+      "    书房  客房区",
+      "   (现场)"
+    ],
+    "en": [
+      "kitchen ── dining room ── lobby ── tea room{terrace}",
+      "   │                        │",
+      "   └─────── corridor ───────┘",
+      "          ┌─────┴─────┐",
+      "        study    guest wing",
+      "       (scene)"
+    ]
+  },
+  "map_art_optional": {
+    "terrace": {"zh": " ── 露台", "en": " ── terrace"}
+  },
   "client": {
     "id": "shen", "haunts": ["guest_wing", "tea_room"],
     "name": {"zh": "沈怀山", "en": "Shen Huaishan"},
@@ -88,7 +128,7 @@
   "last_seen_template": {
     "kind": "photo",
     "text": {
-      "zh": "{client}手机里的一张照片显示：{time}，{item}还好好地摆在书房的架子上。",
+      "zh": "{client}手机里的照片：{time}，{item}还好好地摆在书房架子上。",
       "en": "A photo on {client}'s phone shows the {item} on the study shelf at {time}."
     }
   },

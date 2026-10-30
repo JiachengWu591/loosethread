@@ -224,3 +224,22 @@ directly.
 - **Consequences**: default generation rejects ~81.5% of attempts (mean 0.028 s, max 0.22 s per
   case on seeds 0–999). Daily preset on seeds 0–299: mean 0.118 s, p95 0.334 s, max 0.63 s per case.
   DESIGN §10 updated.
+
+## D-016 — Case sheet layout for the debug CLI
+
+- **Date**: 2026-10-30 · **Type**: tactical
+- **Context**: the owner solved review case 213 and found the sheet correct but "too rigid" to read
+  (long `|`-separated lines, no rules, adjacency as a list).
+- **Decision**: `python -m loosethread.case` prints a case sheet: an intro scene, case facts,
+  people with impression and motive, a drawn map, the rules (DESIGN §3–4 in player words), evidence
+  tagged with the slot it belongs to, and the testimony as a people × slot notebook grid (an "at" and
+  a "with" row per person, surnames for company) with the theft window boxed in. A verdict prompt
+  ends the player part; the truth uses the same grid with `*` for the theft and `!` for lies.
+  Text wraps at 80 columns by display width (CJK = 2) and prefers breaks after punctuation.
+- **Content pack**: new fields `intro`, `map_art` and `map_art_optional` (zh/en). The loader checks
+  that the intro formats and that the drawing names exactly the locations present, with and without
+  the optional ones; it cannot check that the drawn lines match the adjacency list, so map drawings
+  stay a review item. The zh last-seen evidence text was shortened to fit one line.
+- **Consequences**: case data is unchanged (same seeds, same facts); only the sheet text differs.
+  English grids are about 110 columns wide. Alignment assumes a monospace font where CJK characters
+  are exactly two columns wide; proportional fallback fonts may drift.

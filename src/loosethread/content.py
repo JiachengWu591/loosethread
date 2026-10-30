@@ -13,6 +13,7 @@ from typing import Any
 from loosethread.model import (
     EvidenceKind,
     ItemId,
+    Lang,
     LocalizedText,
     Location,
     LocationId,
@@ -58,6 +59,20 @@ class ContentPack:
     last_seen_template: EvidenceTemplate
     evidence_templates: tuple[tuple[LocationId, tuple[EvidenceTemplate, ...]], ...]
     fallback_templates: tuple[EvidenceTemplate, ...]
+    # Opening text, lines joined by "\n" (long lines get wrapped, "" is a blank line);
+    # placeholders {setting} {client} {item} {seen} {found}.
+    intro: LocalizedText
+    # Map drawing, lines joined by "\n". `{<location id>}` marks where an optional location's
+    # snippet from `map_art_optional` attaches; it renders empty when that location is dropped.
+    map_art: LocalizedText
+    map_art_optional: tuple[tuple[LocationId, LocalizedText], ...]
+
+    def map_picture(self, lang: Lang, present: frozenset[LocationId]) -> str:
+        snippets = {
+            str(loc): (text.get(lang) if loc in present else "")
+            for loc, text in self.map_art_optional
+        }
+        return self.map_art.get(lang).format(**snippets)
 
     def templates_for(self, location: LocationId) -> tuple[EvidenceTemplate, ...]:
         for loc, templates in self.evidence_templates:
@@ -117,6 +132,19 @@ def _text(obj: dict[str, Any], key: str, where: str) -> LocalizedText:
     return LocalizedText(
         zh=_str(inner, "zh", f"{where}.{key}"), en=_str(inner, "en", f"{where}.{key}")
     )
+
+
+def _lines(obj: dict[str, Any], key: str, where: str) -> LocalizedText:
+    """A zh/en pair of non-empty string lists, each joined with newlines."""
+    inner = _obj(obj.get(key), f"{where}.{key}")
+
+    def join(lang: str) -> str:
+        items = _list(inner.get(lang), f"{where}.{key}.{lang}")
+        if not items or not all(isinstance(x, str) for x in items):
+            raise ValueError(f"{where}.{key}.{lang}: expected a non-empty list of strings")
+        return "\n".join(items)
+
+    return LocalizedText(zh=join("zh"), en=join("en"))
 
 
 def _person(obj: dict[str, Any], where: str) -> Person:
@@ -189,6 +217,7 @@ def _parse_pack(raw: dict[str, Any]) -> ContentPack:
     )
     if not {loc for loc, _ in evidence_templates} <= location_ids - {crime_location}:
         raise ValueError("evidence_templates: unknown location, or a template for the crime scene")
+    art_optional = _obj(raw.get("map_art_optional"), "map_art_optional")
 
     pack = ContentPack(
         id=_str(raw, "id", "pack"),
@@ -208,10 +237,40 @@ def _parse_pack(raw: dict[str, Any]) -> ContentPack:
             _template(t, "fallback_templates")
             for t in _list(raw.get("fallback_templates"), "fallback_templates")
         ),
+        intro=_lines(raw, "intro", "pack"),
+        map_art=_lines(raw, "map_art", "pack"),
+        map_art_optional=tuple(
+            (LocationId(loc_id), _text(art_optional, loc_id, "map_art_optional"))
+            for loc_id in art_optional
+        ),
     )
+    _check_text(pack)
     ids = [pack.client.id, *(e.person.id for e in roster)]
     if len(set(ids)) != len(ids):
         raise ValueError("pack: duplicate person ids")
     if not pack.fallback_templates or not pack.items or not pack.roster:
         raise ValueError("pack: needs fallback templates, items and a roster")
     return pack
+
+
+def _check_text(pack: ContentPack) -> None:
+    """The intro formats, and the map drawing names exactly the locations on the map.
+
+    This cannot check that the drawn lines match the adjacency list; that stays a review item.
+    """
+    if {loc for loc, _ in pack.map_art_optional} != pack.optional_locations:
+        raise ValueError("map_art_optional: must cover exactly the optional locations")
+    every = frozenset(loc.id for loc in pack.locations)
+    for lang in Lang:
+        try:
+            pack.intro.get(lang).format(setting="", client="", item="", seen="", found="")
+            pictures = [
+                (present, pack.map_picture(lang, present))
+                for present in (every, every - pack.optional_locations)
+            ]
+        except (KeyError, IndexError, ValueError) as exc:
+            raise ValueError(f"intro/map_art ({lang.value}): bad placeholder {exc}") from exc
+        for present, picture in pictures:
+            for loc in pack.locations:
+                if (loc.name.get(lang) in picture) != (loc.id in present):
+                    raise ValueError(f"map_art ({lang.value}): {loc.id!r} drawn wrongly")

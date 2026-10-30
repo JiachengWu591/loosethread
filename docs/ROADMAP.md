@@ -68,7 +68,8 @@ Commands below use the package name `loosethread` (originally `alibi`; renamed b
     `PYTHONHASHSEED`, AST isolation of solver and metrics.
   - CP-1, CP-2, CP-3 approved (D-015): trusting acceptance is the default; daily preset
     `generator.DAILY` (min questions 3–6) generates in ≤ 0.63 s on seeds 0–299.
-  - Open: owner review of 3 cases (`docs/review/p1/`).
+  - Owner review: case 213 solved correctly, no problems found; the sheet was "too rigid", so the
+    debug CLI now prints a case-sheet layout (D-016). Open: cases 214 and 222.
 
 ## P2 — NPC pipeline and CLI playable · `planned`
 
