@@ -2,8 +2,9 @@
 
 import random
 
+from loosethread.audit import audit
 from loosethread.difficulty import measure
-from loosethread.generator import ContradictionRule, GenParams, generate
+from loosethread.generator import DAILY, ContradictionRule, GenParams, generate
 from loosethread.solver import Solver
 
 SEEDS = random.Random(424242).sample(range(1_000_000), 12)
@@ -30,6 +31,14 @@ def test_trusting_cases_need_a_contradiction() -> None:
         assert metrics.trusting_suspects >= 2
         assert metrics.contradictions_required is None or metrics.contradictions_required >= 1
         assert metrics.min_questions >= 2
+
+
+def test_daily_preset_stays_in_its_question_range() -> None:
+    low, high = DAILY.min_questions or (0, 0)
+    for seed in SEEDS[:6]:
+        case = generate(seed, DAILY).case
+        assert audit(case) == []
+        assert low <= measure(case.view).min_questions <= high, f"seed {seed}"
 
 
 def test_plan_of_two_or_fewer_is_exact() -> None:

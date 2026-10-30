@@ -156,7 +156,8 @@ Disjunctive evidence ("someone came in from the terrace") is a later extension.
 | Hunch | right suspect, attached pair does not expose a lie of theirs | ☆ |
 | Wrong | wrong suspect | ✗ |
 
-- Stars for *Solved*: ★★★ if questions used ≤ the case's minimum question count + 2; ★★ if ≤ 70% of
+- Stars for *Solved*: ★★★ if questions used ≤ the case's minimum question count (the plan length
+  from the P1 metric) + 2; ★★ if ≤ 70% of
   the budget; otherwise ★. (The minimum question count comes from the P1 difficulty metric.)
 - The truth is revealed after any outcome.
 - **Share card** (P4): date/case number, mark, questions used, and one emoji per question (⬜ nothing
@@ -178,12 +179,17 @@ Disjunctive evidence ("someone came in from the terrace") is a later extension.
   or links one person's consecutive slots, so for a fixed theft slot each person's feasibility is an
   independent reachability check (bitmask DP). The check is exact; tests compare it against brute-force
   enumeration of whole timelines on small random problems.
-- **Accept a case iff** exactly one suspect is consistent **and** the naive reading fails: if every
-  statement not contradicted by evidence is taken as true, no suspect is consistent. That makes at
-  least one contradiction inference necessary.
-- **Difficulty metrics**: contradictions required; minimum number of questions whose answers (plus
-  evidence) already make the solution unique; inference steps in the solver's proof. Daily cases target
-  a minimum of 6–10 questions; budget ≈ 2 × minimum, clamped to 12–30.
+- **Accept a case iff** exactly one suspect is consistent **and** the case needs a contradiction:
+  using only *uncontested* statements (those in no direct conflict), at least two suspects remain
+  consistent (CP-2, approved 2026-10-30). The earlier naive reading ("believing every statement that
+  evidence does not refute leaves no suspect") is kept as an option; it accepted cases where 71.5% were
+  solvable without resolving any contradiction.
+- **Difficulty metrics** (D-013): contradictions required; minimum number of questions whose answers
+  (plus evidence) make the solution unique — exact up to 2, an upper bound above that (CP-1); inference
+  steps (irreducible statement sets that rule out each innocent).
+- **Daily target** (CP-3, provisional): minimum questions 3–6 (preset `generator.DAILY`), question
+  budget 20. Both are set for real after the P2 playtest; the oracle minimum understates human effort
+  because players do not know whom to ask about which slot.
 
 ## 11. Review outcomes (2026-10-30)
 

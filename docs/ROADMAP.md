@@ -66,8 +66,9 @@ Commands below use the package name `loosethread` (originally `alibi`; renamed b
     0.033 s / 0.220 s. Details in `docs/review/p1/batch-*.txt`.
   - Tests: brute-force cross-check of the solver, property tests on random seeds, determinism across
     `PYTHONHASHSEED`, AST isolation of solver and metrics.
-  - Open: owner review of 3 cases (`docs/review/p1/`); change proposals CP-1, CP-2, CP-3
-    (`docs/CHANGE_PROPOSALS.md`).
+  - CP-1, CP-2, CP-3 approved (D-015): trusting acceptance is the default; daily preset
+    `generator.DAILY` (min questions 3–6) generates in ≤ 0.63 s on seeds 0–299.
+  - Open: owner review of 3 cases (`docs/review/p1/`).
 
 ## P2 — NPC pipeline and CLI playable · `planned`
 

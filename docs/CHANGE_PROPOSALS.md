@@ -9,7 +9,9 @@ alibi style). Full outputs: `docs/review/p1/batch-naive.txt`, `docs/review/p1/ba
 
 ---
 
-## CP-1 — `min_questions` is exact only up to 2; above that it is an upper bound · `open`
+## CP-1 — `min_questions` is exact only up to 2; above that it is an upper bound · `approved`
+
+- **Decision** (owner, 2026-10-30, "全部按建议"): option A; C to be evaluated in P2. See D-015.
 
 - **Trigger**: an exact minimum is a set-cover search over ~150 distinct answers per case. Exact
   search at size 3 would need ~550k solver checks per case (minutes). Current implementation proves
@@ -29,7 +31,9 @@ alibi style). Full outputs: `docs/review/p1/batch-naive.txt`, `docs/review/p1/ba
 - **Recommendation**: A now; evaluate C during P2 with playtest data, since the oracle minimum
   assumes the player already knows whom to ask about which slot.
 
-## CP-2 — Make "needs a contradiction" stricter (naive → trusting) · `open`
+## CP-2 — Make "needs a contradiction" stricter (naive → trusting) · `approved`
+
+- **Decision** (owner, 2026-10-30): option B; trusting is the default. See D-015.
 
 - **Trigger**: DESIGN §10's naive criterion ("believing every statement evidence does not refute
   leaves no suspect") accepts cases that never require resolving a contradiction. In the naive batch,
@@ -55,7 +59,10 @@ alibi style). Full outputs: `docs/review/p1/batch-naive.txt`, `docs/review/p1/ba
   - C. Use naive for an easy mode and trusting for normal/daily.
 - **Recommendation**: B as the default (C can be added later as a difficulty option).
 
-## CP-3 — Revisit the daily-case difficulty target (min questions 6–10) · `open`
+## CP-3 — Revisit the daily-case difficulty target (min questions 6–10) · `approved`
+
+- **Decision** (owner, 2026-10-30): option B; provisional target 3–6, budget 20, revisit after the
+  P2 playtest (option C only if cases prove too easy). See D-015.
 
 - **Trigger**: under T2 one conflict between the culprit and a witness narrows the culprit to two
   people, so an oracle needs few questions. Trusting-rule distribution of `min_questions`

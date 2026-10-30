@@ -11,12 +11,13 @@ import sys
 import time
 from collections import Counter
 from collections.abc import Sequence
+from dataclasses import replace
 from pathlib import Path
 
 from loosethread.audit import audit
 from loosethread.content import load_pack
 from loosethread.difficulty import Metrics, measure
-from loosethread.generator import ContradictionRule, Generated, GenParams, generate
+from loosethread.generator import DAILY, ContradictionRule, Generated, GenParams, generate
 from loosethread.lookup import AnswerBook
 from loosethread.model import (
     Basis,
@@ -382,10 +383,13 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--hide-truth", action="store_true", help="omit the truth section")
     parser.add_argument("--metrics", action="store_true", help="also compute difficulty metrics")
     parser.add_argument("--batch", type=int, default=0, help="generate N cases and report stats")
-    parser.add_argument("--rule", choices=[r.value for r in ContradictionRule], default="naive")
+    parser.add_argument("--rule", choices=[r.value for r in ContradictionRule], default="trusting")
+    parser.add_argument("--daily", action="store_true", help="use the daily-case preset (CP-3)")
     parser.add_argument("--out", type=Path, help="write UTF-8 output to this file")
     args = parser.parse_args(argv)
-    params = GenParams(contradiction_rule=ContradictionRule(args.rule))
+    params = replace(
+        DAILY if args.daily else GenParams(), contradiction_rule=ContradictionRule(args.rule)
+    )
 
     if args.batch:
         text = run_batch(args.batch, args.seed, params, args.metrics)

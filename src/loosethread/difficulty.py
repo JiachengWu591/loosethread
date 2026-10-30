@@ -36,16 +36,16 @@ def measure(view: PlayerView, solver: Solver | None = None) -> Metrics:
     solver = solver or Solver(view)
     contested = solver.contested()
     uncontested = [i for i in solver.all_statements() if i not in contested]
-    question_plan, exact = _min_questions(view, solver)
+    plan, exact = question_plan(view, solver)
     return Metrics(
         conflict_pairs=len(solver.conflict_pairs()),
         contested_statements=len(contested),
         naive_suspects=len(solver.consistent(naive=True).consistent),
         trusting_suspects=len(solver.consistent(uncontested).consistent),
         contradictions_required=_contradictions_required(solver, uncontested),
-        min_questions=len(question_plan),
+        min_questions=len(plan),
         min_questions_exact=exact,
-        question_plan=question_plan,
+        question_plan=plan,
         inference_steps=_inference_steps(solver),
     )
 
@@ -80,7 +80,7 @@ def _contradictions_required(solver: Solver, uncontested: list[int]) -> int | No
     return None
 
 
-def _min_questions(view: PlayerView, solver: Solver) -> tuple[tuple[Query, ...], bool]:
+def question_plan(view: PlayerView, solver: Solver) -> tuple[tuple[Query, ...], bool]:
     """A short question plan that makes the culprit unique, and whether it is provably minimal."""
     index = {s: i for i, s in enumerate(solver.statements)}
     asked: dict[frozenset[int], Query] = {}

@@ -209,3 +209,18 @@ directly.
 - **Decision**: ignore ruff's size rules PLR0911/0912/0913/0915/0917 (they fight the generator's
   step-by-step orchestration and the audit checklist); set pytest `python_classes = []` so model
   classes such as `Testimony` are not collected as tests.
+
+## D-015 — Change proposals CP-1, CP-2, CP-3 approved
+
+- **Date**: 2026-10-30 · **Type**: strategic · **Approved by owner** (chat: "全部按建议")
+- **Context**: `docs/CHANGE_PROPOSALS.md` (data from 1,000-seed batches under both rules).
+- **Decision**
+  - CP-1: `min_questions` stays exact up to 2 and an upper bound above; always labelled. A behavioural
+    "simulated player" metric is to be evaluated in P2.
+  - CP-2: the acceptance rule requires at least two suspects to remain consistent on uncontested
+    statements alone (`ContradictionRule.TRUSTING`, now the default). Naive remains available.
+  - CP-3: daily preset `generator.DAILY` = minimum questions 3–6; budget 20; both revisited after
+    the P2 playtest.
+- **Consequences**: default generation rejects ~81.5% of attempts (mean 0.028 s, max 0.22 s per
+  case on seeds 0–999). Daily preset on seeds 0–299: mean 0.118 s, p95 0.334 s, max 0.63 s per case.
+  DESIGN §10 updated.

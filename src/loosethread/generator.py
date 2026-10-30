@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from enum import Enum
 
 from loosethread.content import ContentPack, EvidenceTemplate, load_pack
-from loosethread.difficulty import measure
+from loosethread.difficulty import question_plan
 from loosethread.lookup import AnswerBook
 from loosethread.model import (
     Basis,
@@ -74,7 +74,7 @@ class GenParams:
     max_privacy_lies: int = 2
     max_hearsay: int = 2
     optional_locations: bool = False
-    contradiction_rule: ContradictionRule = ContradictionRule.NAIVE
+    contradiction_rule: ContradictionRule = ContradictionRule.TRUSTING  # CP-2
     # UNREACHABLE makes the culprit's own story self-contradictory (two questions solve it), so it
     # is off by default; see D-012.
     alibi_styles: tuple[AlibiStyle, ...] = (AlibiStyle.OCCUPIED,)
@@ -107,6 +107,11 @@ class Generated:
 
 class GenerationError(RuntimeError):
     pass
+
+
+# Daily-case preset (CP-3, provisional until the P2 playtest): exclude two-question cases and keep
+# the oracle question count at most 6. Values above 2 are upper bounds (CP-1).
+DAILY = GenParams(min_questions=(3, 6))
 
 
 def generate(
@@ -277,7 +282,7 @@ class _Attempt:
                 return RejectReason.TOO_EASY
         if params.min_questions is not None:
             low, high = params.min_questions
-            if not low <= measure(view, solver).min_questions <= high:
+            if not low <= len(question_plan(view, solver)[0]) <= high:
                 return RejectReason.DIFFICULTY
 
         lies = self._expose(solver, lie_statements, culprit)
