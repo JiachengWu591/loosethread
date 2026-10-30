@@ -32,8 +32,9 @@ Commands below use the package name `loosethread` (originally `alibi`; renamed b
   6. Data contracts first draft: Person, Location, TimeSlot, Item, Event, Fact, Statement, Evidence,
      Case, Query, AllowedFacts.
 - **Exit criteria**: pytest, ruff, mypy all pass; CI is green; the owner has reviewed DESIGN.md.
-- **Progress**: items 1–6 done on branch `p0-skeleton`; CI green pending repo creation and push
-  (owner actions); DESIGN.md review pending.
+- **Progress**: items 1–6 done on branch `p0-skeleton`. Pushed to
+  `github.com/JiachengWu591/loosethread` on 2026-10-30 (`main` = `p0-skeleton` = `fe7ee9f`); CI green
+  on ubuntu and windows for both branches. Remaining: owner review of DESIGN.md.
 
 ## P1 — Case generator and solver · `planned`
 
