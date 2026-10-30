@@ -137,3 +137,75 @@ directly.
   generator must guarantee T3 (each innocent lie has an evidence item that contradicts it). Deferred
   alternatives (innocent lies inside the window, searchable rooms, free small talk, two accusations,
   30-minute slots) can be revived after the P2 playtest by a new decision with owner approval.
+
+## D-010 — Contract changes for P1: `Testimony`, `Stance.DENY`
+
+- **Date**: 2026-10-30 · **Type**: tactical
+- **Context**: difficulty metrics need to know which statements one question yields; some answers are
+  denials ("I was never in the kitchen") with no structured claim.
+- **Decision**: `PlayerView.testimony: tuple[Testimony, ...]` (query → claims) replaces the flat
+  statement list; `PlayerView.statements` is now a derived, de-duplicated property. New
+  `Stance.DENY`. Only answers with claims are recorded as testimony.
+- **Consequences**: the solver ignores denials, which makes it slightly more conservative than a
+  player (it may reject a case a player could solve, never the reverse).
+
+## D-011 — Solver: exact per-person bitmask DP; conflicts include impossible moves
+
+- **Date**: 2026-10-30 · **Type**: tactical
+- **Decision**
+  - All constraints are unary or within one person's consecutive slots, so for a fixed theft slot the
+    persons are independent; each is a reachability check over location bitmasks.
+  - "Direct conflict" covers the same slot (W1) and consecutive slots (W2); "contradicted by
+    evidence" uses the same definition (DESIGN §10).
+  - Inconsistent evidence fails closed (no hypothesis survives).
+  - The solver imports nothing from the generator, lookup, audit or content modules and no truth
+    types; `tests/test_isolation.py` checks this by AST.
+- **Verification**: `tests/test_solver.py` compares the solver with brute-force enumeration of whole
+  joint timelines (independent code) on 140 random small problems, in full, naive and partial-
+  testimony modes. It found one real bug during development (a contradictory second evidence item
+  was silently ignored), now fixed.
+- **Limits**: brute force covers 2–3 people, 3 locations and 3–4 slots; larger cases rely on the
+  decomposition argument plus the generator-level property tests.
+
+## D-012 — Generator design choices
+
+- **Date**: 2026-10-30 · **Type**: tactical
+- **Decision**
+  - Timelines: backward-feasibility DP + weighted random walk. Weights favour the character's haunts
+    (new `haunts` field in the content pack), staying put and small groups; crowds of 3+ and the crime
+    scene are rare. Innocents never enter the crime scene during the window (otherwise the case
+    cannot be unique).
+  - The client is a non-suspect who always tells the truth; the client's photo fixes *last seen*.
+  - Culprit alibi lie: occupied-room style by default; the unreachable-room style is available but
+    off (DESIGN §5). Measured on seeds 0–149 with the trusting rule: unreachable-only gave a
+    two-question solution in 149/150 cases (self-contradicting story); occupied-only gave a median
+    of 3 questions (range 2–7). Witnesses of the alibi lie are suspects, never the client.
+  - Innocent privacy lies: 0–2, outside the window, each contradicted by an evidence item that
+    places the liar truthfully.
+  - Evidence guard: no evidence that alone breaks the culprit's alibi; specific templates preferred;
+    at most two evidence items per person; evidence order shuffled so ids do not reveal which items
+    expose lies.
+  - Hearsay: 0–2 items, "B told A, at a later slot they shared, where B was".
+  - Determinism: each attempt uses `random.Random(f"loosethread:{pack}:{seed}:{attempt}")`; no
+    iteration over hash-ordered sets affects choices (tested across `PYTHONHASHSEED` values).
+  - `audit.py` checks every guarantee against the ground truth independently of the solver's
+    reasoning.
+
+## D-013 — Difficulty metric definitions
+
+- **Date**: 2026-10-30 · **Type**: tactical (first definitions; see CP-1 for the min-questions caveat)
+- **Decision**
+  - `contradictions_required`: fewest conflict groups (connected contested statements) that must be
+    taken into account, on top of all uncontested statements, before the culprit is unique.
+  - `min_questions`: greedy choice of answers (most suspects ruled out, then fewest feasible
+    theft-slot pairs) followed by reverse pruning. Exact only when it is ≤ 1, or 2 after every single
+    question was shown to be insufficient; otherwise an upper bound.
+  - `inference_steps`: for each innocent suspect, the size of an irreducible (deletion-minimal)
+    statement set that still rules them out, summed.
+
+## D-014 — Lint and test configuration
+
+- **Date**: 2026-10-30 · **Type**: tactical
+- **Decision**: ignore ruff's size rules PLR0911/0912/0913/0915/0917 (they fight the generator's
+  step-by-step orchestration and the audit checklist); set pytest `python_classes = []` so model
+  classes such as `Testimony` are not collected as tests.

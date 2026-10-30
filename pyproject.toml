@@ -41,6 +41,13 @@ ignore = [
     "RUF002",
     "RUF003",
     "PLR2004", # magic values are fine in tests and small tables
+    # Size limits (branches/returns/statements/arguments) fight the generator's step-by-step
+    # orchestration and the audit's checklist; readability is reviewed by hand instead.
+    "PLR0911",
+    "PLR0912",
+    "PLR0913",
+    "PLR0915",
+    "PLR0917",
 ]
 
 [tool.mypy]
@@ -52,3 +59,5 @@ mypy_path = "src"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
+# Tests are plain functions; this stops pytest from collecting model classes such as `Testimony`.
+python_classes = []

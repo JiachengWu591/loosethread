@@ -7,7 +7,7 @@ All numeric thresholds are provisional and may only change through the process i
 | Phase | Title | Status |
 |---|---|---|
 | P0 | Skeleton and design | done |
-| P1 | Case generator and solver | planned |
+| P1 | Case generator and solver | in progress |
 | P2 | NPC pipeline and CLI playable | planned |
 | P3 | Evaluation study | planned |
 | P4 | Web version, daily case, sharing | planned |
@@ -36,7 +36,7 @@ Commands below use the package name `loosethread` (originally `alibi`; renamed b
   `github.com/JiachengWu591/loosethread`; CI green on ubuntu and windows. DESIGN.md reviewed; all
   open questions resolved as proposed (D-009). All exit criteria met.
 
-## P1 — Case generator and solver · `planned`
+## P1 — Case generator and solver · `in progress`
 
 - **Goal**: for any seed, generate a case proven uniquely solvable by an independent solver, with
   controllable difficulty.
@@ -58,6 +58,16 @@ Commands below use the package name `loosethread` (originally `alibi`; renamed b
   - Generation time < 1 s per case.
   - Property tests based on stdlib `random`.
   - The owner reviews 3 cases by hand and can deduce the culprit.
+- **Progress (2026-10-30, branch `p1-generator-solver`)**
+  - Done: content pack + loader, generator, answer lookup, independent solver, audit, difficulty
+    metrics, `python -m loosethread.case` (single case, `--hide-truth`, `--metrics`, `--batch N`).
+  - 1,000 seeds, both contradiction rules: 1000/1000 audited unique + all guarantees
+    [Wilson 95%: 99.6%, 100%]; rejection rate 35.5% (naive) / 81.5% (trusting); generation time max
+    0.033 s / 0.220 s. Details in `docs/review/p1/batch-*.txt`.
+  - Tests: brute-force cross-check of the solver, property tests on random seeds, determinism across
+    `PYTHONHASHSEED`, AST isolation of solver and metrics.
+  - Open: owner review of 3 cases (`docs/review/p1/`); change proposals CP-1, CP-2, CP-3
+    (`docs/CHANGE_PROPOSALS.md`).
 
 ## P2 — NPC pipeline and CLI playable · `planned`
 

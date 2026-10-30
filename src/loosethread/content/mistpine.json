@@ -1,0 +1,118 @@
+{
+  "id": "mistpine",
+  "setting": {"zh": "雾松山庄", "en": "Mistpine Lodge"},
+  "start_minute": 1200,
+  "slot_minutes": 15,
+  "crime_location": "study",
+  "locations": [
+    {"id": "lobby", "name": {"zh": "大堂", "en": "lobby"}, "neighbors": ["dining", "tea_room", "corridor"]},
+    {"id": "dining", "name": {"zh": "餐厅", "en": "dining room"}, "neighbors": ["lobby", "kitchen"]},
+    {"id": "kitchen", "name": {"zh": "厨房", "en": "kitchen"}, "neighbors": ["dining", "corridor"]},
+    {"id": "tea_room", "name": {"zh": "茶室", "en": "tea room"}, "neighbors": ["lobby", "terrace"]},
+    {"id": "corridor", "name": {"zh": "走廊", "en": "corridor"}, "neighbors": ["lobby", "kitchen", "study", "guest_wing"]},
+    {"id": "study", "name": {"zh": "书房", "en": "study"}, "neighbors": ["corridor"]},
+    {"id": "guest_wing", "name": {"zh": "客房区", "en": "guest wing"}, "neighbors": ["corridor"]},
+    {"id": "terrace", "name": {"zh": "露台", "en": "terrace"}, "neighbors": ["tea_room"]}
+  ],
+  "optional_locations": ["terrace"],
+  "client": {
+    "id": "shen", "haunts": ["guest_wing", "tea_room"],
+    "name": {"zh": "沈怀山", "en": "Shen Huaishan"},
+    "role": {"zh": "收藏家", "en": "collector"},
+    "persona": {"zh": "斯文讲究，心疼藏品，说话爱引经据典。", "en": "Refined and particular, anxious about the collection, quotes old sayings."}
+  },
+  "roster": [
+    {
+      "id": "he", "haunts": ["lobby", "kitchen", "dining"],
+      "name": {"zh": "何秀兰", "en": "He Xiulan"},
+      "role": {"zh": "山庄老板", "en": "lodge owner"},
+      "persona": {"zh": "热情周到，爱操心，说话快。", "en": "Warm and fussy, talks fast."},
+      "motive": {"zh": "山庄生意冷清，装修贷款还欠着。", "en": "Business is slow and the renovation loan is overdue."}
+    },
+    {
+      "id": "zhou", "haunts": ["kitchen", "dining"],
+      "name": {"zh": "周大川", "en": "Zhou Dachuan"},
+      "role": {"zh": "厨师", "en": "cook"},
+      "persona": {"zh": "话少，直来直去，三句不离吃。", "en": "Few words, blunt, always comes back to food."},
+      "motive": {"zh": "沈先生昨晚当众嫌弃过这里的菜。", "en": "Shen sneered at the cooking in front of everyone last night."}
+    },
+    {
+      "id": "lin", "haunts": ["lobby"],
+      "name": {"zh": "林小雨", "en": "Lin Xiaoyu"},
+      "role": {"zh": "前台", "en": "receptionist"},
+      "persona": {"zh": "年轻，一紧张就笑，记性很好。", "en": "Young, laughs when nervous, sharp memory."},
+      "motive": {"zh": "正在拼命攒钱出国读书。", "en": "Saving hard to study abroad."}
+    },
+    {
+      "id": "wu", "haunts": ["terrace", "tea_room", "corridor"],
+      "name": {"zh": "吴哲", "en": "Wu Zhe"},
+      "role": {"zh": "摄影师", "en": "photographer"},
+      "persona": {"zh": "散漫，爱开玩笑，什么都想拍。", "en": "Laid-back and jokey, wants to photograph everything."},
+      "motive": {"zh": "曾出价想买这件藏品，被沈先生一口回绝。", "en": "Once offered to buy the piece and was flatly refused."}
+    },
+    {
+      "id": "su", "haunts": ["tea_room", "lobby"],
+      "name": {"zh": "苏曼", "en": "Su Man"},
+      "role": {"zh": "古董商", "en": "antiques dealer"},
+      "persona": {"zh": "精明客气，说话滴水不漏。", "en": "Shrewd and polite, chooses every word."},
+      "motive": {"zh": "怀疑这件藏品原本是自家祖传之物。", "en": "Suspects the piece was once a family heirloom."}
+    },
+    {
+      "id": "chen", "haunts": ["tea_room", "guest_wing"],
+      "name": {"zh": "陈墨", "en": "Chen Mo"},
+      "role": {"zh": "作家", "en": "novelist"},
+      "persona": {"zh": "慢条斯理，爱打比方，常常走神。", "en": "Unhurried, fond of metaphors, easily distracted."},
+      "motive": {"zh": "新书写的正是一桩藏品失窃案，正缺“素材”。", "en": "Writing a novel about a stolen heirloom and short of \"material\"."}
+    },
+    {
+      "id": "zhao", "haunts": ["dining", "guest_wing", "terrace"],
+      "name": {"zh": "赵一帆", "en": "Zhao Yifan"},
+      "role": {"zh": "大学生", "en": "student hiker"},
+      "persona": {"zh": "活泼好奇，问题比答案多。", "en": "Lively and curious, asks more than answers."},
+      "motive": {"zh": "登山装备丢了，手头很紧。", "en": "Lost all the hiking gear and is short of money."}
+    },
+    {
+      "id": "ma", "haunts": ["lobby", "kitchen"],
+      "name": {"zh": "马建国", "en": "Ma Jianguo"},
+      "role": {"zh": "修车师傅", "en": "mechanic"},
+      "persona": {"zh": "嗓门大，讲义气，不爱绕弯子。", "en": "Loud and loyal, no patience for small talk."},
+      "motive": {"zh": "车困在山上，修车钱还没着落。", "en": "Stranded with a broken van and no money for repairs."}
+    }
+  ],
+  "items": [
+    {"id": "jade_seal", "name": {"zh": "青玉印章", "en": "celadon jade seal"}},
+    {"id": "pocket_watch", "name": {"zh": "银怀表", "en": "silver pocket watch"}},
+    {"id": "first_edition", "name": {"zh": "初版线装书", "en": "first-edition thread-bound book"}},
+    {"id": "camera", "name": {"zh": "老式旁轴相机", "en": "vintage rangefinder camera"}}
+  ],
+  "last_seen_template": {
+    "kind": "photo",
+    "text": {
+      "zh": "{client}手机里的一张照片显示：{time}，{item}还好好地摆在书房的架子上。",
+      "en": "A photo on {client}'s phone shows the {item} on the study shelf at {time}."
+    }
+  },
+  "evidence_templates": {
+    "lobby": [
+      {"kind": "record", "text": {"zh": "大堂留言簿上有{person}写的一句话，落款时间 {time}。", "en": "The lobby guestbook has a line from {person}, timed {time}."}}
+    ],
+    "dining": [
+      {"kind": "record", "text": {"zh": "餐厅点单本上写着：{time}，{person}点了一碗热汤面。", "en": "The dining-room order pad reads: {time}, {person} ordered a bowl of hot noodles."}}
+    ],
+    "kitchen": [
+      {"kind": "record", "text": {"zh": "厨房白板上有{person}留的字条，落款时间 {time}。", "en": "A note on the kitchen whiteboard, signed by {person}, is timed {time}."}}
+    ],
+    "tea_room": [
+      {"kind": "record", "text": {"zh": "茶室的账单上有{person}的签名，时间是 {time}。", "en": "The tea-room bill bears {person}'s signature, timed {time}."}}
+    ],
+    "guest_wing": [
+      {"kind": "record", "text": {"zh": "客房区门禁记录显示，{person}的房卡在 {time} 刷开了门。", "en": "The guest-wing door log shows {person}'s key card at {time}."}}
+    ],
+    "terrace": [
+      {"kind": "photo", "text": {"zh": "{person}的手机里有一张 {time} 在露台拍的雨景照片。", "en": "{person}'s phone holds a photo of the rain taken from the terrace at {time}."}}
+    ]
+  },
+  "fallback_templates": [
+    {"kind": "photo", "text": {"zh": "{person}的手机里有一张 {time} 在{location}拍的照片。", "en": "{person}'s phone holds a photo taken in the {location} at {time}."}}
+  ]
+}

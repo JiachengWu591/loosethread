@@ -77,10 +77,17 @@ considered and deferred (§11).
 
 - All lies are fixed at generation time and stored in the case's truth. The same question always gets
   the same answer, in both languages.
-- **Culprit (alibi lies)**: claims a different location for the theft slot(s), chosen so it is
-  reachable under W2 from their true positions before and after; may claim to have been alone, or
-  name a companion. The generator guarantees at least one exposure: an evidence item, or an innocent's
-  account of who was in the claimed location (W3 + T2).
+- **Culprit (alibi lies)**: claims another location for the theft slot and claims to have been alone
+  there. Two styles (P1 implementation):
+  - *occupied room* (default): a reachable room where one or two other suspects were — their account
+    of who was there leaves the culprit out (W3 + T2). The client is never one of these witnesses:
+    the client is not a suspect, so a clash with the client would name the culprit outright.
+  - *unreachable room* (off by default): an empty room the culprit could not have reached from where
+    they were seen just before or after (W2). Measured on 150 seeds, this makes the culprit's own
+    story self-contradictory and every case solvable in two questions.
+- The generator never hands out evidence that by itself breaks the culprit's alibi (no evidence about
+  the culprit near the window, nobody evidenced in the claimed room during the window); otherwise one
+  question plus the evidence would solve the case under T2.
 - **Innocents (privacy lies)**: 0–2 per case, outside the window, each contradicted by an evidence item
   (T3). They are red herrings: catching one proves a lie but not the theft.
 - The generator never produces evidence that directly places the culprit at the scene during the
@@ -118,6 +125,11 @@ Disjunctive evidence ("someone came in from the terrace") is a later extension.
 
 - Because answers come from a fixed table, the set of all possible statements is finite; the solver
   receives all of them.
+- A person who was never in the asked location, never saw the asked person, or never saw the item
+  answers with a denial (`Stance.DENY`). Denials carry no structured claim, so the solver ignores them;
+  this only makes the solver more conservative than a player.
+- Hearsay ("B told me B was in the tea room at 20:30") appears in answers about B and is repeated
+  exactly as B tells it, lies included (T5).
 - **Budget**: every successfully parsed question costs 1. Parse failures (the NPC asks for
   clarification) and exact repeats of an earlier query cost 0 (the answer is already in the notebook).
 - Evidence and the notebook are free to consult.
@@ -128,7 +140,7 @@ Disjunctive evidence ("someone came in from the terrace") is a later extension.
   source ("Lin said, saw it", "Zhou said, heard from Wu", "evidence #3").
 - **Contradiction hint (normal difficulty)**: a cell is flagged when two recorded items cannot both be
   true (different locations for one person in one slot; an `Occupants` claim that excludes someone
-  who claims to be there; a statement vs evidence). Only items the player has already obtained are
+  who claims to be there; an impossible move between consecutive slots; a statement vs evidence). Only items the player has already obtained are
   compared, so the player still has to ask the right questions and decide who is lying.
 - Hard mode turns hints off.
 
@@ -159,6 +171,13 @@ Disjunctive evidence ("someone came in from the terrace") is a later extension.
   as the thief, makes every evidence fact true, and makes true every statement by a non-c speaker that
   (a) concerns a window slot, or (b) is not contradicted by evidence. Statements by c are unconstrained.
   Hearsay is evaluated as a claim by its source (T5).
+- **Direct conflict** (P1 formalization): two items conflict if, for one person, they allow no common
+  location in the same slot (W1) or no possible move between consecutive slots (W2). "Contradicted by
+  evidence" means in direct conflict with the evidence.
+- **Algorithm** (`loosethread/solver.py`): every constraint is unary ("p is / is not at L in slot t")
+  or links one person's consecutive slots, so for a fixed theft slot each person's feasibility is an
+  independent reachability check (bitmask DP). The check is exact; tests compare it against brute-force
+  enumeration of whole timelines on small random problems.
 - **Accept a case iff** exactly one suspect is consistent **and** the naive reading fails: if every
   statement not contradicted by evidence is taken as true, no suspect is consistent. That makes at
   least one contradiction inference necessary.

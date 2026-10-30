@@ -222,8 +222,8 @@ class CrimeReport:
 class PlayerView:
     """Everything the player can learn. The solver's only input.
 
-    `statements` holds every answer any NPC would give to any in-scope query; the player obtains
-    each one by asking.
+    `testimony` holds the answer to every in-scope query that yields claims; the player obtains
+    each one by asking. Answers are fixed at generation time.
     """
 
     seed: int
@@ -232,18 +232,25 @@ class PlayerView:
     motives: tuple[Motive, ...]
     crime: CrimeReport
     evidence: tuple[Evidence, ...]
-    statements: tuple[Statement, ...]
+    testimony: tuple["Testimony", ...]
 
     def __post_init__(self) -> None:
         person_ids = {p.id for p in self.world.people}
         if not self.suspects <= person_ids:
             raise ValueError("every suspect must be a person in the world")
+        if any(t.query.addressee not in person_ids for t in self.testimony):
+            raise ValueError("testimony from someone who is not in the world")
         if self.crime.item not in {i.id for i in self.world.items}:
             raise ValueError("crime report names an unknown item")
         if self.crime.location not in {loc.id for loc in self.world.locations}:
             raise ValueError("crime report names an unknown location")
         if self.crime.discovered >= len(self.world.slots):
             raise ValueError("crime report refers to a slot outside the evening")
+
+    @property
+    def statements(self) -> tuple[Statement, ...]:
+        """Every distinct claim in the testimony, in first-seen order."""
+        return tuple(dict.fromkeys(c for t in self.testimony for c in t.claims))
 
 
 # --- Truth: never reachable from PlayerView or AllowedFacts ------------------------------------
@@ -361,6 +368,7 @@ class Query:
 
 class Stance(Enum):
     ANSWER = "answer"  # states the claims
+    DENY = "deny"  # rejects the premise: was never there, never saw them or it
     DONT_KNOW = "dont_know"  # honestly has nothing to say
     DEFLECT = "deflect"  # small talk, opinion or out of scope: no case facts
     CLARIFY = "clarify"  # the question could not be parsed; ask the player to rephrase
@@ -396,3 +404,17 @@ class AllowedFacts:
             raise ValueError("only a CLARIFY answer has no parsed query")
         if self.query is not None and self.query.addressee != self.speaker:
             raise ValueError("the speaker must be the person the query was addressed to")
+
+
+@dataclass(frozen=True)
+class Testimony:
+    """The claims `query.addressee` makes when asked `query`. Fixed at generation time."""
+
+    query: Query
+    claims: tuple[Statement, ...]
+
+    def __post_init__(self) -> None:
+        if not self.claims:
+            raise ValueError("testimony without claims is not recorded")
+        if any(c.speaker != self.query.addressee for c in self.claims):
+            raise ValueError("all claims must be made by the person asked")

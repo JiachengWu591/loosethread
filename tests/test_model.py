@@ -34,6 +34,7 @@ from loosethread.model import (
     SlotIndex,
     Stance,
     Statement,
+    Testimony,
     TimeSlot,
     Truth,
     World,
@@ -91,7 +92,10 @@ def _view() -> PlayerView:
                 _text("photo"),
             ),
         ),
-        statements=(seen,),
+        testimony=(
+            Testimony(Query(QueryKind.WHERE, addressee=LIN, slot=SlotIndex(1)), (seen,)),
+            Testimony(Query(QueryKind.WHEN, addressee=LIN, location=LOBBY), (seen,)),
+        ),
     )
 
 
@@ -160,6 +164,18 @@ def test_valid_view_and_case_build() -> None:
     view = _view()
     truth = Truth(culprit=ZHOU, timeline=(), item_timeline=(), events=(), knowledge=(), lies=())
     assert Case(view, truth).truth.culprit == ZHOU
+
+
+def test_view_statements_are_deduplicated() -> None:
+    assert _view().statements == (
+        Statement(LIN, PersonAt(LIN, LOBBY, SlotIndex(1)), Basis.WITNESSED),
+    )
+
+
+def test_testimony_claims_belong_to_the_person_asked() -> None:
+    claim = Statement(ZHOU, PersonAt(ZHOU, LOBBY, SlotIndex(1)), Basis.WITNESSED)
+    with pytest.raises(ValueError, match="person asked"):
+        Testimony(Query(QueryKind.WHERE, addressee=LIN, slot=SlotIndex(1)), (claim,))
 
 
 # --- Validation ---------------------------------------------------------------------------------
