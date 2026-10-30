@@ -1,0 +1,5 @@
+# Normalize line endings so result rows and tables are byte-identical across OSes.
+* text=auto eol=lf
+*.png binary
+*.gif binary
+*.jpg binary

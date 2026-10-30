@@ -1,0 +1,54 @@
+[project]
+name = "loosethread"
+version = "0.0.0"
+description = "破绽 / Loose Thread: a Chinese-first bilingual deduction game where LLM-voiced suspects are structurally isolated from the truth."
+readme = "README.md"
+requires-python = ">=3.12"
+license = "MIT"
+license-files = ["LICENSE", "LICENSE-CONTENT.md"]
+authors = [{ name = "Jiacheng Wu" }]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Games/Entertainment :: Puzzle Games",
+    "Typing :: Typed",
+]
+# The core (world model, generator, solver, lie policy, scoring) is stdlib-only.
+dependencies = []
+
+[project.optional-dependencies]
+llm = ["openai>=1.0"]
+# Web stack is chosen by an ADR in Phase 4; intentionally empty until then.
+web = []
+dev = ["pytest>=8", "ruff>=0.6", "mypy>=1.11"]
+
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/loosethread"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "UP", "B", "SIM", "RUF", "PL", "PT"]
+ignore = [
+    "RUF001", # ambiguous unicode: Chinese text and full-width punctuation are intentional
+    "RUF002",
+    "RUF003",
+    "PLR2004", # magic values are fine in tests and small tables
+]
+
+[tool.mypy]
+strict = true
+python_version = "3.12"
+files = ["src", "tests"]
+mypy_path = "src"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
