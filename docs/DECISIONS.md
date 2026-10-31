@@ -481,3 +481,40 @@ directly.
   items, and not from the test split.
 - **Spend**: CNY 0.535 so far (upper bound: peak price, every input token a cache miss; DeepSeek
   reported most prompt tokens as cache hits). The test (148 items) projects about CNY 0.68 more.
+
+## D-025 — DeepSeek parser measured on the test split: P2 parser criterion met
+
+- **Date**: 2026-10-31 · **Type**: result (within D-018); measured once, as fixed in D-024
+- **Test split, 148 items** (`results/rows/parser-deepseek-test.jsonl`; `deepseek-flash`,
+  thinking off; owner's go-ahead in chat: "跑 test"):
+
+  | parser | accuracy | charged wrong | needless rephrase | invalid |
+  |---|---|---|---|---|
+  | **DeepSeek, time guard (criterion)** | **138/148 = 93.2% [88.0%, 96.3%]** | 3 | 7 | 0 |
+  | DeepSeek, raw | 143/148 = 96.6% [92.3%, 98.5%] | 3 | 2 | 0 |
+  | rules (D-022) | 132/148 = 89.2% [83.2%, 93.2%] | 8 | 8 | 0 |
+  | local Qwen 7B, time guard (D-022) | 114/148 = 77.0% [69.6%, 83.1%] | 16 | 14 | 4 |
+
+  By language (guarded): zh 85/88 = 96.6% [90.5%, 98.8%], en 53/60 = 88.3% [77.8%, 94.2%].
+- **Criterion**: ≥ 85% on DeepSeek is met; the whole Wilson interval is above it.
+- **DeepSeek vs rules** (guarded, same items): only DeepSeek right 10, only rules right 4,
+  exact McNemar p = 0.18. **Not a significant difference** at this sample size. Exploratory (not
+  fixed in advance): charged errors 3 vs 8, paired 2 vs 7, p = 0.18, also not significant.
+- **The guard**: 5 needless rephrases, 0 charged errors prevented (guard vs raw p = 0.0625). All 5
+  are clock formats the deterministic reader cannot read ("21.30", "2045", "2030", "ten past
+  nine", "九点过一刻"); the rule parser charges wrong answers on some of the same formats. Widening
+  that reader would help both parsers, but these formats were found on the test split, so any
+  gain must be measured on new questions or playtest data, not on this split.
+- **DeepSeek's misses**: "嗯……" and "Hmm." read as small talk, which costs a question (expected
+  "please rephrase"); "Where were you when the watch went missing?" read as out of scope
+  (expected "name a time"; the rules make the same error); "你哪个时间段在厨房" and "Have you seen
+  Shen Huaishan since dinner?" refused for free.
+- **D-022 said** the parser design needs a CP if DeepSeek does not beat the rules. It is ahead
+  but not significantly. No CP is proposed now: the criterion is met, both parsers ship (rules
+  offline by default, DeepSeek with `--backend deepseek`), and which is the default is better
+  judged from the step 3 playtest, where real players' phrasing is the open question (the rule
+  parser misread all 8 of the owner's free-form questions before D-020).
+- **Caveats**: the set and the rule parser have the same author (D-022); the prompt was tuned on
+  dev with Qwen; DeepSeek replies are not guaranteed to be reproducible, but the rows are kept.
+- **Spend**: CNY 1.214 in total (upper bound) of the CNY 20 cap; parsing costs at most CNY 0.0046
+  and about 1.1 s per question.

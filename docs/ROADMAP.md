@@ -135,7 +135,10 @@ Commands below use the package name `loosethread` (originally `alibi`; renamed b
   - DeepSeek pilot (D-024): thinking mode (on by default) cut off 2 of 10 replies; with it off,
     dev is 96.1% [86.8%, 98.9%] guarded, 100% raw, 1.1 s per question; thinking on is no more
     accurate and slower. The criterion is judged on the guarded variant. Spent CNY 0.54 of 20.
-  - Next: DeepSeek test split (once, about CNY 0.68), compared with rules; then the playtest.
+  - DeepSeek test split (D-025): 93.2% [88.0%, 96.3%] with the time guard, so the ≥ 85% parser
+    criterion is met; raw 96.6%. Ahead of rules (89.2%) but not significantly (McNemar
+    p = 0.18); 3 charged errors vs 8. Spent CNY 1.21 of 20. Step 2 done.
+  - Next: step 3, the owner's playtest (zh and en) and the playability gate.
 
 ## P3 — Evaluation study · `planned`
 
