@@ -17,6 +17,7 @@ python -m loosethread.simulate --seeds 200 --orders 20
 
 import argparse
 import json
+import math
 import random
 import statistics
 from collections.abc import Sequence
@@ -24,7 +25,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 
 from loosethread.difficulty import question_plan
-from loosethread.game import DEFAULT_BUDGET, TWO_STARS_SHARE, Game
+from loosethread.game import DEFAULT_BUDGET, Game, StarRule
 from loosethread.generator import DAILY, generate
 from loosethread.lines import TemplateWriter
 from loosethread.lookup import in_scope_queries
@@ -34,6 +35,8 @@ from loosethread.solver import Solver
 from loosethread.stats import percentile, wilson
 
 ROWS = Path("results/rows/simulated-player.jsonl")
+STAR_RUNS = 20  # simulated players behind each case's star thresholds (CP-5)
+OLD_TWO_STARS_SHARE = 0.7  # the oracle-based rule before CP-5, kept to reproduce its evidence
 
 
 @dataclass(frozen=True)
@@ -62,12 +65,12 @@ def question_order(case: Case, rng: random.Random) -> list[Query]:
     return first + second + rest
 
 
-def play(case: Case, seed: int, order: int, min_questions: int) -> Run:
-    rng = random.Random(f"{seed}:{order}")
+def _solve(case: Case, rng: random.Random) -> tuple[int | None, int | None]:
+    """Questions asked when the culprit was identified, and when the case was solved."""
     queries = question_order(case, rng)
     game = Game(case, RuleParser(), TemplateWriter(), Lang.EN, budget=len(queries))
     world = case.view.world
-    identified_at = solved_at = None
+    identified_at = None
     for query in queries:
         turn = game.ask(query.addressee, canonical_question(query, world, Lang.EN))
         if not turn.new_notes:
@@ -77,8 +80,12 @@ def play(case: Case, seed: int, order: int, min_questions: int) -> Run:
                 continue
             identified_at = game.used
         if any(game.exposes_culprit_lie(*pair) for pair in game.notebook.conflicts()):
-            solved_at = game.used
-            break
+            return identified_at, game.used
+    return identified_at, None
+
+
+def play(case: Case, seed: int, order: int, min_questions: int) -> Run:
+    identified_at, solved_at = _solve(case, random.Random(f"{seed}:{order}"))
     view = case.view
     return Run(
         seed,
@@ -89,6 +96,17 @@ def play(case: Case, seed: int, order: int, min_questions: int) -> Run:
         identified_at,
         solved_at,
     )
+
+
+def star_rule(case: Case, budget: int = DEFAULT_BUDGET, orders: int = STAR_RUNS) -> StarRule:
+    """CP-5: ★★★ up to the fastest quarter of simulated systematic players, ★★ up to their
+    median, both capped at the budget. Deterministic: the orders do not depend on the truth."""
+    done = []
+    for order in range(orders):
+        _, solved_at = _solve(case, random.Random(f"stars:{order}"))
+        done.append(float(solved_at) if solved_at is not None else math.inf)
+    three, two = percentile(done, 25), percentile(done, 50)
+    return StarRule(int(min(three, budget)), int(min(two, budget)))
 
 
 def simulate(seeds: Sequence[int], orders: int) -> list[Run]:
@@ -133,14 +151,15 @@ def summary(runs: Sequence[Run], budget: int = DEFAULT_BUDGET) -> list[str]:
         sum(median[s] <= first[s].suspects * first[s].window for s in by_case),
     )
     rate("median run within the budget", sum(m <= budget for m in median.values()))
-    two = int(TWO_STARS_SHARE * budget)
-    rate(f"median run within ★★ ({two})", sum(m <= two for m in median.values()))
+    two = int(OLD_TWO_STARS_SHARE * budget)  # the rule before CP-5
+    rate(f"before CP-5: median run within ★★ ({two})", sum(m <= two for m in median.values()))
     rate(
-        "median run within ★★★ (minimum + 2)",
+        "before CP-5: median run within ★★★ (minimum + 2)",
         sum(median[s] <= first[s].min_questions + 2 for s in by_case),
     )
     rate(
-        "best of the orders within ★★★", sum(best[s] <= first[s].min_questions + 2 for s in by_case)
+        "before CP-5: best of the orders within ★★★",
+        sum(best[s] <= first[s].min_questions + 2 for s in by_case),
     )
     rate(
         "some order identifies the culprit before an exposing pair is noted",

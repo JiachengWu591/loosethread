@@ -103,8 +103,16 @@ _UI: dict[str, tuple[str, str]] = {
         "You used {used}/{budget} questions; this case can be solved in {min}.",
     ),
     "stars_rule": (
-        "（★★★ 不超过最少问数 + 2；★★ 不超过 {two} 问；★ 其余）",
-        "(★★★ within the minimum + 2; ★★ within {two}; ★ otherwise)",
+        "（本案：★★★ 不超过 {three} 问，★★ 不超过 {two} 问，★ 其余。"
+        "标准来自 20 名挨个盘问的模拟玩家：★★★ 相当于其中最快的四分之一，★★ 相当于中位数。）",
+        "(This case: ★★★ within {three} questions, ★★ within {two}, ★ otherwise. Set by 20"
+        " simulated players who question everyone in turn: ★★★ matches their fastest quarter,"
+        " ★★ their median.)",
+    ),
+    "stars_rule_all": (
+        "（本案：在 {budget} 问内破案即得 ★★★；挨个盘问的模拟玩家多数要超过 {budget} 问。）",
+        "(This case: any solve within {budget} questions earns ★★★; most simulated players who"
+        " question everyone in turn need more.)",
     ),
     "quit_confirm": ("确定退出吗？不会揭晓真相。(y/n) ", "Quit without seeing the truth? (y/n) "),
     "bye": ("再见。", "Goodbye."),
@@ -366,7 +374,11 @@ class Session:
                 min=verdict.min_questions,
             )
         )
-        lines.append(_t("stars_rule", self.lang, two=int(0.7 * verdict.budget)))
+        rule = verdict.star_rule
+        if rule.three >= verdict.budget:
+            lines.append(_t("stars_rule_all", self.lang, budget=verdict.budget))
+        else:
+            lines.append(_t("stars_rule", self.lang, three=rule.three, two=rule.two))
         lines += ["", *render_truth(self.game.case, self.lang)]
         self.write("\n".join(lines))
 
@@ -427,6 +439,8 @@ def session_rows(
             "accused": verdict.accused if verdict else None,
             "pair": list(verdict.pair) if verdict else None,
             "min_questions": verdict.min_questions if verdict else None,
+            "stars_three_within": verdict.star_rule.three if verdict else None,
+            "stars_two_within": verdict.star_rule.two if verdict else None,
             "usage": asdict(total),
             "cost_cny_max": round(cost(total), 6) if cost else 0.0,
         }

@@ -45,7 +45,6 @@ from loosethread.npc import (
 from loosethread.solver import Solver
 
 DEFAULT_BUDGET = 20  # CP-3, provisional until the P2 playtest
-TWO_STARS_SHARE = 0.7  # DESIGN §9: two stars up to 70% of the budget
 
 
 class GameOver(RuntimeError):
@@ -84,6 +83,25 @@ class AccusationError(ValueError):
 
 
 @dataclass(frozen=True)
+class StarRule:
+    """Most questions for each star in one case (CP-5, DESIGN §9).
+
+    Set by simulated systematic players (`loosethread.simulate`): ★★★ up to the fastest quarter of
+    them, ★★ up to their median, both capped at the budget.
+    """
+
+    three: int
+    two: int
+
+    def __post_init__(self) -> None:
+        if not 0 < self.three <= self.two:
+            raise ValueError("star thresholds must satisfy 0 < three <= two")
+
+    def stars(self, used: int) -> int:
+        return 3 if used <= self.three else 2 if used <= self.two else 1
+
+
+@dataclass(frozen=True)
 class Verdict:
     outcome: Outcome
     stars: int  # 1-3 when solved, else 0
@@ -93,6 +111,7 @@ class Verdict:
     questions_used: int
     min_questions: int
     budget: int
+    star_rule: StarRule
 
 
 @dataclass
@@ -106,6 +125,7 @@ class Game:
     used: int = 0
     turns: list[Turn] = field(default_factory=list)
     verdict: Verdict | None = None
+    stars: StarRule | None = None  # computed on first use when not given
 
     def __post_init__(self) -> None:
         view = self.case.view
@@ -229,6 +249,7 @@ class Game:
         exposes = self.exposes_culprit_lie(a, b)
         culprit = self.case.truth.culprit
         min_q = len(question_plan(view, Solver(view))[0])
+        rule = self.star_rule()
         stars = 0
         if suspect != culprit:
             outcome = Outcome.WRONG
@@ -236,16 +257,20 @@ class Game:
             outcome = Outcome.HUNCH
         else:
             outcome = Outcome.SOLVED
-            if self.used <= min_q + 2:
-                stars = 3
-            elif self.used <= int(TWO_STARS_SHARE * self.budget):
-                stars = 2
-            else:
-                stars = 1
+            stars = rule.stars(self.used)
         self.verdict = Verdict(
-            outcome, stars, suspect, (a, b), exposes, self.used, min_q, self.budget
+            outcome, stars, suspect, (a, b), exposes, self.used, min_q, self.budget, rule
         )
         return self.verdict
+
+    def star_rule(self) -> StarRule:
+        """This case's star thresholds (CP-5); simulated once, on first use, about a second."""
+        if self.stars is None:
+            # `simulate` plays whole games itself, so it is imported here, not at the top.
+            from loosethread.simulate import star_rule  # noqa: PLC0415
+
+            self.stars = star_rule(self.case, self.budget)
+        return self.stars
 
     def exposing_pairs(self) -> tuple[tuple[str, str], ...]:
         """After the accusation: the notebook pairs that would have exposed the culprit's lie."""

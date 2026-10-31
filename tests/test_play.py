@@ -6,6 +6,7 @@ from pathlib import Path
 
 from loosethread.generator import DAILY, generate
 from loosethread.play import main
+from loosethread.simulate import star_rule
 
 CASE = generate(213, DAILY).case
 CULPRIT_ZH = next(p.name.zh for p in CASE.view.world.people if p.id == CASE.truth.culprit)
@@ -74,6 +75,16 @@ def test_en_accusation_takes_a_full_name() -> None:
     assert "Note: E1 and E2 do not contradict each other." in text
     assert "Right person, but E1 and E2 do not expose a lie" in text
     assert f"Your notebook had no pair yet that exposes {culprit}'s lie." in text
+    # Most systematic players need more than the budget for case 213 (CP-5).
+    assert "(This case: any solve within 20 questions earns ★★★;" in text
+
+
+def test_the_result_shows_this_case_s_star_thresholds() -> None:
+    case = generate(0, DAILY).case
+    rule = star_rule(case)
+    culprit = next(p.name.zh for p in case.view.world.people if p.id == case.truth.culprit)
+    text = _run(["--seed", "0"], [f"/指认 {culprit} E1 E2", "y"])
+    assert f"（本案：★★★ 不超过 {rule.three} 问，★★ 不超过 {rule.two} 问，★ 其余。" in text
 
 
 def test_after_a_miss_the_exposing_pair_is_shown() -> None:

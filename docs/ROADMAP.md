@@ -130,8 +130,9 @@ Commands below use the package name `loosethread` (originally `alibi`; renamed b
     split: rules 89.2% [83.2%, 93.2%]; local Qwen 7B (prompt tuned on dev, 3 rounds) 77.0%
     [69.6%, 83.1%], significantly worse than rules (McNemar p = 0.003) and charging twice as
     many wrong answers: a negative result for the local model.
-  - Next: DeepSeek pilot (10) then test (needs `DEEPSEEK_API_KEY`); CP-5 decision; then the
-    playtest.
+  - CP-5 approved (D-023): stars are graded per case against 20 simulated systematic players
+    (★★★ ≤ their fastest quarter, ★★ ≤ their median); budget stays 20.
+  - Next: DeepSeek pilot (10) then test (needs `DEEPSEEK_API_KEY`); then the playtest.
 
 ## P3 — Evaluation study · `planned`
 

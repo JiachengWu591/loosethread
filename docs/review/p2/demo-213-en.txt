@@ -144,7 +144,7 @@ You get one accusation. Accuse Lin Xiaoyu, because S6 and S9 cannot both be true
 
 Solved! ★★★
 You used 4/20 questions; this case can be solved in 4.
-(★★★ within the minimum + 2; ★★ within 14; ★ otherwise)
+(This case: any solve within 20 questions earns ★★★; most simulated players who question everyone in turn need more.)
 
 ─── Truth (spoilers) ───────────────────────────────────────────────────────────
   Culprit: Lin Xiaoyu, alone in the study at 20:30–20:45.

@@ -156,9 +156,12 @@ Disjunctive evidence ("someone came in from the terrace") is a later extension.
 | Hunch | right suspect, attached pair does not expose a lie of theirs | ☆ |
 | Wrong | wrong suspect | ✗ |
 
-- Stars for *Solved*: ★★★ if questions used ≤ the case's minimum question count (the plan length
-  from the P1 metric) + 2; ★★ if ≤ 70% of
-  the budget; otherwise ★. (The minimum question count comes from the P1 difficulty metric.)
+- Stars for *Solved* (changed by CP-5, D-023): each case is played by 20 simulated systematic
+  players (`loosethread.simulate`: everyone is asked "who was with you" for each window slot in a
+  random order, then the rest). ★★★ if questions used ≤ the fastest quarter of them (25th
+  percentile), ★★ if ≤ their median, otherwise ★; both thresholds are capped at the budget and
+  shown with the result. Before CP-5: ★★★ ≤ minimum question count + 2, ★★ ≤ 70% of the budget,
+  which a methodical player never reached.
 - The truth is revealed after any outcome.
 - **Share card** (P4): date/case number, mark, questions used, and one emoji per question (⬜ nothing
   new, 🟨 new fact, 🟥 contradiction found). No names, places or times — spoiler-free by construction,

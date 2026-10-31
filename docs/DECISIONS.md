@@ -427,3 +427,24 @@ directly.
   playtest (8 free-form questions, all misread before D-020) is the only real-player sample.
 - **Not done**: DeepSeek (the P2 criterion of >= 85% applies to it, D-018); `DEEPSEEK_API_KEY` is
   not set. If DeepSeek does not beat the rule parser, the parser design itself needs a CP.
+## D-023 — CP-5 approved: stars graded against simulated systematic players
+
+- **Date**: 2026-10-31 · **Type**: strategic (scoring, DESIGN §9) · **Approved by owner** (chat:
+  "选 B")
+- **Context**: CP-5. With the oracle-based rule, the median systematic run reached ★★★ in 0/200
+  daily cases; the sweep of 15 questions fits the budget of 20 in every daily case.
+- **Decision**: option B. Per case, 20 simulated systematic players (orders seeded `stars:0..19`,
+  independent of the truth) set the thresholds: ★★★ ≤ their 25th percentile, ★★ ≤ their median,
+  ★ otherwise, both capped at the budget. `game.StarRule`, `simulate.star_rule`; the game computes
+  the rule once, at the accusation (0.2–1.1 s on the cases tried). The result screen shows this
+  case's thresholds, or "any solve within the budget earns ★★★" when the 25th percentile is at
+  or past the budget. Budget stays 20 (CP-3); option C (a budget that bites) is for the step 3
+  playtest.
+- **Observations, not changed** (from the 4,000 analysis runs, seeded differently from the game,
+  so indicative): typical thresholds ★★★ ≤ 9, ★★ ≤ 12. In 34/200 cases the median simulated
+  player needs more than 20 questions, so there any solve within the budget earns ★★★. In 1/200
+  cases the new ★★★ threshold is below the old "minimum + 2", so a player who follows the oracle
+  plan with two spare questions would get ★★ there.
+- **Consequences**: case 213's demo now shows "any solve within 20 earns ★★★"; the owner's
+  playtest case (20261031) has ★★★ ≤ 9, ★★ ≤ 12. Pre-CP-5 star rates stay reproducible from
+  `simulate --score` (labelled "before CP-5").

@@ -106,7 +106,10 @@ alibi style). Full outputs: `docs/review/p1/batch-naive.txt`, `docs/review/p1/ba
   to a person, two more manual reviews add little. Also add to the P2 playability gate the question
   "do cases feel formulaic?", since 99.2% of cases need exactly one contradiction.
 
-## CP-5 — Stars and budget measured against a systematic player · `open`
+## CP-5 — Stars and budget measured against a systematic player · `approved`
+
+- **Decision** (owner, 2026-10-31, "选 B"): option B; budget 20 unchanged; C to be looked at
+  with the step 3 playtest. See D-023.
 
 - **Trigger**: the simulated systematic player (CP-1 option C, D-018 item 5, D-021). It asks every
   suspect "who was with you" for every slot of the theft window in a random order, then the
