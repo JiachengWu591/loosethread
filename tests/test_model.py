@@ -39,6 +39,7 @@ from loosethread.model import (
     Truth,
     World,
 )
+from loosethread.npc import LineRequest, LineResult, ParseRequest, ParseResult
 
 TRUTH_TYPES = frozenset({Truth, Lie, Knowledge, Event, Case})
 
@@ -126,7 +127,11 @@ def test_walker_finds_truth_from_case() -> None:
     assert TRUTH_TYPES - {Case} <= _reachable_types(Case)
 
 
-@pytest.mark.parametrize("root", [PlayerView, AllowedFacts])
+@pytest.mark.parametrize(
+    "root",
+    # Everything a language backend receives or returns (ROADMAP P2 item 3).
+    [PlayerView, AllowedFacts, ParseRequest, ParseResult, LineRequest, LineResult],
+)
 def test_no_truth_type_reachable(root: type) -> None:
     assert _reachable_types(root) & TRUTH_TYPES == set()
 

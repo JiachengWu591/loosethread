@@ -258,3 +258,68 @@ directly.
 - **Consequences**: human evidence on sheet readability comes from one case. "No tools" is an
   instruction, not an enforced sandbox. Readability, fun and variety ("do cases feel formulaic?")
   move to the P2 playability gate.
+
+## D-018 — P2 plan approved, with the owner's choices
+
+- **Date**: 2026-10-30 · **Type**: strategic (clarifies an exit criterion, sets a budget) ·
+  **Approved by owner** (chat: "按建议开工")
+- **Context**: start of P2. The plan was restated in ten lines with five decision points.
+- **Decision**:
+  1. Tone tags depend on public information only (kind of question, how often this person was
+     asked), never on guilt or on whether a claim is a lie.
+  2. Parser test set: Claude drafts and labels 150-200 zh/en questions; the owner spot-checks a
+     random 30; the set is frozen before the first measurement and split into dev (~50, used to tune
+     prompts) and test (~150, measured once). Reports say the set was drafted by an LLM.
+  3. The provisional parser exit criterion (>= 85%) applies to the DeepSeek backend; local Qwen and
+     the rule-based parser are reported alongside as comparisons.
+  4. P2 spending cap: CNY 20 for API calls. Prices are read from DeepSeek's site into config, a
+     pilot of about 10 questions is run and extrapolated before any full run, and work stops and
+     is reported if the cap would be exceeded.
+  5. CP-1 option C (simulated systematic player as a second difficulty metric) is done in P2.
+  6. Branch `p2-npc-pipeline`; step 1 is the offline template backend and game loop (no key needed),
+     step 2 the model backends and parser accuracy, step 3 the playtest.
+- **Consequences**: the owner sets `DEEPSEEK_API_KEY` as a user environment variable before step 2;
+  code only ever refers to the variable name.
+## D-019 — P2 step 1: offline backends and the terminal game
+
+- **Date**: 2026-10-30 · **Type**: tactical
+- **Context**: P2 step 1 (D-018): a complete game with no API key, so the loop and the isolation
+  tests exist before any model is called.
+- **Decision**:
+  - Contracts in `loosethread.npc`: `ParseRequest` (question, addressee, lexicon of public names),
+    `ParseResult` (a query or a `ClarifyReason`), `LineRequest` (speaker card, `AllowedFacts`,
+    public world, clarify reason, repeat flag), `LineResult`, `Usage`. Model backends build their
+    prompts from these only; `lines.line_payload` is the JSON they may embed.
+  - `loosethread.lexicon`: names, roles, generated forms (老周, 沈先生, Mr Zhou) and the content
+    pack's new `aliases` field; an alias shared by two entities is dropped. Clock times in digits,
+    Chinese (九点一刻) and English (half past eight); bare small hours are not times (一点 = "a bit").
+  - `loosethread.parser.RuleParser`: the offline parser and the baseline for parser accuracy.
+    Anything it cannot read becomes a free "please rephrase" with a reason (unclear, need a time,
+    time outside the evening, two people named). `canonical_question` renders a query as a plain
+    question; every in-scope query round-trips in zh and en (tested on two cases).
+  - `loosethread.lines`: template lines in zh and en, and the post-check `unauthorised`: every
+    person, place, item and clock time in a line must appear in its facts, its query or the
+    speaker's persona. It cannot catch a wrong relation between allowed names, negations, or names
+    the lexicon does not know.
+  - Tone (D-018 item 1): out-of-scope questions get "evasive"; from the sixth question to the same
+    person, "irritated"; otherwise "calm". "Nervous" is unused for now.
+  - `loosethread.game.Game` is the only play-loop module that holds the truth. Fail closed: a parser
+    that raises or returns a query for someone else or with unknown names gives a free rephrase; a
+    writer that raises, returns nothing or fails the post-check is replaced by the template line;
+    each turn records why. Out-of-scope questions parse successfully and cost 1 (DESIGN §7).
+  - Notebook ids: statements `S1, S2, ...` in the order obtained, evidence keeps `E1...`. Hints list
+    obtained pairs in direct conflict (solver rule), hidden with `--hard`.
+  - Scoring (DESIGN §9): a pair "exposes a lie of the culprit" when the two items are in direct
+    conflict and one of them is a false claim whose source is the culprit (hearsay counts for its
+    source). Stars use `min_questions` from the P1 plan.
+  - `python -m loosethread.play`: default case = today's date as the seed with the daily preset;
+    `--lang`, `--hard`, `--budget`, `--log` (JSONL turns + summary, no credentials). Debug-CLI
+    layout helpers became public (`render_sheet`, `render_notebook`, `render_truth`, `hang`, ...).
+- **Observation (open)**: on 200 daily seeds, playing exactly the oracle question plan leaves no
+  pair that exposes a lie of the culprit in 56/200 = 28.0% [Wilson 95%: 22.2%, 34.6%]: the plan
+  rules the innocents out by elimination, and the player must ask more to attach a lie. So the
+  ★★★ threshold (`min_questions` + 2) is tighter than it looks for those cases. To be measured with
+  the simulated-player metric (CP-1 option C) in step 2 before proposing any change to scoring.
+- **Consequences**: 159 tests pass (parser round trips, post-check on every template line, fail
+  closed backends, every backend request equals the answer table's output on three cases).
+  Recorded demos: `docs/review/p2/demo-213-zh.txt`, `demo-213-en.txt`.

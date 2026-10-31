@@ -1,0 +1,163 @@
+════════════════════════════════════════════════════════════════════════════════
+                   Loose Thread · Mistpine Lodge · case #213
+════════════════════════════════════════════════════════════════════════════════
+
+  A night of driving rain. At eight o'clock a landslide warning closed the only
+  road up to Mistpine Lodge: nobody gets in, nobody gets out.
+
+  At 21:00, Shen Huaishan returned to the study and found the celadon jade seal
+  gone. It was last confirmed on the shelf during 20:00–20:15.
+
+  You are a retired detective who turned in early. A knock at the door wakes
+  you. Everyone is waiting in the lobby.
+
+─── The case ───────────────────────────────────────────────────────────────────
+  Stolen         the celadon jade seal (owner: Shen Huaishan)
+  Scene          study
+  Last seen      20:00–20:15
+  Found missing  21:00–21:15
+  Theft window   20:15–21:00, 3 slots
+
+─── Who was there ──────────────────────────────────────────────────────────────
+  ◆ Zhao Yifan · student hiker
+    Impression: Lively and curious, asks more than answers.
+    Motive: Lost all the hiking gear and is short of money.
+  ◆ Chen Mo · novelist
+    Impression: Unhurried, fond of metaphors, easily distracted.
+    Motive: Writing a novel about a stolen heirloom and short of "material".
+  ◆ Zhou Dachuan · cook
+    Impression: Few words, blunt, always comes back to food.
+    Motive: Shen sneered at the cooking in front of everyone last night.
+  ◆ Lin Xiaoyu · receptionist
+    Impression: Young, laughs when nervous, sharp memory.
+    Motive: Saving hard to study abroad.
+  ◆ Su Man · antiques dealer
+    Impression: Shrewd and polite, chooses every word.
+    Motive: Suspects the piece was once a family heirloom.
+  ◇ Shen Huaishan · collector (the owner, not a suspect)
+    Impression: Refined and particular, anxious about the collection, quotes old
+    sayings.
+
+─── Map ────────────────────────────────────────────────────────────────────────
+  kitchen ── dining room ── lobby ── tea room
+     │                        │
+     └─────── corridor ───────┘
+            ┌─────┴─────┐
+          study    guest wing
+         (scene)
+
+─── Rules ──────────────────────────────────────────────────────────────────────
+  1. Everyone is in exactly one place per slot; people in the same room in the
+     same slot see each other.
+  2. From one slot to the next, a person stays put or moves one step along a map
+     line.
+  3. During the theft window the culprit was alone at the scene for at least one
+     slot.
+  4. Evidence is always true.
+  5. Innocent people (the owner included) never lie about the theft window; any
+     lie they tell about other times is exposed by evidence.
+  6. The culprit lies to protect their alibi.
+  7. Hearsay repeats exactly what the source said, and is as reliable as the
+     source.
+
+─── Evidence (always true; [ ] = the slot it belongs to) ───────────────────────
+  E1 [20:00] A photo on Shen Huaishan's phone shows the celadon jade seal on the
+             study shelf at 20:09.
+  E2 [21:45] A note on the kitchen whiteboard, signed by Zhou Dachuan, is timed
+             21:58.
+  E3 [21:30] The lobby guestbook has a line from Su Man, timed 21:39.
+  E4 [21:45] The dining-room order pad reads: 21:49, Su Man ordered a bowl of
+             hot noodles.
+  E5 [20:00] A note on the kitchen whiteboard, signed by Zhao Yifan, is timed
+             20:14.
+  E6 [21:30] The dining-room order pad reads: 21:44, Zhao Yifan ordered a bowl
+             of hot noodles.
+
+How to play
+  Ask someone:  Lin Xiaoyu: where were you at 21:15?  (or start with @Lin)
+  Ask the same person again: just type the question.
+  You can ask: where they were at a time, who was with them, whether they saw
+  someone, when they were somewhere, whether they saw the stolen item.
+  Each question costs 1; questions not understood and repeats are free.
+  Commands: /notes  /case  /accuse SUSPECT ID ID (e.g. /accuse Chen S3 E2)
+  /help  /quit
+[20 left]> Shen Huaishan: Who was with you at 20:15?
+  Shen Huaishan: Between 20:15 and 20:30 I was in the corridor with Chen Mo and
+                 Lin Xiaoyu.
+→ noted: S1
+[19 left] Shen Huaishan> Lin Xiaoyu: Did you see Su Man tonight?
+  Lin Xiaoyu: Between 20:00 and 20:15 I saw Su Man in the lobby. Between 20:45
+              and 21:00 I saw Su Man in the corridor. Between 21:45 and 22:00 I
+              saw Su Man in the dining room.
+→ noted: S2, S3, S4
+[18 left] Lin Xiaoyu> Lin Xiaoyu: When were you in the lobby?
+  Lin Xiaoyu: I was in the lobby during 20:00–20:15, 20:30–20:45, 21:00–21:15,
+              21:15–21:30.
+→ noted: S5, S6, S7, S8
+[17 left] Lin Xiaoyu> Su Man: Who was with you at 20:30?
+  Su Man: Between 20:30 and 20:45 I was alone in the lobby.
+→ noted: S9
+⚠ S6 and S9 cannot both be true
+[16 left] Su Man> /notes
+─── Notebook (9 statements) ────────────────────────────────────────────────────
+  Two rows per person. at: where they say they were; with: who they say was in
+  the room (surnames), "alone" meaning nobody else. Slot 21:15 means
+  21:15–21:30.
+
+                     ┌───── theft window ──────┐
+              20:00  │ 20:15     20:30  20:45  │ 21:00  21:15  21:30  21:45
+  Shen  at    ·      │ ·         ·      ·      │ ·      ·      ·      ·
+        with         │ Chen,Lin                │
+                     │                         │
+  Zhao  at    ·      │ ·         ·      ·      │ ·      ·      ·      ·
+        with         │                         │
+                     │                         │
+  Chen  at    ·      │ ·         ·      ·      │ ·      ·      ·      ·
+        with         │                         │
+                     │                         │
+  Zhou  at    ·      │ ·         ·      ·      │ ·      ·      ·      ·
+        with         │                         │
+                     │                         │
+  Lin   at    lobby  │ ·         lobby  ·      │ lobby  lobby  ·      ·
+        with         │                         │
+                     │                         │
+  Su    at    ·      │ ·         ·      ·      │ ·      ·      ·      ·
+        with         │           alone         │
+
+  Statements (slot starts):
+  S1  Shen Huaishan: in the corridor at 20:15 with Chen Mo, Lin Xiaoyu
+  S2  Lin Xiaoyu: saw Su Man in the lobby at 20:00
+  S3  Lin Xiaoyu: saw Su Man in the corridor at 20:45
+  S4  Lin Xiaoyu: saw Su Man in the dining room at 21:45
+  S5  Lin Xiaoyu: in the lobby at 20:00
+  S6  Lin Xiaoyu: in the lobby at 20:30
+  S7  Lin Xiaoyu: in the lobby at 21:00
+  S8  Lin Xiaoyu: in the lobby at 21:15
+  S9  Su Man: alone in the lobby at 20:30
+
+  Contradiction hints:
+  ⚠ S6 and S9 cannot both be true
+  Evidence ids are on /case.
+[16 left] Su Man> /accuse Lin Xiaoyu S6 S9
+You get one accusation. Accuse Lin Xiaoyu, because S6 and S9 cannot both be true? (y/n) y
+
+Solved! ★★★
+You used 4/20 questions; this case can be solved in 4.
+(★★★ within the minimum + 2; ★★ within 14; ★ otherwise)
+
+─── Truth (spoilers) ───────────────────────────────────────────────────────────
+  Culprit: Lin Xiaoyu, alone in the study at 20:30–20:45.
+
+  True whereabouts (* the theft; ! they lied about this slot)
+                     ┌─────────── theft window ────────────┐
+        20:00        │ 20:15     20:30        20:45        │ 21:00        21:15        21:30        21:45
+  Shen  study        │ corridor  guest wing   corridor     │ study        study        corridor     guest wing
+  Zhao  kitchen      │ kitchen   dining room  dining room  │ dining room  dining room  dining room  dining room
+  Chen  kitchen      │ corridor  kitchen      corridor     │ lobby        lobby        dining room  dining room
+  Zhou  dining room  │ kitchen   corridor     kitchen      │ dining room  lobby        dining room  kitchen
+  Lin   lobby        │ corridor  study*!      corridor     │ lobby        lobby        dining room  dining room
+  Su    lobby        │ lobby     lobby        corridor     │ corridor     corridor     lobby        dining room
+
+  Lies:
+  · Lin Xiaoyu (alibi) claims the lobby at 20:30, was really in the study.
+    Exposed by: Su Man

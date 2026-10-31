@@ -23,8 +23,16 @@ FORBIDDEN_MODULES = {
 }
 
 
-@pytest.mark.parametrize("module", ["solver.py", "difficulty.py"])
+@pytest.mark.parametrize(
+    "module",
+    # The solver side, and everything a language backend or the notebook is built from. Only
+    # `game.py` and `play.py` hold a `Case` in the play loop.
+    ["solver.py", "difficulty.py", "lexicon.py", "npc.py", "parser.py", "lines.py", "notebook.py"],
+)
 def test_module_cannot_reach_truth(module: str) -> None:
+    forbidden = FORBIDDEN_MODULES | {"loosethread.game", "loosethread.play"}
+    if module == "lexicon.py":  # names and aliases come from the content pack
+        forbidden -= {"loosethread.content"}
     tree = ast.parse((PACKAGE / module).read_text(encoding="utf-8"))
     imported_modules: set[str] = set()
     imported_names: set[str] = set()
@@ -34,7 +42,7 @@ def test_module_cannot_reach_truth(module: str) -> None:
             imported_names.update(alias.name for alias in node.names)
         elif isinstance(node, ast.Import):
             imported_modules.update(alias.name for alias in node.names)
-    assert not imported_modules & FORBIDDEN_MODULES
+    assert not imported_modules & forbidden
     assert not imported_names & TRUTH_NAMES
     attributes = {n.attr for n in ast.walk(tree) if isinstance(n, ast.Attribute)}
     identifiers = {n.id for n in ast.walk(tree) if isinstance(n, ast.Name)}

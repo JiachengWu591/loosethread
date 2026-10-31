@@ -44,6 +44,14 @@ class ItemSpec:
 
 
 @dataclass(frozen=True)
+class Aliases:
+    """Extra names the question parser accepts for one person, location or item."""
+
+    zh: tuple[str, ...]
+    en: tuple[str, ...]
+
+
+@dataclass(frozen=True)
 class ContentPack:
     id: str
     setting: LocalizedText
@@ -66,6 +74,14 @@ class ContentPack:
     # snippet from `map_art_optional` attaches; it renders empty when that location is dropped.
     map_art: LocalizedText
     map_art_optional: tuple[tuple[LocationId, LocalizedText], ...]
+    # Parser aliases by person, location or item id; names and roles are always accepted too.
+    aliases: tuple[tuple[str, Aliases], ...] = ()
+
+    def aliases_for(self, entity_id: str) -> tuple[str, ...]:
+        for key, found in self.aliases:
+            if key == entity_id:
+                return (*found.zh, *found.en)
+        return ()
 
     def map_picture(self, lang: Lang, present: frozenset[LocationId]) -> str:
         snippets = {
@@ -218,6 +234,24 @@ def _parse_pack(raw: dict[str, Any]) -> ContentPack:
     if not {loc for loc, _ in evidence_templates} <= location_ids - {crime_location}:
         raise ValueError("evidence_templates: unknown location, or a template for the crime scene")
     art_optional = _obj(raw.get("map_art_optional"), "map_art_optional")
+    aliases_raw = _obj(raw.get("aliases", {}), "aliases")
+
+    def names(entry: Any, where: str) -> tuple[str, ...]:
+        found = _list(entry, where)
+        if not all(isinstance(x, str) and x.strip() for x in found):
+            raise ValueError(f"{where}: expected a list of non-empty strings")
+        return tuple(found)
+
+    aliases = tuple(
+        (
+            key,
+            Aliases(
+                zh=names(_obj(value, f"aliases.{key}").get("zh"), f"aliases.{key}.zh"),
+                en=names(_obj(value, f"aliases.{key}").get("en"), f"aliases.{key}.en"),
+            ),
+        )
+        for key, value in aliases_raw.items()
+    )
 
     pack = ContentPack(
         id=_str(raw, "id", "pack"),
@@ -243,11 +277,16 @@ def _parse_pack(raw: dict[str, Any]) -> ContentPack:
             (LocationId(loc_id), _text(art_optional, loc_id, "map_art_optional"))
             for loc_id in art_optional
         ),
+        aliases=aliases,
     )
     _check_text(pack)
     ids = [pack.client.id, *(e.person.id for e in roster)]
     if len(set(ids)) != len(ids):
         raise ValueError("pack: duplicate person ids")
+    known = {*ids, *location_ids, *(i.id for i in items)}
+    unknown = sorted(key for key, _ in aliases if key not in known)
+    if unknown:
+        raise ValueError(f"aliases: unknown ids {unknown}")
     if not pack.fallback_templates or not pack.items or not pack.roster:
         raise ValueError("pack: needs fallback templates, items and a roster")
     return pack

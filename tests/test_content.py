@@ -61,6 +61,14 @@ def test_map_art_missing_a_location_is_rejected() -> None:
         _parse_pack(raw)
 
 
+def test_aliases_load_and_unknown_ids_are_rejected() -> None:
+    assert "印章" in load_pack().aliases_for("jade_seal")
+    raw = _raw_pack()
+    raw["aliases"]["ghost"] = {"zh": ["鬼"], "en": []}
+    with pytest.raises(ValueError, match="ghost"):
+        _parse_pack(raw)
+
+
 def test_intro_with_an_unknown_placeholder_is_rejected() -> None:
     raw = _raw_pack()
     raw["intro"]["en"] = ["{culprit} did it."]

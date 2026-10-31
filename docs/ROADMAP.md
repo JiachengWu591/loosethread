@@ -8,7 +8,7 @@ All numeric thresholds are provisional and may only change through the process i
 |---|---|---|
 | P0 | Skeleton and design | done |
 | P1 | Case generator and solver | done |
-| P2 | NPC pipeline and CLI playable | planned |
+| P2 | NPC pipeline and CLI playable | in progress |
 | P3 | Evaluation study | planned |
 | P4 | Web version, daily case, sharing | planned |
 | P5 | Release v0.1.0 | planned |
@@ -77,7 +77,7 @@ Commands below use the package name `loosethread` (originally `alibi`; renamed b
   pairs under CP-4 (`docs/review/p1/REVIEW.md`, which also reports case variety over 1,000 seeds).
   All exit criteria met, the review criterion as changed by CP-4.
 
-## P2 — NPC pipeline and CLI playable · `planned`
+## P2 — NPC pipeline and CLI playable · `in progress`
 
 - **Goal**: play one full case in the terminal in Chinese and one in English.
 - **Work**
@@ -105,6 +105,20 @@ Commands below use the package name `loosethread` (originally `alibi`; renamed b
 - **Playability gate**: after P2, a playtest review with the owner and ideally 2–3 friends: "is it fun,
   where do you get stuck?" — and, added by CP-4, "do cases feel formulaic?" (99.2% of cases need
   exactly one contradiction). If not fun, iterate on P1/P2 before entering P3.
+- **Plan approved 2026-10-30 (D-018)**: tone from public information only; LLM-drafted parser test
+  set, owner spot-checks 30, frozen before measuring (dev ~50 / test ~150); the 85% criterion
+  applies to DeepSeek; API spending cap CNY 20; CP-1 option C done in P2. Steps: (1) offline backends
+  and game loop, (2) model backends and parser accuracy, (3) playtest.
+- **Progress (2026-10-30, branch `p2-npc-pipeline`)**
+  - Step 1 done (D-019): `python -m loosethread.play` plays a full case offline in zh and en with
+    the rule-based parser and template lines; work items 1, 3, 6 and the offline half of 4, 5, 7, 8
+    are in place. Isolation tests record every backend request on three cases and check it equals
+    the answer table's output. Demos in `docs/review/p2/`.
+  - Open: on 200 daily seeds, the oracle plan alone leaves no lie-exposing pair in 28.0%
+    [22.2%, 34.6%] of cases (elimination instead of contradiction); to be measured with the
+    simulated player in step 2 before any scoring change is proposed.
+  - Next: DeepSeek and llama.cpp backends (needs `DEEPSEEK_API_KEY` set by the owner), parser test
+    set, parser accuracy, simulated-player metric, then the owner's playtest.
 
 ## P3 — Evaluation study · `planned`
 

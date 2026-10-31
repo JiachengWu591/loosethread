@@ -30,10 +30,12 @@ from loosethread.model import (
     Occupants,
     PersonAt,
     PersonId,
+    PlayerView,
     Query,
     QueryKind,
     SlotIndex,
     Statement,
+    World,
 )
 from loosethread.stats import percentile, wilson
 
@@ -136,7 +138,7 @@ _RULES: tuple[tuple[str, str], ...] = (
     ),
 )
 
-_WIDTH = 80  # page width in display columns (CJK characters count as 2)
+WIDTH = 80  # page width in display columns (CJK characters count as 2)
 
 
 def _t(key: str, lang: Lang, **fields: object) -> str:
@@ -145,8 +147,7 @@ def _t(key: str, lang: Lang, **fields: object) -> str:
 
 
 class _Names:
-    def __init__(self, case: Case, lang: Lang) -> None:
-        world = case.view.world
+    def __init__(self, world: World, lang: Lang) -> None:
         self.lang = lang
         self.person = {p.id: p.name.get(lang) for p in world.people}
         self.loc = {loc.id: loc.name.get(lang) for loc in world.locations}
@@ -172,67 +173,67 @@ class _Names:
 # --- Text layout ---------------------------------------------------------------------------------
 
 
-def _display_width(text: str) -> int:
+def display_width(text: str) -> int:
     return sum(2 if ord(ch) > 0x2E80 else 1 for ch in text)
 
 
 def _fit(text: str, width: int) -> str:
-    return text + " " * max(0, width - _display_width(text))
+    return text + " " * max(0, width - display_width(text))
 
 
-def _rule(title: str) -> str:
+def rule(title: str) -> str:
     head = f"─── {title} "
-    return head + "─" * max(3, _WIDTH - _display_width(head))
+    return head + "─" * max(3, WIDTH - display_width(head))
 
 
 _NO_LINE_START = frozenset("，。、；：？！）》」』”’,.;:?!)")
 _BREAK_AFTER = frozenset("，。、；：？！）》」』”")
 _MAX_CARRY = 12  # columns of CJK text that may move down to break at punctuation instead
-_WIDE = f"{chr(0x2E80)}-{chr(0xFFFF)}"  # the range `_display_width` counts as two columns
+_WIDE = f"{chr(0x2E80)}-{chr(0xFFFF)}"  # the range `display_width` counts as two columns
 # Tokens: a run of narrow non-space characters (a word, number or time), a space run, or one
 # wide character.
 _TOKEN = re.compile(rf"[^\s{_WIDE}]+|\s+|.")
 
 
-def _wrap(text: str, width: int) -> list[str]:
+def wrap(text: str, width: int) -> list[str]:
     """Greedy wrap by display width. ASCII words and numbers stay whole; CJK text prefers to
     break after punctuation, so names are not split across lines."""
     lines: list[str] = []
     line, used = "", 0
     for token in _TOKEN.findall(text):
-        size = _display_width(token)
+        size = display_width(token)
         if used + size > width and line.strip():
             if token[0] in _NO_LINE_START:
                 # Punctuation may not start a line: take the last CJK character down with it.
-                carry = line[-1] if _display_width(line[-1]) == 2 else ""
+                carry = line[-1] if display_width(line[-1]) == 2 else ""
             else:
                 cut = max((i for i, ch in enumerate(line) if ch in _BREAK_AFTER), default=-1)
                 carry = line[cut + 1 :] if cut >= 0 and size == 2 else ""
-                if _display_width(carry) > _MAX_CARRY:
+                if display_width(carry) > _MAX_CARRY:
                     carry = ""
             if carry == line:  # nothing would remain; overflow instead
                 line += token
                 used += size
                 continue
             lines.append(line[: len(line) - len(carry)].rstrip())
-            line, used = carry, _display_width(carry)
+            line, used = carry, display_width(carry)
             if token.isspace():
                 continue
         line += token
         used += size
     lines.append(line.rstrip())
     # No orphan of one or two CJK characters on the last line: pull two down with it.
-    if len(lines) > 1 and _display_width(lines[-1]) <= 4:
+    if len(lines) > 1 and display_width(lines[-1]) <= 4:
         tail = lines[-2][-2:]
-        if len(tail) == 2 and all(_display_width(ch) == 2 for ch in tail):
+        if len(tail) == 2 and all(display_width(ch) == 2 for ch in tail):
             lines[-2], lines[-1] = lines[-2][:-2], tail + lines[-1]
     return lines
 
 
-def _hang(prefix: str, text: str) -> list[str]:
+def hang(prefix: str, text: str) -> list[str]:
     """`prefix` + `text` wrapped to the page width, continuation lines aligned after the prefix."""
-    pad = _display_width(prefix)
-    first, *rest = _wrap(text, _WIDTH - pad)
+    pad = display_width(prefix)
+    first, *rest = wrap(text, WIDTH - pad)
     return [prefix + first, *(" " * pad + line for line in rest)]
 
 
@@ -248,9 +249,9 @@ def _grid(nm: _Names, window: Sequence[SlotIndex], rows: Sequence[_Row]) -> list
     first, last = int(window[0]), int(window[-1])
     table = [_Row("", "", tuple(nm.time(t) for t in sorted(nm.slot))), *rows]
     count = len(table[0].cells)
-    widths = [max(_display_width(r.cells[i]) for r in table) + 2 for i in range(count)]
-    name_w = max(_display_width(r.name) for r in table) + 2
-    tag_w = max(_display_width(r.tag) for r in table)
+    widths = [max(display_width(r.cells[i]) for r in table) + 2 for i in range(count)]
+    name_w = max(display_width(r.name) for r in table) + 2
+    tag_w = max(display_width(r.tag) for r in table)
     tag_w += 2 if tag_w else 0
 
     def line(row: _Row) -> str:
@@ -266,7 +267,7 @@ def _grid(nm: _Names, window: Sequence[SlotIndex], rows: Sequence[_Row]) -> list
     left = 2 + name_w + tag_w + sum(widths[:first])
     inner = 1 + sum(widths[first : last + 1])
     label = f" {_t('band', nm.lang)} "
-    fill = max(0, inner - _display_width(label))
+    fill = max(0, inner - display_width(label))
     band = " " * left + "┌" + "─" * (fill // 2) + label + "─" * (fill - fill // 2) + "┐"
     return [band, *(line(r) for r in table)]
 
@@ -275,8 +276,20 @@ def _grid(nm: _Names, window: Sequence[SlotIndex], rows: Sequence[_Row]) -> list
 
 
 def render_case(case: Case, lang: Lang = Lang.ZH, show_truth: bool = True) -> str:
-    view, world = case.view, case.view.world
-    nm = _Names(case, lang)
+    out = render_sheet(case.view, lang)
+    out += render_notebook(case.view, lang)
+    out.append("")
+    out.append(rule(_t("verdict", lang)))
+    out += ["  " + line for line in _t("verdict_body", lang).split("\n")]
+    if show_truth:
+        out += ["", *render_truth(case, lang)]
+    return "\n".join(out)
+
+
+def render_sheet(view: PlayerView, lang: Lang) -> list[str]:
+    """Banner, story, case facts, people, map, rules and evidence; ends with a blank line."""
+    world = view.world
+    nm = _Names(world, lang)
     pack = load_pack()
     item = world.items[0]
     client = next(p for p in world.people if p.id not in view.suspects)
@@ -284,7 +297,7 @@ def render_case(case: Case, lang: Lang = Lang.ZH, show_truth: bool = True) -> st
     out: list[str] = []
 
     title = _t("title", lang, setting=pack.setting.get(lang), seed=view.seed)
-    out += ["═" * _WIDTH, " " * ((_WIDTH - _display_width(title)) // 2) + title, "═" * _WIDTH, ""]
+    out += ["═" * WIDTH, " " * ((WIDTH - display_width(title)) // 2) + title, "═" * WIDTH, ""]
     intro = pack.intro.get(lang).format(
         setting=pack.setting.get(lang),
         client=nm.person[client.id],
@@ -293,10 +306,10 @@ def render_case(case: Case, lang: Lang = Lang.ZH, show_truth: bool = True) -> st
         found=nm.time(crime.discovered),
     )
     for line in intro.split("\n"):
-        out += _hang("  ", line) if line else [""]
+        out += hang("  ", line) if line else [""]
     out.append("")
 
-    out.append(_rule(_t("facts", lang)))
+    out.append(rule(_t("facts", lang)))
     end = nm.slot[window[-1]].label.split("–")[1]
     facts = [
         ("f_item", _t("f_item_v", lang, item=item.name.get(lang), owner=nm.person[client.id])),
@@ -305,51 +318,50 @@ def render_case(case: Case, lang: Lang = Lang.ZH, show_truth: bool = True) -> st
         ("f_found", nm.slot[crime.discovered].label),
         ("f_window", _t("f_window_v", lang, start=nm.time(window[0]), end=end, n=len(window))),
     ]
-    label_w = max(_display_width(_t(key, lang)) for key, _ in facts) + 2
+    label_w = max(display_width(_t(key, lang)) for key, _ in facts) + 2
     out += [f"  {_fit(_t(key, lang), label_w)}{value}" for key, value in facts]
     out.append("")
 
-    out.append(_rule(_t("people", lang)))
+    out.append(rule(_t("people", lang)))
     motives = {m.person: m.reason.get(lang) for m in view.motives}
     for p in [*(p for p in world.people if p.id in view.suspects), client]:
         head = "suspect_head" if p.id in view.suspects else "client_head"
         out.append("  " + _t(head, lang, name=nm.person[p.id], role=p.role.get(lang)))
-        out += _hang("    ", _t("persona", lang, text=p.persona.get(lang)))
+        out += hang("    ", _t("persona", lang, text=p.persona.get(lang)))
         if p.id in motives:
-            out += _hang("    ", _t("motive", lang, text=motives[p.id]))
+            out += hang("    ", _t("motive", lang, text=motives[p.id]))
     out.append("")
 
-    out.append(_rule(_t("map", lang)))
+    out.append(rule(_t("map", lang)))
     present = frozenset(loc.id for loc in world.locations)
     out += ["  " + line for line in pack.map_picture(lang, present).split("\n")]
     out.append("")
 
-    out.append(_rule(_t("rules", lang)))
+    out.append(rule(_t("rules", lang)))
     for i, (zh, en) in enumerate(_RULES, 1):
-        out += _hang(f"  {i}. ", zh if lang is Lang.ZH else en)
+        out += hang(f"  {i}. ", zh if lang is Lang.ZH else en)
     out.append("")
 
-    out.append(_rule(_t("evidence", lang)))
+    out.append(rule(_t("evidence", lang)))
     for e in view.evidence:
         slots = sorted({int(f.slot) for f in e.establishes})
         tag = "/".join(nm.time(t) for t in slots)
-        out += _hang(f"  {e.id} [{tag}] ", e.text.get(lang))
+        out += hang(f"  {e.id} [{tag}] ", e.text.get(lang))
     out.append("")
-
-    out.append(_rule(_t("notes", lang)))
-    out += [*_hang("  ", _t("notes_legend", lang)), ""]
-    out += _testimony_block(case, nm)
-    out.append("")
-
-    out.append(_rule(_t("verdict", lang)))
-    out += ["  " + line for line in _t("verdict_body", lang).split("\n")]
-    if show_truth:
-        out += ["", *_truth_block(case, nm)]
-    return "\n".join(out)
+    return out
 
 
-def _testimony_block(case: Case, nm: _Names) -> list[str]:
-    lang, view = nm.lang, case.view
+def render_notebook(
+    view: PlayerView, lang: Lang, title: str | None = None, unknown: str = "?"
+) -> list[str]:
+    """The testimony grid for every statement in `view`; `unknown` fills cells nobody spoke to."""
+    nm = _Names(view.world, lang)
+    out = [rule(title or _t("notes", lang)), *hang("  ", _t("notes_legend", lang)), ""]
+    return out + _testimony_block(view, nm, unknown)
+
+
+def _testimony_block(view: PlayerView, nm: _Names, unknown: str = "?") -> list[str]:
+    lang = nm.lang
     slots = sorted(nm.slot)
     item = view.world.items[0].name.get(lang)
     by_speaker: dict[PersonId, list[Statement]] = {}
@@ -370,7 +382,7 @@ def _testimony_block(case: Case, nm: _Names) -> list[str]:
             if isinstance(s.claim, Occupants)
         }
         rows += [
-            _Row(nm.row[person.id], _t("tag_at", lang), tuple(at.get(t, "?") for t in slots)),
+            _Row(nm.row[person.id], _t("tag_at", lang), tuple(at.get(t, unknown) for t in slots)),
             _Row(
                 "",
                 _t("tag_with", lang),
@@ -400,12 +412,13 @@ def _testimony_block(case: Case, nm: _Names) -> list[str]:
     if extras:
         lines += ["", "  " + _t("extra", lang)]
         for extra in extras:
-            lines += _hang("  · ", extra)
+            lines += hang("  · ", extra)
     return lines
 
 
-def _truth_block(case: Case, nm: _Names) -> list[str]:
-    lang, truth = nm.lang, case.truth
+def render_truth(case: Case, lang: Lang) -> list[str]:
+    nm = _Names(case.view.world, lang)
+    truth = case.truth
     (theft,) = truth.events
     where: dict[tuple[PersonId, int], LocationId] = {
         (f.person, int(f.slot)): f.location for f in truth.timeline
@@ -427,10 +440,10 @@ def _truth_block(case: Case, nm: _Names) -> list[str]:
         loc=nm.loc[theft.location],
     )
     lines = [
-        _rule(_t("truth", lang)),
+        rule(_t("truth", lang)),
         "  " + culprit,
         "",
-        *_hang("  ", _t("timeline", lang)),
+        *hang("  ", _t("timeline", lang)),
         *_grid(nm, case.view.crime.window, rows),
         "",
         "  " + _t("lies", lang),
@@ -452,7 +465,7 @@ def _truth_block(case: Case, nm: _Names) -> list[str]:
             real=nm.loc[where[(speaker, slot)]],
             by=sep.join(dict.fromkeys(by)),
         )
-        lines += _hang("  · ", text)
+        lines += hang("  · ", text)
     return lines
 
 
@@ -580,8 +593,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         text = render_case(generated.case, lang, show_truth=not args.hide_truth)
         if args.metrics and not args.hide_truth:
             case = generated.case
-            block = _metrics_block(measure(case.view), _Names(case, lang), case)
-            text += "\n\n" + _rule(_t("metrics", lang)) + "\n" + block
+            block = _metrics_block(measure(case.view), _Names(case.view.world, lang), case)
+            text += "\n\n" + rule(_t("metrics", lang)) + "\n" + block
     if args.out:
         args.out.write_text(text + "\n", encoding="utf-8", newline="\n")
     else:

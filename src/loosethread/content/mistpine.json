@@ -55,6 +55,25 @@
   "map_art_optional": {
     "terrace": {"zh": " ── 露台", "en": " ── terrace"}
   },
+  "aliases": {
+    "shen": {"zh": ["失主"], "en": []},
+    "he": {"zh": ["老板", "老板娘"], "en": []},
+    "zhou": {"zh": ["大厨"], "en": ["chef"]},
+    "ma": {"zh": ["修车的"], "en": []},
+    "zhao": {"zh": ["学生"], "en": ["student", "hiker"]},
+    "chen": {"zh": [], "en": ["writer"]},
+    "su": {"zh": [], "en": ["dealer"]},
+    "lobby": {"zh": ["前厅"], "en": ["hall", "reception"]},
+    "dining": {"zh": ["饭厅"], "en": ["dining", "restaurant"]},
+    "tea_room": {"zh": [], "en": ["tearoom", "tea-room"]},
+    "corridor": {"zh": ["过道"], "en": ["hallway", "passage"]},
+    "guest_wing": {"zh": ["客房", "房间"], "en": ["guest rooms", "guest room", "your room"]},
+    "terrace": {"zh": ["阳台"], "en": ["balcony"]},
+    "jade_seal": {"zh": ["印章", "玉印", "青玉印"], "en": ["seal", "jade seal"]},
+    "pocket_watch": {"zh": ["怀表", "银表"], "en": ["watch", "pocket watch"]},
+    "first_edition": {"zh": ["线装书", "初版书", "古书"], "en": ["book", "first edition"]},
+    "camera": {"zh": ["相机", "旁轴相机", "老相机"], "en": ["camera", "rangefinder"]}
+  },
   "client": {
     "id": "shen", "haunts": ["guest_wing", "tea_room"],
     "name": {"zh": "沈怀山", "en": "Shen Huaishan"},

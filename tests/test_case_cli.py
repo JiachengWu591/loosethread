@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from loosethread.case import _WIDTH, _display_width, _wrap, main, render_case
+from loosethread.case import WIDTH, display_width, main, render_case, wrap
 from loosethread.generator import generate
 from loosethread.model import Lang
 from loosethread.stats import percentile, wilson
@@ -30,7 +30,7 @@ def test_english_rendering(tmp_path: Path) -> None:
 
 
 def _columns(line: str, chars: str) -> list[int]:
-    return [_display_width(line[:i]) for i, ch in enumerate(line) if ch in chars]
+    return [display_width(line[:i]) for i, ch in enumerate(line) if ch in chars]
 
 
 @pytest.mark.parametrize("lang", list(Lang))
@@ -53,25 +53,25 @@ def test_window_bars_line_up(seed: int, lang: Lang) -> None:
 @pytest.mark.parametrize("seed", [0, 7, 213])
 def test_chinese_text_fits_the_page(seed: int) -> None:
     for line in render_case(generate(seed).case, Lang.ZH).splitlines():
-        assert _display_width(line) <= _WIDTH, line
+        assert display_width(line) <= WIDTH, line
 
 
 def test_wrap_keeps_words_names_and_numbers_whole() -> None:
     zh = "马建国（隐私小谎）声称 20:15 在走廊，实际在客房区。能揭穿它的：沈怀山、何秀兰、苏曼"
-    lines = _wrap(zh, 40)
-    assert all(_display_width(line) <= 40 for line in lines)
+    lines = wrap(zh, 40)
+    assert all(display_width(line) <= 40 for line in lines)
     assert "".join(lines).replace(" ", "") == zh.replace(" ", "")
     assert not any(line.endswith(("沈", "沈怀")) for line in lines)
     en = "Innocent people never lie about the theft window at 21:15–21:30 or any other"
-    for line in _wrap(en, 20):
-        assert _display_width(line) <= 20
+    for line in wrap(en, 20):
+        assert display_width(line) <= 20
         assert all(word in en.split() for word in line.split())
-    assert _wrap("", 10) == [""]
+    assert wrap("", 10) == [""]
 
 
 def test_wrap_avoids_a_lone_character_on_the_last_line() -> None:
-    lines = _wrap("一二三四五六七八九十上。", 20)
-    assert _display_width(lines[-1]) > 4
+    lines = wrap("一二三四五六七八九十上。", 20)
+    assert display_width(lines[-1]) > 4
 
 
 def test_batch_report(tmp_path: Path) -> None:
