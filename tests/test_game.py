@@ -86,8 +86,12 @@ def test_wrong_suspect_and_hunch() -> None:
     assert game.accuse(INNOCENT, "E1", "E2").outcome is Outcome.WRONG
     with pytest.raises(GameOver):
         game.accuse(CULPRIT, "E1", "E2")
-    hunch = _game().accuse(CULPRIT, "E1", "E2")
+    game = _game()
+    with pytest.raises(RuntimeError, match="only after the accusation"):
+        game.exposing_pairs()
+    hunch = game.accuse(CULPRIT, "E1", "E2")
     assert (hunch.outcome, hunch.stars, hunch.exposes_lie) == (Outcome.HUNCH, 0, False)
+    assert game.exposing_pairs() == ()
 
 
 @pytest.mark.parametrize(

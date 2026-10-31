@@ -240,9 +240,15 @@ class Game:
         )
         return self.verdict
 
+    def exposing_pairs(self) -> tuple[tuple[str, str], ...]:
+        """After the accusation: the notebook pairs that would have exposed the culprit's lie."""
+        if self.verdict is None:
+            raise RuntimeError("the answer is shown only after the accusation")
+        return tuple(p for p in self.notebook.conflicts() if self._exposes_culprit_lie(*p))
+
     def _exposes_culprit_lie(self, a: str, b: str) -> bool:
         """The pair conflicts, and one side is a false claim whose source is the culprit."""
-        if (a, b) not in self.notebook.conflicts() and (b, a) not in self.notebook.conflicts():
+        if not self.notebook.in_conflict(a, b):
             return False
         culprit = self.case.truth.culprit
         for note_id in (a, b):

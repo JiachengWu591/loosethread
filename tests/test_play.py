@@ -50,13 +50,15 @@ def test_zh_session_from_question_to_truth(tmp_path: Path) -> None:
         ],
     )
     assert "先说明问谁" in text
-    assert "→ 记入笔记：S1" in text
-    assert "（问过了，不计次数）" in text
+    assert "→ 按“林小雨 21:15–21:30 在哪”记入笔记：S1" in text
+    assert "（按“林小雨 21:15–21:30 在哪”算问过了，不计次数）" in text
     assert "（没听懂，不计次数）" in text
     assert "S1  林小雨：21:15 自己在" in text
     assert "不认识的命令：/飞" in text
     assert "用法：/指认" in text
+    assert "注意：S1 与 E1 并不矛盾。" in text
     assert "已取消。" in text
+    assert f"笔记里还没有能揭穿{CULPRIT_ZH}谎言的一对。" in text
     assert "─── 真相" in text
     rows = [json.loads(line) for line in log.read_text(encoding="utf-8").splitlines()]
     assert [r["type"] for r in rows] == ["turn"] * 3 + ["summary"]
@@ -69,7 +71,38 @@ def test_zh_session_from_question_to_truth(tmp_path: Path) -> None:
 def test_en_accusation_takes_a_full_name() -> None:
     culprit = next(p.name.en for p in CASE.view.world.people if p.id == CASE.truth.culprit)
     text = _run(["--seed", "213", "--lang", "en"], [f"/accuse {culprit} E1 E2", "y"])
+    assert "Note: E1 and E2 do not contradict each other." in text
     assert "Right person, but E1 and E2 do not expose a lie" in text
+    assert f"Your notebook had no pair yet that exposes {culprit}'s lie." in text
+
+
+def test_after_a_miss_the_exposing_pair_is_shown() -> None:
+    innocent = next(
+        p.name.zh
+        for p in CASE.view.world.people
+        if p.id in CASE.view.suspects and p.id != CASE.truth.culprit
+    )
+    text = _run(
+        ["--seed", "213"],
+        [
+            "沈怀山：20:15 你和谁在一起？",
+            "林小雨：你今晚见过苏曼吗？",
+            "你什么时候去过大堂？",
+            "苏曼：20:30 你和谁在一起？",
+            f"/指认 {innocent} S6 S9",
+            "y",
+        ],
+    )
+    assert "→ 按“林小雨什么时候在大堂”记入笔记：S5、S6、S7、S8" in text
+    assert f"确认指认 {innocent}，理由是 S6 与 S9 不能同时成立？" in text
+    assert "抓错人了。" in text
+    assert f"笔记里能揭穿{CULPRIT_ZH}谎言的：S6 与 S9。" in text
+
+
+def test_hard_mode_does_not_warn_about_the_pair() -> None:
+    text = _run(["--seed", "213", "--hard"], [f"/指认 {CULPRIT_ZH} E1 E2", "n", "/退出", "y"])
+    assert "并不矛盾" not in text
+    assert "理由是 E1 与 E2 不能同时成立？" in text
 
 
 def test_en_session_and_quit() -> None:
@@ -78,6 +111,7 @@ def test_en_session_and_quit() -> None:
         ["@Lin where were you at 9:15?", "/notes", "/quit", "y"],
     )
     assert "Lin Xiaoyu: Between 21:15 and 21:30 I was in the" in text
+    assert "→ read as “where Lin Xiaoyu was at 21:15–21:30”; noted: S1" in text
     assert "(hard mode: no contradiction hints)" in text
     assert "Goodbye." in text
     assert "Truth (spoilers)" not in text

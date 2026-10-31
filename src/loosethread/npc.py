@@ -38,8 +38,9 @@ class Usage:
 
 class ClarifyReason(Enum):
     UNCLEAR = "unclear"  # no question shape recognised
-    NEED_TIME = "need_time"  # the question needs a time and has none
+    NEED_TIME = "need_time"  # the question needs a time and has none, or only a relative one
     BAD_TIME = "bad_time"  # the time is outside the evening
+    ONE_SLOT = "one_slot"  # the times span more than one slot
     TWO_PEOPLE = "two_people"  # more than one other person named
 
 

@@ -323,3 +323,35 @@ directly.
 - **Consequences**: 159 tests pass (parser round trips, post-check on every template line, fail
   closed backends, every backend request equals the answer table's output on three cases).
   Recorded demos: `docs/review/p2/demo-213-zh.txt`, `demo-213-en.txt`.
+
+## D-020 — P2 step 1: fixes from the owner's first offline playtest
+
+- **Date**: 2026-10-31 · **Type**: tactical (parser fix) and owner-approved game changes (chat:
+  "照建议改")
+- **Context**: the owner played case 20261031 offline (log:
+  `docs/review/p2/playtest-20261031-zh.jsonl`). Right culprit, but the accusation cited two items
+  that do not conflict, so the result was a hunch (☆); 19 of 20 questions used, minimum 3. The
+  hint for the exposing pair (S1/S5) had appeared at question 5. The 15 questions in one fixed
+  pattern ("20:15-20:30 你在哪里？和谁在一起？") all parsed correctly; the 8 free-form ones were all
+  misread, because the rule parser kept only the first clock time and ignored relative words.
+  4 of them were charged (4 of the 19 questions used bought answers to questions not asked); the
+  other 4 were taken as repeats of a different question.
+- **Decision**:
+  1. Parser (tactical, fail closed): every clock time in a question must fall in one slot. A range
+     that names exactly one slot ("20:15–20:30") is that slot; anything wider gets the new reason
+     `ONE_SLOT` (free), whose line also suggests "when were you there". A clock time next to a
+     relative word (之后, 下一个, after, before, ...) gets `NEED_TIME`. More "with whom" phrases
+     (身边, 其他人, beside you, ...). Replaying the 23 playtest inputs: 16 parse as intended, the
+     other 7 now get a free rephrase, and none is charged for a misreading.
+  2. Echo (approved): every answered or repeated question shows what it was read as, e.g.
+     "→ 按“苏曼 20:15–20:30 在哪”记入笔记：S16", so a misreading is visible at once.
+  3. Accusation (approved): in normal mode, if the two items are not among the contradiction
+     hints, the confirmation says so first; hard mode does not warn. After a ☆ or ✗ the result
+     names the notebook pairs that would have exposed the culprit's lie, or says there were none.
+- **Not changed**: scoring, budget, question schema. Two observations go to the playability gate:
+  the owner filled the whole window table, 5 suspects × 3 slots = 15 questions, which fits in the
+  budget of 20 for this case, so the budget did not force choices (only the stars do); and
+  "with whom" answers include the place, so "where" questions are never needed.
+- **Consequences**: 174 tests pass; the playtest questions are parser regression tests; demos
+  regenerated. The rule parser still cannot answer relative or multi-slot questions, it only
+  refuses them for free; step 2 measures the LLM parser on such phrasings too.

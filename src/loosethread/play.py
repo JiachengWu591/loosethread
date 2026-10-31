@@ -21,7 +21,7 @@ from loosethread.game import AccusationError, Game, Outcome, Turn
 from loosethread.generator import DAILY, generate
 from loosethread.lexicon import normalize
 from loosethread.lines import TemplateWriter
-from loosethread.model import Lang, PersonId, Query, Stance
+from loosethread.model import Lang, PersonId, Query, QueryKind, Stance, World
 from loosethread.notebook import describe
 from loosethread.npc import Usage
 from loosethread.parser import RuleParser
@@ -32,14 +32,15 @@ _UI: dict[str, tuple[str, str]] = {
         "  向某人提问：林小雨：你 21:15 在哪？（也可以用 @林小雨 开头）\n"
         "  接着问同一个人：直接输入问题。\n"
         "  能问的：某个时段在哪、和谁在一起、见没见过某人、什么时候去过某处、见没见过失物。\n"
-        "  每个问题花 1 次；没听懂的和问过的不花。\n"
+        "  一次问一个人、一个时段。每个问题花 1 次；没听懂的和问过的不花。\n"
         "  命令：/笔记  /案情  /指认 嫌疑人 编号 编号（例：/指认 陈墨 S3 E2）  /帮助  /退出",
         "How to play\n"
         "  Ask someone:  Lin Xiaoyu: where were you at 21:15?  (or start with @Lin)\n"
         "  Ask the same person again: just type the question.\n"
         "  You can ask: where they were at a time, who was with them, whether they saw someone,"
         " when they were somewhere, whether they saw the stolen item.\n"
-        "  Each question costs 1; questions not understood and repeats are free.\n"
+        "  One person and one time per question. Each costs 1; questions not understood and"
+        " repeats are free.\n"
         "  Commands: /notes  /case  /accuse SUSPECT ID ID (e.g. /accuse Chen S3 E2)  /help  /quit",
     ),
     "prompt": ("[还剩 {left} 问]{who}> ", "[{left} left]{who}> "),
@@ -50,9 +51,10 @@ _UI: dict[str, tuple[str, str]] = {
     "to": ("现在问的是：{name}", "Now asking: {name}"),
     "unknown_person": ("没有这个人：{name}", "No such person: {name}"),
     "free_clarify": ("（没听懂，不计次数）", "(not understood; free)"),
-    "free_repeat": ("（问过了，不计次数）", "(asked before; free)"),
-    "noted": ("→ 记入笔记：{ids}", "→ noted: {ids}"),
-    "nothing_new": ("（没有新说法）", "(nothing new)"),
+    "free_repeat": ("（按“{q}”算问过了，不计次数）", "(read as “{q}”, asked before; free)"),
+    "noted": ("→ 按“{q}”记入笔记：{ids}", "→ read as “{q}”; noted: {ids}"),
+    "nothing_new": ("→ 按“{q}”回答，没有新说法", "→ read as “{q}”; nothing new"),
+    "answered": ("→ 按“{q}”回答", "→ read as “{q}”"),
     "conflict": ("⚠ {a} 与 {b} 不能同时成立", "⚠ {a} and {b} cannot both be true"),
     "notes_title": ("笔记（已记 {n} 条说法）", "Notebook ({n} statements)"),
     "statements": ("说法（时间指时段开始，21:15 即 21:15–21:30）：", "Statements (slot starts):"),
@@ -76,6 +78,11 @@ _UI: dict[str, tuple[str, str]] = {
         "只能指认一次。确认指认 {name}，理由是 {a} 与 {b} 不能同时成立？(y/n) ",
         "You get one accusation. Accuse {name}, because {a} and {b} cannot both be true? (y/n) ",
     ),
+    "confirm_no_conflict": (
+        "注意：{a} 与 {b} 并不矛盾。只能指认一次，仍要指认 {name} 吗？(y/n) ",
+        "Note: {a} and {b} do not contradict each other. You get one accusation;"
+        " accuse {name} anyway? (y/n) ",
+    ),
     "cancel": ("已取消。", "Cancelled."),
     "solved": ("破案！{stars}", "Solved! {stars}"),
     "hunch": (
@@ -83,6 +90,14 @@ _UI: dict[str, tuple[str, str]] = {
         "Right person, but {a} and {b} do not expose a lie by {name}. ☆",
     ),
     "wrong": ("抓错人了。✗", "Wrong person. ✗"),
+    "could_expose": (
+        "笔记里能揭穿{name}谎言的：{pairs}。",
+        "In your notebook, {pairs} would have exposed {name}'s lie.",
+    ),
+    "none_expose": (
+        "笔记里还没有能揭穿{name}谎言的一对。",
+        "Your notebook had no pair yet that exposes {name}'s lie.",
+    ),
     "summary": (
         "用了 {used}/{budget} 问；这个案子最少 {min} 问能破。",
         "You used {used}/{budget} questions; this case can be solved in {min}.",
@@ -95,6 +110,19 @@ _UI: dict[str, tuple[str, str]] = {
     "bye": ("再见。", "Goodbye."),
     "unknown_cmd": ("不认识的命令：{cmd}。见 /帮助。", "Unknown command: {cmd}; see /help."),
 }  # fmt: skip
+
+# What the parser understood, shown with every answered question so a misreading is visible.
+_READ_AS: dict[QueryKind, tuple[str, str]] = {
+    QueryKind.WHERE: ("{who} {t} 在哪", "where {who} was at {t}"),
+    QueryKind.WHEN: ("{who}什么时候在{loc}", "when {who} was in the {loc}"),
+    QueryKind.WITH_WHOM: ("{t} 谁和{who}在一起", "who was with {who} at {t}"),
+    QueryKind.SAW_PERSON: ("{who}今晚见没见过{p}", "whether {who} saw {p} tonight"),
+    QueryKind.ABOUT_ITEM: ("{who}见没见过{item}", "whether {who} saw the {item}"),
+    QueryKind.OPINION: ("{who}怎么看{p}", "what {who} thinks of {p}"),
+    QueryKind.SMALL_TALK: ("和{who}闲聊", "small talk with {who}"),
+    QueryKind.OUT_OF_SCOPE: ("案情以外的问题", "a question outside the case"),
+}
+_SAW_AT = ("{who} {t} 见没见过{p}", "whether {who} saw {p} at {t}")
 
 _COMMANDS: dict[str, str] = {
     "/help": "help", "/h": "help", "/?": "help", "/帮助": "help",
@@ -110,6 +138,21 @@ _SEPARATORS = ":,;"  # after a name; NFKC turns full-width ：，； into these
 
 def _t(key: str, lang: Lang, **fields: object) -> str:
     zh, en = _UI[key]
+    return (zh if lang is Lang.ZH else en).format(**fields)
+
+
+def read_as(query: Query, world: World, lang: Lang) -> str:
+    """The query in third person, e.g. "苏曼 20:15–20:30 在哪"."""
+    saw_at = query.kind is QueryKind.SAW_PERSON and query.slot is not None
+    zh, en = _SAW_AT if saw_at else _READ_AS[query.kind]
+    names = {p.id: p.name.get(lang) for p in world.people}
+    fields = {
+        "who": names[query.addressee],
+        "t": world.slots[query.slot].label if query.slot is not None else "",
+        "loc": next((x.name.get(lang) for x in world.locations if x.id == query.location), ""),
+        "p": names.get(query.person, "") if query.person is not None else "",
+        "item": next((i.name.get(lang) for i in world.items if i.id == query.item), ""),
+    }
     return (zh if lang is Lang.ZH else en).format(**fields)
 
 
@@ -191,13 +234,17 @@ class Session:
         self.write("\n".join(hang(f"  {self.names[turn.addressee]}{colon}", turn.line)))
         if turn.query is None:
             self.say("free_clarify")
-        elif turn.repeat:
-            self.say("free_repeat")
+            return
+        q = read_as(turn.query, self.game.case.view.world, self.lang)
+        if turn.repeat:
+            self.say("free_repeat", q=q)
         elif turn.new_notes:
             sep = "、" if self.lang is Lang.ZH else ", "
-            self.say("noted", ids=sep.join(turn.new_notes))
+            self.say("noted", q=q, ids=sep.join(turn.new_notes))
         elif turn.stance is Stance.ANSWER:
-            self.say("nothing_new")
+            self.say("nothing_new", q=q)
+        else:
+            self.say("answered", q=q)
         if self.hints:
             for a, b in turn.new_conflicts:
                 self.say("conflict", a=a, b=b)
@@ -279,7 +326,10 @@ class Session:
         except AccusationError as err:
             self.say(err.key, x=self.names.get(PersonId(err.detail), err.detail))
             return
-        if not self.confirm(_t("confirm", self.lang, name=self.names[suspect], a=a, b=b)):
+        # In normal mode, warn using the same contradiction hints the player already sees.
+        warn = self.hints and not self.game.notebook.in_conflict(a, b)
+        key = "confirm_no_conflict" if warn else "confirm"
+        if not self.confirm(_t(key, self.lang, name=self.names[suspect], a=a, b=b)):
             self.say("cancel")
             return
         self.game.accuse(suspect, a, b)
@@ -298,6 +348,15 @@ class Session:
                 lines.append(_t("hunch", self.lang, a=a, b=b, name=self.names[verdict.accused]))
             case Outcome.WRONG:
                 lines.append(_t("wrong", self.lang))
+        if verdict.outcome is not Outcome.SOLVED:
+            culprit = self.names[self.game.case.truth.culprit]
+            if pairs := self.game.exposing_pairs():
+                zh = "、".join(f"{x} 与 {y}" for x, y in pairs)
+                en = " or ".join(f"{x}/{y}" for x, y in pairs)
+                text = zh if self.lang is Lang.ZH else en
+                lines.append(_t("could_expose", self.lang, name=culprit, pairs=text))
+            else:
+                lines.append(_t("none_expose", self.lang, name=culprit))
         lines.append(
             _t(
                 "summary",

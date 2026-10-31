@@ -57,6 +57,11 @@ _LINES: dict[str, tuple[str, str]] = {
         "今晚 {start} 到 {end} 之外的事，我说不上来。",
         "I can't speak to anything outside {start} to {end} tonight.",
     ),
+    "one_slot": (
+        "一次问一个时段吧，比如“你 {start} 在哪”。想问去没去过某处，可以问“你什么时候去过那里”。",
+        "One time at a time, please, like 'where were you at {start}?' To ask about a place,"
+        " ask when I was there.",
+    ),
     "two_people": (
         "一次问一个人吧，你说的是哪一位？",
         "One person at a time, please. Whom do you mean?",

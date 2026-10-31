@@ -117,6 +117,10 @@ Commands below use the package name `loosethread` (originally `alibi`; renamed b
   - Open: on 200 daily seeds, the oracle plan alone leaves no lie-exposing pair in 28.0%
     [22.2%, 34.6%] of cases (elimination instead of contradiction); to be measured with the
     simulated player in step 2 before any scoring change is proposed.
+  - Owner's offline playtest 1 (2026-10-31, D-020): right culprit, but the cited pair did not
+    conflict (☆, 19/20 questions). All 8 free-form questions were misread by the rule parser and
+    4 were charged; fixed fail-closed (one slot per question, relative times refused). Answers now
+    echo how the question was read; the accusation warns about a pair that is not a contradiction.
   - Next: DeepSeek and llama.cpp backends (needs `DEEPSEEK_API_KEY` set by the owner), parser test
     set, parser accuracy, simulated-player metric, then the owner's playtest.
 

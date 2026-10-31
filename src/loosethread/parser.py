@@ -3,6 +3,11 @@
 Deterministic keyword and name matching over the lexicon, in zh and en. Anything it cannot read
 with confidence becomes a request to rephrase (free for the player), never a guess. The order of
 checks decides conflicts: out of scope, opinion, company, people, the item, places, times.
+
+Times are read strictly: every clock time in the question must fall in one slot ("20:15–20:30"
+names one slot; "20:15–21:00" spans three), and a time next to a relative word ("之后",
+"after") is an anchor, not the time asked about. Both cases ask the player to rephrase, because a
+first-time guess charges the player for an answer to a question they did not ask (P2 playtest).
 """
 
 import re
@@ -44,15 +49,23 @@ _OPINION = _keywords(
 )  # fmt: skip
 _COMPANY = _keywords(
     "和谁", "跟谁", "同谁", "与谁", "谁和你", "谁跟你", "还有谁", "有谁", "有没有人", "有别人",
-    "一个人", "独自", "就你自己", "一起", "在一块", "同处",
+    "一个人", "独自", "就你自己", "一起", "在一块", "同处", "身边", "旁边", "其他人", "别人",
+    "别的人",
     "with whom", "who was with", "who were you with", "who else", "anyone else",
-    "anybody else", "alone", "with you", "together", "company", "by yourself",
+    "anybody else", "alone", "with you", "together", "company", "by yourself", "beside you",
+    "next to you", "near you", "other people", "others", "someone else",
     "看到谁", "看见谁", "见到谁", "见过谁", "碰到谁", "遇到谁",
     "who did you see", "whom did you see", "who was there", "who else was",
 )  # fmt: skip
 _WHERE = _keywords(
     "在哪", "在什么地方", "在干嘛", "在干什么", "在做什么", "去哪", "人在",
     "where", "what were you doing",
+)  # fmt: skip
+_RELATIVE = _keywords(
+    "之后", "以后", "后来", "然后", "接着", "随后", "下一个", "下个", "之前", "以前", "上一个",
+    "上个", "前一个",
+    "after", "afterwards", "before", "later", "earlier", "previous", "prior", "next slot",
+    "next quarter",
 )  # fmt: skip
 _SMALL_TALK = _keywords(
     "你好", "您好", "晚上好", "雨", "天气", "吃了", "累", "谢谢", "辛苦", "冷",
@@ -63,6 +76,19 @@ _SMALL_TALK = _keywords(
 
 def _unique(values: list[str]) -> list[str]:
     return list(dict.fromkeys(values))
+
+
+def _slots(times: tuple[int, ...], lex: Lexicon) -> list[SlotIndex | None]:
+    """The slot of each time; a time that closes the slot just named ("20:15–20:30") is skipped."""
+    slots: list[SlotIndex | None] = []
+    opened: SlotIndex | None = None
+    for minute in times:
+        if opened is not None and minute == lex.slot_bounds(opened)[1]:
+            opened = None
+            continue
+        opened = lex.slot_at(minute)
+        slots.append(opened)
+    return slots
 
 
 _CANONICAL: dict[QueryKind, tuple[str, str]] = {
@@ -127,8 +153,8 @@ class RuleParser:
         places = _unique([m.id for m in mentions if m.kind is EntityKind.LOCATION])
         items = _unique([m.id for m in mentions if m.kind is EntityKind.ITEM])
         times = lex.times(text)
-        slot = lex.slot_at(times[0]) if times else None
-        bad_time = bool(times) and slot is None
+        slots = _slots(times, lex)
+        slot = slots[0] if slots else None
         # Keywords are looked for outside names, so 林小雨 does not read as small talk about rain.
         rest = lex.without_names(text)
 
@@ -137,8 +163,12 @@ class RuleParser:
         person = PersonId(people[0]) if people else None
         if person is not None and not times and _OPINION.search(rest):
             return ok(QueryKind.OPINION, person=person)
-        if bad_time:
+        if None in slots:
             return clarify(ClarifyReason.BAD_TIME)
+        if len(set(slots)) > 1:
+            return clarify(ClarifyReason.ONE_SLOT)
+        if times and _RELATIVE.search(rest):
+            return clarify(ClarifyReason.NEED_TIME)
         if _COMPANY.search(rest):
             if slot is None:
                 return clarify(ClarifyReason.NEED_TIME)

@@ -84,6 +84,32 @@ def test_question_shapes(text: str, expected: Query | ClarifyReason) -> None:
     assert _parse(text) == expected
 
 
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        # From the first playtest (seed 20261031): each of these used to be answered for 20:15.
+        ("20:22 你在餐厅点热汤面之后，下一个时段移动去了哪里？", ClarifyReason.NEED_TIME),
+        (
+            "20:34 你在厨房留字条时，身边有没有其他人？",
+            Query(QueryKind.WITH_WHOM, LIN, slot=SlotIndex(2)),
+        ),
+        ("20:15–21:00 之间，你有没有单独去过书房？", ClarifyReason.ONE_SLOT),
+        ("20:15–21:00，你有没有看到谁独自进入书房？", ClarifyReason.ONE_SLOT),
+        ("20:15–20:30、20:30–20:45、20:45–21:00 这三段你分别在哪？", ClarifyReason.ONE_SLOT),
+        # A range that names exactly one slot is one slot.
+        ("20:15-20:30 你在哪里？和谁在一起？", Query(QueryKind.WITH_WHOM, LIN, slot=SlotIndex(1))),
+        ("21:45 到 22:00 你在哪", Query(QueryKind.WHERE, LIN, slot=SlotIndex(7))),
+        ("Where were you between 20:15 and 20:30?", Query(QueryKind.WHERE, LIN, slot=SlotIndex(1))),
+        ("八点半到九点你在哪", ClarifyReason.ONE_SLOT),
+        ("Where did you go after 20:22?", ClarifyReason.NEED_TIME),
+        ("Who was beside you at 8:30?", Query(QueryKind.WITH_WHOM, LIN, slot=SlotIndex(2))),
+        ("你 21:15 在哪？21:15 呢？", Query(QueryKind.WHERE, LIN, slot=SlotIndex(5))),
+    ],
+)
+def test_times_must_name_one_slot(text: str, expected: Query | ClarifyReason) -> None:
+    assert _parse(text) == expected
+
+
 def test_asking_someone_about_themselves_drops_their_name() -> None:
     assert _parse("林小雨，你 21:15 在哪？") == Query(QueryKind.WHERE, LIN, slot=SlotIndex(5))
 

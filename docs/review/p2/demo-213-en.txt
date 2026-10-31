@@ -78,25 +78,26 @@ How to play
   Ask the same person again: just type the question.
   You can ask: where they were at a time, who was with them, whether they saw
   someone, when they were somewhere, whether they saw the stolen item.
-  Each question costs 1; questions not understood and repeats are free.
+  One person and one time per question. Each costs 1; questions not understood
+  and repeats are free.
   Commands: /notes  /case  /accuse SUSPECT ID ID (e.g. /accuse Chen S3 E2)
   /help  /quit
 [20 left]> Shen Huaishan: Who was with you at 20:15?
   Shen Huaishan: Between 20:15 and 20:30 I was in the corridor with Chen Mo and
                  Lin Xiaoyu.
-→ noted: S1
+→ read as “who was with Shen Huaishan at 20:15–20:30”; noted: S1
 [19 left] Shen Huaishan> Lin Xiaoyu: Did you see Su Man tonight?
   Lin Xiaoyu: Between 20:00 and 20:15 I saw Su Man in the lobby. Between 20:45
               and 21:00 I saw Su Man in the corridor. Between 21:45 and 22:00 I
               saw Su Man in the dining room.
-→ noted: S2, S3, S4
+→ read as “whether Lin Xiaoyu saw Su Man tonight”; noted: S2, S3, S4
 [18 left] Lin Xiaoyu> Lin Xiaoyu: When were you in the lobby?
   Lin Xiaoyu: I was in the lobby during 20:00–20:15, 20:30–20:45, 21:00–21:15,
               21:15–21:30.
-→ noted: S5, S6, S7, S8
+→ read as “when Lin Xiaoyu was in the lobby”; noted: S5, S6, S7, S8
 [17 left] Lin Xiaoyu> Su Man: Who was with you at 20:30?
   Su Man: Between 20:30 and 20:45 I was alone in the lobby.
-→ noted: S9
+→ read as “who was with Su Man at 20:30–20:45”; noted: S9
 ⚠ S6 and S9 cannot both be true
 [16 left] Su Man> /notes
 ─── Notebook (9 statements) ────────────────────────────────────────────────────

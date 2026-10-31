@@ -120,6 +120,10 @@ class Notebook:
         """Pairs of obtained items (statement, statement or evidence) that cannot both be true."""
         return self._conflicts
 
+    def in_conflict(self, a: str, b: str) -> bool:
+        a, b = a.strip().upper(), b.strip().upper()
+        return (a, b) in self._conflicts or (b, a) in self._conflicts
+
     def _compute_conflicts(self) -> tuple[tuple[str, str], ...]:
         solver = Solver(self.obtained_view())
         pairs: set[tuple[str, str]] = set()

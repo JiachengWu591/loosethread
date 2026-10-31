@@ -67,6 +67,10 @@ def test_clarify_lines_follow_the_reason() -> None:
     assert template_line(en).startswith("Which time")
     with pytest.raises(ValueError, match="clarify reason"):
         LineRequest(Lang.ZH, speaker, facts, WORLD)
+    for reason in ClarifyReason:
+        for lang in Lang:
+            request = LineRequest(lang, speaker, facts, WORLD, reason=reason)
+            assert unauthorised(template_line(request), request, LEX) == (), (reason, lang)
 
 
 def test_repeat_and_tone_prefixes() -> None:
