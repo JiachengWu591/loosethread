@@ -132,7 +132,10 @@ Commands below use the package name `loosethread` (originally `alibi`; renamed b
     many wrong answers: a negative result for the local model.
   - CP-5 approved (D-023): stars are graded per case against 20 simulated systematic players
     (★★★ ≤ their fastest quarter, ★★ ≤ their median); budget stays 20.
-  - Next: DeepSeek pilot (10) then test (needs `DEEPSEEK_API_KEY`); then the playtest.
+  - DeepSeek pilot (D-024): thinking mode (on by default) cut off 2 of 10 replies; with it off,
+    dev is 96.1% [86.8%, 98.9%] guarded, 100% raw, 1.1 s per question; thinking on is no more
+    accurate and slower. The criterion is judged on the guarded variant. Spent CNY 0.54 of 20.
+  - Next: DeepSeek test split (once, about CNY 0.68), compared with rules; then the playtest.
 
 ## P3 — Evaluation study · `planned`
 

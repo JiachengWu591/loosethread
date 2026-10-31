@@ -177,6 +177,13 @@ def test_bad_replies_cost_nothing_in_the_game_but_their_usage_is_kept() -> None:
     assert game.used == 0
 
 
+def test_a_cut_off_parse_is_refused_even_if_it_reads() -> None:
+    fake = _Fake(['{"kind": "where", "time": "21:15"}'], finish="length")
+    game = Game(CASE, LLMParser(fake), TemplateWriter(), Lang.ZH)
+    turn = game.ask(LIN, "你 21:15 在哪？")
+    assert (turn.cost, turn.problems, turn.parse_usage) == (0, ("parser_invalid:too_long",), USED)
+
+
 # --- Writer --------------------------------------------------------------------------------------
 
 
@@ -245,6 +252,42 @@ def test_a_missing_key_is_reported_by_variable_name_only(monkeypatch: pytest.Mon
     monkeypatch.delenv("LOOSETHREAD_TEST_KEY", raising=False)
     with pytest.raises(MissingKey, match="LOOSETHREAD_TEST_KEY is not set"):
         OpenAIChat(_backend(api_key_env="LOOSETHREAD_TEST_KEY"))
+
+
+@pytest.mark.parametrize(
+    ("thinking", "reasoning", "extra", "budget"),
+    [("", 0, None, 120), ("disabled", 0, {"thinking": {"type": "disabled"}}, 120),
+     ("enabled", 1024, {"thinking": {"type": "enabled"}}, 1144)],
+)  # fmt: skip
+def test_thinking_mode_is_sent_and_reasoning_gets_its_own_budget(
+    monkeypatch: pytest.MonkeyPatch,
+    thinking: str,
+    reasoning: int,
+    extra: dict[str, object] | None,
+    budget: int,
+) -> None:
+    model = OpenAIChat(_backend(thinking=thinking, reasoning_tokens=reasoning))
+    sent: dict[str, object] = {}
+
+    def create(**kwargs: object) -> object:
+        sent.update(kwargs)
+        raise ConnectionError  # stop before any reply is read
+
+    monkeypatch.setattr(model._client.chat.completions, "create", create)
+    with pytest.raises(ConnectionError):
+        model.complete("s", "u", json_mode=True, max_tokens=120)
+    assert (sent["extra_body"], sent["max_tokens"]) == (extra, budget)
+
+
+def test_config_rejects_an_unknown_thinking_mode(tmp_path: Path) -> None:
+    bad = tmp_path / "backends.toml"
+    bad.write_text(
+        '[x]\nbase_url = "u"\napi_key_env = ""\nmodel = "m"\nprice_input = 0\n'
+        'price_output = 0\ntimeout = 1\nmax_retries = 0\nthinking = "maybe"\n',
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="bad thinking setting"):
+        load_backends(bad)
 
 
 def test_an_unserved_model_is_refused(monkeypatch: pytest.MonkeyPatch) -> None:

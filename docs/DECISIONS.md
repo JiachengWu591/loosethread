@@ -427,6 +427,7 @@ directly.
   playtest (8 free-form questions, all misread before D-020) is the only real-player sample.
 - **Not done**: DeepSeek (the P2 criterion of >= 85% applies to it, D-018); `DEEPSEEK_API_KEY` is
   not set. If DeepSeek does not beat the rule parser, the parser design itself needs a CP.
+
 ## D-023 — CP-5 approved: stars graded against simulated systematic players
 
 - **Date**: 2026-10-31 · **Type**: strategic (scoring, DESIGN §9) · **Approved by owner** (chat:
@@ -448,3 +449,35 @@ directly.
 - **Consequences**: case 213's demo now shows "any solve within 20 earns ★★★"; the owner's
   playtest case (20261031) has ★★★ ≤ 9, ★★ ≤ 12. Pre-CP-5 star rates stay reproducible from
   `simulate --score` (labelled "before CP-5").
+
+## D-024 — DeepSeek pilot: thinking mode off; headline variant fixed before the test
+
+- **Date**: 2026-10-31 · **Type**: tactical (backend settings, harness); the headline variant is
+  stated before the DeepSeek test so it cannot be picked after
+- **Pilot** (10 dev items, `parser-deepseek-dev-first10-r1`, CNY 0.051): 8/10 right, 2 invalid.
+  Both were cut off: DeepSeek's thinking mode is on by default, its hidden reasoning tokens count
+  against `max_tokens`, and the parser allows 120. A probe of one item with a larger budget used
+  162 reasoning tokens, then answered correctly. The models list showed `deepseek-flash` and
+  `deepseek-v4-pro`, as configured.
+- **Change**: `backends.toml` gains `thinking` (sent as `{"thinking": {"type": ...}}`) and
+  `reasoning_tokens` (added to every call's `max_tokens`). `deepseek` and `deepseek-pro` turn
+  thinking off; `deepseek-think` turns it on with 1,024 extra tokens. A reply cut off by the
+  token limit is now `too_long` in the parser and the harness (it was read as `not_json`); rows
+  record the thinking setting.
+- **Dev, 51 items** (same prompt as local r3, which was tuned on dev with Qwen, so dev is not a
+  held-out estimate for any model):
+
+  | backend | guarded | raw | completion tokens (median) | seconds (median) | CNY/question (max) |
+  |---|---|---|---|---|---|
+  | `deepseek` (thinking off) | 49/51 = 96.1% [86.8%, 98.9%] | 51/51 = 100% [93.0%, 100%] | 13 | 1.14 | 0.0046 |
+  | `deepseek-think` | 49/51 = 96.1% [86.8%, 98.9%] | 51/51 = 100% [93.0%, 100%] | 44 | 1.40 | 0.0049 |
+
+  No charged errors and no invalid replies in either. The guard's only effect was 2 needless
+  rephrases ("差一刻九点…", "twenty to ten"), times the deterministic reader cannot read.
+- **Decision**: `deepseek` (thinking off) is the DeepSeek backend for the game and for the test
+  measurement: same dev accuracy, faster, and DeepSeek honours `temperature` only with thinking
+  off. **The P2 criterion is judged on the guarded variant** (the parser as the game runs it);
+  raw is reported alongside. Whether to drop the guard for DeepSeek is not decided from 2 dev
+  items, and not from the test split.
+- **Spend**: CNY 0.535 so far (upper bound: peak price, every input token a cache miss; DeepSeek
+  reported most prompt tokens as cache hits). The test (148 items) projects about CNY 0.68 more.

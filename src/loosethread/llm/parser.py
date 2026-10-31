@@ -220,6 +220,8 @@ class LLMParser:
     def parse(self, request: ParseRequest) -> ParseResult:
         system, user = parse_prompt(request)
         reply = self.model.complete(system, user, json_mode=True, max_tokens=self.max_tokens)
+        if reply.finish_reason == "length":
+            raise BackendError("too_long", reply.usage)
         try:
             got = read_reply(reply.text, request)
         except ValueError as defect:

@@ -3,6 +3,7 @@
 python -m loosethread.parser_eval run --backend rule --split test
 python -m loosethread.parser_eval run --backend local --split dev
 python -m loosethread.parser_eval run --backend deepseek --split dev --limit 10   # pilot
+python -m loosethread.parser_eval run --backend deepseek-think --split dev
 python -m loosethread.parser_eval score results/rows/parser-rule-test.jsonl [more rows ...]
 
 `run` writes one row per question to `results/rows/` and prints the scores; `score` recomputes
@@ -21,7 +22,7 @@ import sys
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from loosethread.content import load_pack
 from loosethread.generator import DAILY, generate
@@ -30,6 +31,9 @@ from loosethread.model import ItemId, LocationId, PersonId, Query, QueryKind, Sl
 from loosethread.npc import ClarifyReason, ParseRequest, Usage
 from loosethread.parser import RuleParser
 from loosethread.stats import mcnemar_exact, wilson
+
+if TYPE_CHECKING:
+    from loosethread.llm.config import Backend
 
 SET = Path("data/parser/questions.jsonl")
 ROWS = Path("results/rows")
@@ -235,7 +239,7 @@ def rule_parse(request: ParseRequest) -> tuple[Outcome, Outcome, str | None, Usa
     return got, got, None, Usage()
 
 
-def model_parse(backend: str) -> tuple[Parse, str, Callable[[Usage], float]]:
+def model_parse(backend: str) -> tuple[Parse, "Backend"]:
     # The optional extra is imported only for model backends, so the core stays stdlib-only.
     from loosethread.llm.client import open_model  # noqa: PLC0415
     from loosethread.llm.parser import parse_prompt, read_reply, time_guard  # noqa: PLC0415
@@ -249,6 +253,9 @@ def model_parse(backend: str) -> tuple[Parse, str, Callable[[Usage], float]]:
         except Exception as exc:  # record the type only: messages may echo the key
             failed = Invalid(f"call_error:{type(exc).__name__}")
             return failed, failed, None, Usage(calls=1)
+        if reply.finish_reason == "length":
+            cut = Invalid("too_long")
+            return cut, cut, reply.text, reply.usage
         try:
             got: Outcome = read_reply(reply.text, request)
         except ValueError as defect:
@@ -259,7 +266,7 @@ def model_parse(backend: str) -> tuple[Parse, str, Callable[[Usage], float]]:
             guarded = reason
         return got, guarded, reply.text, reply.usage
 
-    return parse, model.backend.model, model.backend.cost
+    return parse, model.backend
 
 
 def _spent(rows_dir: Path) -> tuple[float, int]:
@@ -293,7 +300,7 @@ def run(
         out = rows_dir / f"{stem}.jsonl"
         if out.exists():
             raise SystemExit(f"{out} exists: the test split is measured once per backend")
-    model_name, prompt = "rules", "rules"
+    model_name, prompt, thinking = "rules", "rules", ""
     cost: Callable[[Usage], float] = lambda usage: 0.0  # noqa: E731
     if parse is None and backend == "rule":
         parse = rule_parse
@@ -307,7 +314,8 @@ def run(
                 print(f"spent so far CNY {spent:.4f}; this run projects CNY {projected:.4f} total")
                 if projected > CAP_CNY:
                     raise SystemExit(f"projected spend passes the cap of CNY {CAP_CNY}")
-        parse, model_name, cost = model_parse(backend)
+        parse, settings = model_parse(backend)
+        model_name, cost, thinking = settings.model, settings.cost, settings.thinking
         from loosethread.llm.parser import SYSTEM  # noqa: PLC0415
 
         prompt = hashlib.sha256(SYSTEM.encode("utf-8")).hexdigest()[:12]
@@ -332,6 +340,7 @@ def run(
                 "question": item.question,
                 "backend": backend,
                 "model": model_name,
+                "thinking": thinking,  # "" = the provider's default (rows before D-024 all are)
                 "prompt": prompt,
                 "expect": to_json(item.expect),
                 "also": [to_json(a) for a in item.also],

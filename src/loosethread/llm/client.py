@@ -67,13 +67,15 @@ class OpenAIChat:
         ]
         fmt: ResponseFormatJSONObject | ResponseFormatText
         fmt = {"type": "json_object"} if json_mode else {"type": "text"}
+        thinking = self.backend.thinking
         start = time.perf_counter()
         response = self._client.chat.completions.create(
             model=self.backend.model,
             messages=messages,
-            temperature=self.temperature,
-            max_tokens=max_tokens,
+            temperature=self.temperature,  # DeepSeek ignores it while thinking
+            max_tokens=max_tokens + self.backend.reasoning_tokens,
             response_format=fmt,
+            extra_body={"thinking": {"type": thinking}} if thinking else None,
         )
         seconds = time.perf_counter() - start
         choice = response.choices[0]

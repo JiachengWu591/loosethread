@@ -57,3 +57,5 @@ player rephrase is a `clarify` with the reason the game would give.
 - The model parser is reported with and without the time guard (one model call per item;
   the guard is deterministic). Every rate gets a Wilson 95% interval; backends are compared on
   the same items with an exact McNemar test.
+- The P2 criterion is judged on the guarded variant, the parser as the game runs it (stated
+  before the DeepSeek test, D-024).
