@@ -36,6 +36,14 @@ class Usage:
         )
 
 
+class BackendError(RuntimeError):
+    """A model replied, but not with something usable. Keeps what the call cost."""
+
+    def __init__(self, detail: str, usage: Usage) -> None:
+        super().__init__(detail)
+        self.detail, self.usage = detail, usage
+
+
 class ClarifyReason(Enum):
     UNCLEAR = "unclear"  # no question shape recognised
     NEED_TIME = "need_time"  # the question needs a time and has none, or only a relative one

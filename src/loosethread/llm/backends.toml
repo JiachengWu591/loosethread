@@ -1,0 +1,36 @@
+# Model backends. Model names live here, never in code (CLAUDE.md); every client lists the
+# server's models before first use and refuses to run if the name is not among them.
+#
+# Prices: CNY per 1M tokens, from https://api-docs.deepseek.com/zh-cn/quick_start/pricing
+# (read 2026-10-31). We use the peak price and count every input token as a cache miss, so
+# reported costs are upper bounds. Off-peak prices are half.
+#
+# api_key_env names the environment variable that holds the key; "" means no key is needed.
+
+[deepseek]
+base_url = "https://api.deepseek.com"
+api_key_env = "DEEPSEEK_API_KEY"
+model = "deepseek-flash"
+price_input = 2.0
+price_output = 8.0
+timeout = 30.0
+max_retries = 1
+
+[deepseek-pro]
+base_url = "https://api.deepseek.com"
+api_key_env = "DEEPSEEK_API_KEY"
+model = "deepseek-v4-pro"
+price_input = 9.0
+price_output = 27.0
+timeout = 60.0
+max_retries = 1
+
+# llama.cpp server started with --alias qwen2.5-7b-instruct (see docs/LOCAL_MODEL.md).
+[local]
+base_url = "http://127.0.0.1:8080/v1"
+api_key_env = ""
+model = "qwen2.5-7b-instruct"
+price_input = 0.0
+price_output = 0.0
+timeout = 120.0
+max_retries = 0

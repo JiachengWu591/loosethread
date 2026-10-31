@@ -32,6 +32,7 @@ from loosethread.model import (
 )
 from loosethread.notebook import Notebook, effective_speaker
 from loosethread.npc import (
+    BackendError,
     ClarifyReason,
     LineRequest,
     LineWriter,
@@ -169,6 +170,9 @@ class Game:
         unclear = ParseResult(None, ClarifyReason.UNCLEAR)
         try:
             parsed = self.parser.parse(ParseRequest(question, addressee, self.lexicon))
+        except BackendError as exc:
+            problems.append(f"parser_invalid:{exc.detail}")
+            parsed = replace(unclear, usage=exc.usage)
         except Exception as exc:  # fail closed: any backend failure means "please rephrase"
             problems.append(f"parser_error:{type(exc).__name__}")
             parsed = unclear
@@ -190,6 +194,9 @@ class Game:
     def _write(self, request: LineRequest, problems: list[str]) -> tuple[str, Usage]:
         try:
             result = self.writer.write(request)
+        except BackendError as exc:
+            problems.append(f"writer_invalid:{exc.detail}")
+            return template_line(request), exc.usage
         except Exception as exc:  # fail closed: fall back to the template line
             problems.append(f"writer_error:{type(exc).__name__}")
             return template_line(request), Usage()

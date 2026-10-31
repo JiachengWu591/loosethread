@@ -19,7 +19,7 @@ jobs:
       - uses: astral-sh/setup-uv@v6
       # Python version comes from .python-version; uv installs it if missing.
       - name: Install
-        run: uv sync --locked --extra dev
+        run: uv sync --locked --extra dev --extra llm
       - name: Ruff lint
         run: uv run ruff check .
       - name: Ruff format

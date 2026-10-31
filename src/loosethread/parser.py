@@ -91,6 +91,20 @@ def _slots(times: tuple[int, ...], lex: Lexicon) -> list[SlotIndex | None]:
     return slots
 
 
+def time_reading(question: str, lex: Lexicon) -> SlotIndex | ClarifyReason | None:
+    """The one slot a question's clock times name, a reason to clarify, or None if it names none."""
+    slots = _slots(lex.times(question), lex)
+    if not slots:
+        return None
+    if None in slots:
+        return ClarifyReason.BAD_TIME
+    if len(set(slots)) > 1:
+        return ClarifyReason.ONE_SLOT
+    if _RELATIVE.search(lex.without_names(question)):
+        return ClarifyReason.NEED_TIME
+    return slots[0]
+
+
 _CANONICAL: dict[QueryKind, tuple[str, str]] = {
     QueryKind.WHERE: ("你 {time} 在哪？", "Where were you at {time}?"),
     QueryKind.WHEN: ("你什么时候去过{loc}？", "When were you in the {loc}?"),
@@ -152,23 +166,18 @@ class RuleParser:
         people = _unique([m.id for m in mentions if m.kind is EntityKind.PERSON and m.id != me])
         places = _unique([m.id for m in mentions if m.kind is EntityKind.LOCATION])
         items = _unique([m.id for m in mentions if m.kind is EntityKind.ITEM])
-        times = lex.times(text)
-        slots = _slots(times, lex)
-        slot = slots[0] if slots else None
+        reading = time_reading(text, lex)
+        slot = None if reading is None or isinstance(reading, ClarifyReason) else reading
         # Keywords are looked for outside names, so 林小雨 does not read as small talk about rain.
         rest = lex.without_names(text)
 
         if len(people) > 1:
             return clarify(ClarifyReason.TWO_PEOPLE)
         person = PersonId(people[0]) if people else None
-        if person is not None and not times and _OPINION.search(rest):
+        if person is not None and reading is None and _OPINION.search(rest):
             return ok(QueryKind.OPINION, person=person)
-        if None in slots:
-            return clarify(ClarifyReason.BAD_TIME)
-        if len(set(slots)) > 1:
-            return clarify(ClarifyReason.ONE_SLOT)
-        if times and _RELATIVE.search(rest):
-            return clarify(ClarifyReason.NEED_TIME)
+        if isinstance(reading, ClarifyReason):
+            return clarify(reading)
         if _COMPANY.search(rest):
             if slot is None:
                 return clarify(ClarifyReason.NEED_TIME)

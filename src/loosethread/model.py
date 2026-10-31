@@ -343,6 +343,12 @@ _QUERY_FIELDS: dict[QueryKind, tuple[frozenset[str], frozenset[str]]] = {
 }
 
 
+def query_fields(kind: QueryKind) -> frozenset[str]:
+    """The fields a query of this kind may set, required or optional."""
+    required, optional = _QUERY_FIELDS[kind]
+    return required | optional
+
+
 @dataclass(frozen=True)
 class Query:
     """Structured form of one player question, produced by the parser. Invalid shapes raise."""

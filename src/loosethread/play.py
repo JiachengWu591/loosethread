@@ -23,7 +23,7 @@ from loosethread.lexicon import normalize
 from loosethread.lines import TemplateWriter
 from loosethread.model import Lang, PersonId, Query, QueryKind, Stance, World
 from loosethread.notebook import describe
-from loosethread.npc import Usage
+from loosethread.npc import LineWriter, QueryParser, Usage
 from loosethread.parser import RuleParser
 
 _UI: dict[str, tuple[str, str]] = {
@@ -385,7 +385,9 @@ def _query_row(query: Query | None) -> dict[str, Any] | None:
     return row
 
 
-def session_rows(game: Game, seed: int, backend: str) -> list[dict[str, Any]]:
+def session_rows(
+    game: Game, seed: int, backend: str, cost: Callable[[Usage], float] | None = None
+) -> list[dict[str, Any]]:
     """One row per turn plus a summary row. Contains no credentials of any kind."""
     rows: list[dict[str, Any]] = []
     total = Usage()
@@ -426,6 +428,7 @@ def session_rows(game: Game, seed: int, backend: str) -> list[dict[str, Any]]:
             "pair": list(verdict.pair) if verdict else None,
             "min_questions": verdict.min_questions if verdict else None,
             "usage": asdict(total),
+            "cost_cny_max": round(cost(total), 6) if cost else 0.0,
         }
     )
     return rows
@@ -442,13 +445,30 @@ def main(
     parser.add_argument("--hard", action="store_true", help="no contradiction hints")
     parser.add_argument("--budget", type=int, default=20)
     parser.add_argument("--log", type=Path, help="write a JSONL session log here")
+    parser.add_argument(
+        "--backend",
+        default="template",
+        help="template (offline, default) or a model backend from llm/backends.toml"
+        " (local, deepseek, ...); model backends need the `llm` extra",
+    )
     args = parser.parse_args(argv)
     seed = args.seed if args.seed is not None else int(date.today().strftime("%Y%m%d"))
     if write is print and isinstance(sys.stdout, io.TextIOWrapper):
         sys.stdout.reconfigure(encoding="utf-8")
 
     case = generate(seed, DAILY).case
-    game = Game(case, RuleParser(), TemplateWriter(), Lang(args.lang), budget=args.budget)
+    query_parser: QueryParser = RuleParser()
+    writer: LineWriter = TemplateWriter()
+    cost: Callable[[Usage], float] | None = None
+    if args.backend != "template":
+        # The optional extra is imported only when asked for, so the core stays stdlib-only.
+        from loosethread.llm.client import open_model  # noqa: PLC0415
+        from loosethread.llm.parser import LLMParser  # noqa: PLC0415
+        from loosethread.llm.writer import LLMWriter  # noqa: PLC0415
+
+        model = open_model(args.backend)
+        query_parser, writer, cost = LLMParser(model), LLMWriter(model), model.backend.cost
+    game = Game(case, query_parser, writer, Lang(args.lang), budget=args.budget)
     code = 0
     try:
         Session(game, read, write, hints=not args.hard).run()
@@ -456,7 +476,7 @@ def main(
         code = 130
     finally:  # a cut-short or crashed playtest still keeps its turns
         if args.log:
-            rows = session_rows(game, seed, "template")
+            rows = session_rows(game, seed, args.backend, cost)
             text = "".join(json.dumps(r, ensure_ascii=False) + "\n" for r in rows)
             args.log.parent.mkdir(parents=True, exist_ok=True)
             args.log.write_text(text, encoding="utf-8", newline="\n")
