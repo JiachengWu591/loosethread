@@ -119,7 +119,7 @@ def test_hard_mode_does_not_warn_about_the_pair() -> None:
 def test_en_session_and_quit() -> None:
     text = _run(
         ["--seed", "213", "--lang", "en", "--hard"],
-        ["@Lin where were you at 9:15?", "/notes", "/quit", "y"],
+        ["﻿@Lin where were you at 9:15?", "/notes", "/quit", "y"],  # BOM from a pipe
     )
     assert "Lin Xiaoyu: Between 21:15 and 21:30 I was in the" in text
     assert "→ read as “where Lin Xiaoyu was at 21:15–21:30”; noted: S1" in text

@@ -138,7 +138,11 @@ Commands below use the package name `loosethread` (originally `alibi`; renamed b
   - DeepSeek test split (D-025): 93.2% [88.0%, 96.3%] with the time guard, so the ≥ 85% parser
     criterion is met; raw 96.6%. Ahead of rules (89.2%) but not significantly (McNemar
     p = 0.18); 3 charged errors vs 8. Spent CNY 1.21 of 20. Step 2 done.
-  - Next: step 3, the owner's playtest (zh and en) and the playability gate.
+  - Step 3 live check (D-026): replaying the owner's playtest-1 questions with DeepSeek showed
+    that one-slot ranges and "where … and with whom?" were misread (the frozen set has neither);
+    fixed in code without touching the measured prompt. The writer produced 37/37 usable lines.
+    Known issue: DeepSeek refuses that phrasing for one character (free rephrase).
+  - Next: the owner's playtest (zh and en, DeepSeek backend) and the playability gate.
 
 ## P3 — Evaluation study · `planned`
 

@@ -105,6 +105,11 @@ def time_reading(question: str, lex: Lexicon) -> SlotIndex | ClarifyReason | Non
     return slots[0]
 
 
+def asks_company(question: str, lex: Lexicon) -> bool:
+    """Whether the question asks who was with the addressee (company words outside names)."""
+    return _COMPANY.search(lex.without_names(question)) is not None
+
+
 _CANONICAL: dict[QueryKind, tuple[str, str]] = {
     QueryKind.WHERE: ("你 {time} 在哪？", "Where were you at {time}?"),
     QueryKind.WHEN: ("你什么时候去过{loc}？", "When were you in the {loc}?"),

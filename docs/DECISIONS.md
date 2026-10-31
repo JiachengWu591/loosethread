@@ -518,3 +518,44 @@ directly.
   dev with Qwen; DeepSeek replies are not guaranteed to be reproducible, but the rows are kept.
 - **Spend**: CNY 1.214 in total (upper bound) of the CNY 20 cap; parsing costs at most CNY 0.0046
   and about 1.1 s per question.
+
+## D-026 — Step 3 live check: DeepSeek in the game; two parser fixes made in code
+
+- **Date**: 2026-10-31 · **Type**: tactical (parser implementation); the measured prompt is
+  unchanged
+- **Live check** (before the owner's playtest; `docs/review/p2/live-deepseek-r1.txt`, rows in
+  `results/rows/live-deepseek-check-r1.jsonl`): the owner's 23 playtest-1 questions replayed on
+  case 20261031 (the only real-player sample), plus 14 scripted English questions on case 214.
+  - Line writer: 37/37 lines written by the model, none replaced by the template line. Some
+    lines add persona colour that is not a fact ("就像一本合上的书", "like a character
+    wandering into the wrong chapter"); the entity post-check allows it by design.
+  - Parser: all 15 of the owner's "20:15-20:30 你在哪里?和谁在一起?" questions were refused as
+    "one time at a time". The prompt both says a one-slot range counts as its start and that a
+    range means `one_slot`; DeepSeek follows the second rule. When a single time was given instead,
+    it read "where … and with whom?" as `where`, losing the companions. **The frozen set has no
+    question of either shape**, so the 93.2% of D-025 did not cover the owner's most common
+    phrasing.
+  - Cost CNY 0.199 for 37 turns (parse + line); one turn took 10 s, most 2–3 s.
+- **Fixes, in code** (`llm/parser.py`; the prompt that D-025 measured is not touched):
+  1. A range that is exactly one slot reaches the model as its start time ("20:15-20:30" →
+     "20:15"); all other text is sent as typed.
+  2. A `where` reading of a question that also has a company word (the rule parser's list:
+     和谁, 身边, who was with, alone, …) becomes `with_whom`, whose answer names the place too.
+  These leave every frozen-set question's prompt byte-identical (a test checks this), and
+  re-reading the recorded DeepSeek replies changes 0/51 dev and 0/148 test outcomes, so D-025's
+  numbers still describe the parser, up to DeepSeek's own run-to-run variation.
+- **After the fixes** (`live-deepseek-r2.txt`): 13 of the 15 are read as "who was with X at that
+  time"; writer again 37/37; CNY 0.198; slowest turn 5.8 s. The other 2 are both addressed to 苏曼:
+  for her prompt DeepSeek answers `one_slot` 3 times out of 3, for 陈墨 and 何秀兰 it does not.
+  This is a free rephrase with a misleading hint ("one time at a time"). **Known issue, not fixed**:
+  see the rejected option below.
+- **Rejected**: letting the clock reading overrule a model `one_slot`/`bad_time` and falling back
+  to the rule parser. Checked against the recorded replies (no new calls; this consulted the test
+  rows): it would turn test item en190 ("between 8:15 and 9", correctly refused) into a charged
+  wrong answer, because the clock reader does not read the bare "9". The clock reader is not
+  reliable enough to overrule the model.
+- **Also**: piped input can start with a byte-order mark, which made the first line unreadable in
+  the CLI; it is now stripped. The English script in the live check took suspects in set order,
+  so r1 and r2 asked them in a different order.
+- **Spend**: about CNY 1.7 in total (upper bound) of the CNY 20 cap, including under CNY 0.1 of
+  unrecorded single-call probes.

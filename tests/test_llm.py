@@ -13,7 +13,14 @@ from loosethread.lexicon import Lexicon
 from loosethread.lines import TemplateWriter, line_payload
 from loosethread.llm.client import Completion, MissingKey, OpenAIChat
 from loosethread.llm.config import Backend, load_backends
-from loosethread.llm.parser import LLMParser, examples, parse_prompt, read_reply, time_guard
+from loosethread.llm.parser import (
+    LLMParser,
+    examples,
+    one_slot_ranges,
+    parse_prompt,
+    read_reply,
+    time_guard,
+)
 from loosethread.llm.writer import LLMWriter, line_prompt
 from loosethread.lookup import AnswerBook
 from loosethread.model import Lang, LocationId, PersonId, Query, QueryKind, SlotIndex
@@ -127,6 +134,45 @@ def test_read_reply_accepts_valid_replies(reply: str, expected: Query | ClarifyR
 def test_read_reply_rejects_everything_else(reply: str, defect: str) -> None:
     with pytest.raises(ValueError, match=defect):
         read_reply(reply, _request("?"))
+
+
+@pytest.mark.parametrize(
+    ("question", "sent"),
+    [
+        ("20:15-20:30 你在哪里?和谁在一起?", "20:15 你在哪里?和谁在一起?"),
+        ("８:１５～８:３０ 你在哪", "８:１５ 你在哪"),
+        ("where were you 9:15 – 9:30?", "where were you 9:15?"),
+        ("20:15 到 21:00 你都在哪", "20:15 到 21:00 你都在哪"),  # three slots: left for the model
+        ("23:45-24:00 你在哪", "23:45-24:00 你在哪"),  # outside the evening
+        ("20:22 之后你去了哪？", "20:22 之后你去了哪？"),
+    ],
+)
+def test_a_range_of_exactly_one_slot_reaches_the_model_as_its_start(
+    question: str, sent: str
+) -> None:
+    assert json.loads(parse_prompt(_request(question))[1])["question"] == sent
+
+
+def test_no_question_in_the_frozen_set_is_rewritten() -> None:
+    # The DeepSeek test measurement (D-025) predates the rewrite; it sent these same texts.
+    for item in load_items(ROOT / SET):
+        assert one_slot_ranges(item.question, LEX) == item.question, item.id
+
+
+@pytest.mark.parametrize(
+    ("question", "kind"),
+    [
+        ("20:15 你在哪里?和谁在一起?", QueryKind.WITH_WHOM),
+        ("Where were you at 8:15, and who was with you?", QueryKind.WITH_WHOM),
+        ("20:15 你在哪里?", QueryKind.WHERE),
+        ("沈怀山 20:15 在哪？", QueryKind.WHERE),  # a name is not a company word
+    ],
+)
+def test_where_that_also_asks_for_company_reads_as_with_whom(
+    question: str, kind: QueryKind
+) -> None:
+    got = read_reply('{"kind": "where", "time": "20:15"}', _request(question))
+    assert got == Query(kind, LIN, slot=SlotIndex(1))
 
 
 @pytest.mark.parametrize(

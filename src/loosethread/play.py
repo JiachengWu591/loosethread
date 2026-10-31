@@ -198,7 +198,7 @@ class Session:
                 raw = self.read(_t("prompt", self.lang, left=self.game.left, who=who))
             except EOFError:
                 return
-            text = raw.strip()
+            text = raw.lstrip("﻿").strip()  # piped input may start with a byte-order mark
             if not text:
                 continue
             if text.startswith("/"):

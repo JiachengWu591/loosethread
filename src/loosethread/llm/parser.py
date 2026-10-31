@@ -9,6 +9,11 @@ shape raises `BackendError`, which the game turns into a free "please rephrase".
 Time guard (on by default): the deterministic clock-time reading (`parser.time_reading`) must agree
 with the model's time. A model that resolves "after that" or a range into one slot, or invents a
 time the question does not name, is not trusted with the player's question budget.
+
+Two more decisions are made in code, not by the model (D-026, from the owner's playtest phrasing):
+a range that is exactly one slot ("20:15-20:30") reaches the model as its start time, and a
+"where" reading of a question that also asks who was there becomes "with whom", whose answer
+names the place too.
 """
 
 import json
@@ -27,7 +32,7 @@ from loosethread.model import (
     query_fields,
 )
 from loosethread.npc import BackendError, ClarifyReason, ParseRequest, ParseResult
-from loosethread.parser import time_reading
+from loosethread.parser import asks_company, time_reading
 
 SYSTEM = """\
 You turn a detective's question to one character in a mystery game into one JSON object. Never \
@@ -102,6 +107,24 @@ def examples(request: ParseRequest) -> list[dict[str, object]]:
     ]  # fmt: skip
 
 
+# Two clock times joined by a dash or 到/至, in any width.
+_SPAN = re.compile(r"(\d{1,2}[:：]\d{2})\s*[-–—~～到至]\s*(\d{1,2}[:：]\d{2})")
+
+
+def one_slot_ranges(question: str, lex: Lexicon) -> str:
+    """`question` with every range that is exactly one slot replaced by its start, as typed.
+
+    Other text, other ranges included, is left exactly as the player typed it.
+    """
+
+    def start(m: re.Match[str]) -> str:
+        times = lex.times(m[0])
+        slot = lex.slot_at(times[0]) if len(times) == 2 else None
+        return m[1] if slot is not None and lex.slot_bounds(slot) == times else m[0]
+
+    return _SPAN.sub(start, question)
+
+
 def parse_prompt(request: ParseRequest) -> tuple[str, str]:
     """System and user message for one question."""
     lex = request.lexicon
@@ -118,7 +141,7 @@ def parse_prompt(request: ParseRequest) -> tuple[str, str]:
         "items": listed(EntityKind.ITEM),
         "evening": {"from": _clock(start), "to": _clock(end)},
         "examples": examples(request),
-        "question": request.question,
+        "question": one_slot_ranges(request.question, lex),
     }
     return SYSTEM, json.dumps(data, ensure_ascii=False)
 
@@ -186,6 +209,8 @@ def read_reply(text: str, request: ParseRequest) -> Query | ClarifyReason:
         # other keys and fields the kind does not use are dropped, not trusted
     if kind in (QueryKind.WHERE, QueryKind.WITH_WHOM) and slot is None:
         return ClarifyReason.NEED_TIME  # the model saw no time: ask for one, for free
+    if kind is QueryKind.WHERE and asks_company(request.question, lex):
+        kind = QueryKind.WITH_WHOM  # "where, and with whom?": that answer names the place too
     try:
         return Query(
             kind,
