@@ -33,7 +33,8 @@ from loosethread.stats import mcnemar_exact, wilson
 
 SET = Path("data/parser/questions.jsonl")
 ROWS = Path("results/rows")
-FROZEN_SHA256: str | None = None  # set once the owner's spot-check is done (D-018)
+# Frozen 2026-10-31 after the owner's spot-check of 30 items found no error (D-022).
+FROZEN_SHA256: str | None = "13e22acc0eaf413cfede733e6138169ccdb9e668fada5db0c14060b0ba57d60d"
 CAP_CNY = 20.0  # P2 spending cap for API calls (D-018 item 4)
 PILOT = 10
 
@@ -285,11 +286,14 @@ def run(
         raise SystemExit("the question set is not frozen (or changed since); see data/parser")
     items = [i for i in load_items(set_path) if split in (i.split, "all")]
     items = items[:limit] if limit is not None else items
-    suffix = f"-first{limit}" if limit is not None else ""
-    out = rows_dir / f"parser-{backend}-{split}{suffix}.jsonl"
-    if out.exists():
-        raise SystemExit(f"{out} exists: each split is measured once per backend")
-    model_name = "rules"
+    stem = f"parser-{backend}-{split}" + (f"-first{limit}" if limit is not None else "")
+    if split == "dev":  # tuning rounds are numbered and all kept
+        out = rows_dir / f"{stem}-r{len(list(rows_dir.glob(f'{stem}-r*.jsonl'))) + 1}.jsonl"
+    else:
+        out = rows_dir / f"{stem}.jsonl"
+        if out.exists():
+            raise SystemExit(f"{out} exists: the test split is measured once per backend")
+    model_name, prompt = "rules", "rules"
     cost: Callable[[Usage], float] = lambda usage: 0.0  # noqa: E731
     if parse is None and backend == "rule":
         parse = rule_parse
@@ -304,6 +308,9 @@ def run(
                 if projected > CAP_CNY:
                     raise SystemExit(f"projected spend passes the cap of CNY {CAP_CNY}")
         parse, model_name, cost = model_parse(backend)
+        from loosethread.llm.parser import SYSTEM  # noqa: PLC0415
+
+        prompt = hashlib.sha256(SYSTEM.encode("utf-8")).hexdigest()[:12]
     assert parse is not None
 
     lexicons: dict[int, Lexicon] = {}
@@ -325,6 +332,7 @@ def run(
                 "question": item.question,
                 "backend": backend,
                 "model": model_name,
+                "prompt": prompt,
                 "expect": to_json(item.expect),
                 "also": [to_json(a) for a in item.also],
                 "raw": to_json(raw),

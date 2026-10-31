@@ -2,6 +2,7 @@
 
 import json
 from dataclasses import dataclass, field
+from pathlib import Path
 
 import pytest
 
@@ -12,18 +13,20 @@ from loosethread.lexicon import Lexicon
 from loosethread.lines import TemplateWriter, line_payload
 from loosethread.llm.client import Completion, MissingKey, OpenAIChat
 from loosethread.llm.config import Backend, load_backends
-from loosethread.llm.parser import LLMParser, parse_prompt, read_reply, time_guard
+from loosethread.llm.parser import LLMParser, examples, parse_prompt, read_reply, time_guard
 from loosethread.llm.writer import LLMWriter, line_prompt
 from loosethread.lookup import AnswerBook
 from loosethread.model import Lang, LocationId, PersonId, Query, QueryKind, SlotIndex
 from loosethread.npc import ClarifyReason, LineRequest, ParseRequest, Usage
 from loosethread.parser import RuleParser
+from loosethread.parser_eval import SET, load_items
 
 CASE = generate(213, DAILY).case
 VIEW = CASE.view
 LEX = Lexicon.build(VIEW.world, VIEW.crime, load_pack())
 LIN, CHEN = PersonId("lin"), PersonId("chen")
 KITCHEN = LocationId("kitchen")
+ROOT = Path(__file__).resolve().parents[1]
 USED = Usage(calls=1, prompt_tokens=900, completion_tokens=20, seconds=0.5)
 
 
@@ -47,30 +50,57 @@ def _request(question: str, to: PersonId = LIN) -> ParseRequest:
 # --- Parser --------------------------------------------------------------------------------------
 
 
-def test_parse_prompt_holds_names_slots_and_the_question_only() -> None:
+def test_parse_prompt_holds_names_examples_and_the_question_only() -> None:
     system, user = parse_prompt(_request("你 21:15 在哪？"))
     data = json.loads(user)
-    assert set(data) == {"addressee", "people", "locations", "items", "slots", "question"}
+    assert set(data) == {
+        "addressee", "people", "locations", "items", "evening", "examples", "question"
+    }  # fmt: skip
     assert data["question"] == "你 21:15 在哪？"
     assert data["addressee"]["id"] == "lin"
-    assert data["slots"][5] == {"slot": 5, "from": "21:15", "to": "21:30"}
+    assert data["evening"] == {"from": "20:00", "to": "22:00"}
     assert {p["id"] for p in data["people"]} == {p.id for p in VIEW.world.people}
     for marker in ("culprit", "thief", "犯人", "真相"):
         assert marker not in user
     assert "Never answer the question" in system
 
 
+def test_worked_examples_parse_and_are_not_set_questions() -> None:
+    asked = {item.question for item in load_items(ROOT / SET)}
+    for seed in (213, 7, 42, 0):
+        view = generate(seed, DAILY).case.view
+        lex = Lexicon.build(view.world, view.crime, load_pack())
+        for person in view.world.people:
+            request = ParseRequest("?", person.id, lex)
+            for example in examples(request):
+                assert example["q"] not in asked
+                read_reply(json.dumps(example["a"]), request)
+
+
 @pytest.mark.parametrize(
     ("reply", "expected"),
     [
-        ('{"kind": "where", "slot": 5}', Query(QueryKind.WHERE, LIN, slot=SlotIndex(5))),
+        ('{"kind": "where", "time": "21:15"}', Query(QueryKind.WHERE, LIN, slot=SlotIndex(5))),
+        ('{"kind": "where", "time": "21:29"}', Query(QueryKind.WHERE, LIN, slot=SlotIndex(5))),
         (  # fields the kind does not use are dropped
-            '{"kind": "where", "slot": 2, "location": "kitchen", "person": null}',
+            '{"kind": "where", "time": "20:30", "location": "kitchen", "person": "lin"}',
             Query(QueryKind.WHERE, LIN, slot=SlotIndex(2)),
         ),
+        ('{"kind": "where", "time": "23:00"}', ClarifyReason.BAD_TIME),
+        (
+            '{"kind": "where", "time": "20:15-20:30"}',
+            Query(QueryKind.WHERE, LIN, slot=SlotIndex(1)),
+        ),
+        ('{"kind": "where", "time": "20:15-21:00"}', ClarifyReason.ONE_SLOT),
+        ('{"kind": "with_whom", "time": null}', ClarifyReason.NEED_TIME),
+        ('{"kind": "where", "slot": 5}', ClarifyReason.NEED_TIME),  # slots are not taken as given
         ('{"kind": "when", "location": "kitchen"}', Query(QueryKind.WHEN, LIN, location=KITCHEN)),
-        ('{"kind": "saw_person", "person": "chen"}', Query(QueryKind.SAW_PERSON, LIN, person=CHEN)),
+        (
+            '{"kind": "saw_person", "person": "chen", "time": null}',
+            Query(QueryKind.SAW_PERSON, LIN, person=CHEN),
+        ),
         ('{"clarify": "one_slot"}', ClarifyReason.ONE_SLOT),
+        ('{"clarify": "out_of_scope"}', Query(QueryKind.OUT_OF_SCOPE, LIN)),
     ],
 )
 def test_read_reply_accepts_valid_replies(reply: str, expected: Query | ClarifyReason) -> None:
@@ -84,11 +114,13 @@ def test_read_reply_accepts_valid_replies(reply: str, expected: Query | ClarifyR
         ("[1, 2]", "not_object"),
         ('{"clarify": "maybe"}', "bad_reason"),
         ('{"kind": "who_did_it"}', "bad_kind"),
-        ('{"kind": "where", "slot": 99}', "bad_slot"),
-        ('{"kind": "where", "slot": true}', "bad_slot"),
+        ('{"kind": "where", "time": "9pm"}', "bad_time_format"),
+        ('{"kind": "where", "time": 21}', "bad_time_format"),
+        ('{"kind": "where", "time": "21:75"}', "bad_time_format"),
+        ('{"kind": "where", "time": "T"}', "bad_time_format"),
         ('{"kind": "when", "location": "moon"}', "unknown_id"),
         ('{"kind": "when", "location": "chen"}', "unknown_id"),  # a person is not a place
-        ('{"kind": "where"}', "bad_shape"),
+        ('{"kind": "opinion"}', "bad_shape"),
         ('{"kind": "saw_person", "person": "lin"}', "bad_shape"),  # herself
     ],
 )
@@ -122,7 +154,7 @@ def test_time_guard(question: str, query: Query, expected: str | None) -> None:
 
 
 def test_parser_returns_queries_and_counts_usage() -> None:
-    fake = _Fake(['{"kind": "where", "slot": 5}', '{"kind": "where", "slot": 2}'])
+    fake = _Fake(['{"kind": "where", "time": "21:15"}', '{"kind": "where", "time": "20:30"}'])
     parser = LLMParser(fake)
     good = parser.parse(_request("九点一刻你在干嘛"))
     assert (good.query, good.usage) == (Query(QueryKind.WHERE, LIN, slot=SlotIndex(5)), USED)

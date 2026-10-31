@@ -3,9 +3,12 @@
 `questions.jsonl`: 199 player questions (119 zh, 80 en) with the query each one should become.
 Used to measure parser accuracy (ROADMAP P2 work item 9; plan in D-018).
 
-**Status: draft.** Not frozen and not measured. It is frozen (SHA-256 recorded here and in
-`loosethread.parser_eval.FROZEN_SHA256`) after the owner's spot-check of 30 random items
-(`docs/review/p2/parser-spotcheck.md`). The evaluation refuses to run on any other version.
+**Status: frozen 2026-10-31** (D-022). SHA-256 of `questions.jsonl`:
+`13e22acc0eaf413cfede733e6138169ccdb9e668fada5db0c14060b0ba57d60d`, also in
+`loosethread.parser_eval.FROZEN_SHA256`; the evaluation refuses any other version. The owner
+spot-checked 30 random items (`docs/review/p2/parser-spotcheck.md`) and found no wrong label:
+30/30, so the label error rate is below 11.4% (Wilson 95% upper bound); the check cannot rule out
+a few wrong labels among the other 169 items.
 
 ## Provenance and limits
 
