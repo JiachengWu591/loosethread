@@ -16,6 +16,17 @@ def wilson(successes: int, n: int, z: float = 1.959963984540054) -> tuple[float,
     return max(0.0, centre - half), min(1.0, centre + half)
 
 
+def mcnemar_exact(only_first: int, only_second: int) -> float:
+    """Two-sided exact McNemar p-value from the discordant pairs (binomial test at 1/2)."""
+    if only_first < 0 or only_second < 0:
+        raise ValueError("counts must be non-negative")
+    n = only_first + only_second
+    if n == 0:
+        return 1.0
+    tail: float = sum(math.comb(n, k) for k in range(min(only_first, only_second) + 1)) / 2**n
+    return min(1.0, 2 * tail)
+
+
 def percentile(values: list[float], q: float) -> float:
     """Nearest-rank percentile, q in [0, 100]."""
     if not values:
