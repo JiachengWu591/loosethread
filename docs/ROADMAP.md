@@ -126,8 +126,12 @@ Commands below use the package name `loosethread` (originally `alibi`; renamed b
     fixed in `data/parser/README.md`), waiting for the owner's 30-item spot-check before freezing;
     evaluation harness with the spending guardrails; simulated-player metric done, which led to
     CP-5 (open): a methodical sweep fits the budget in every daily case and never earns ★★★.
-  - Next: owner spot-check → freeze → rule baseline, local Qwen (dev tuning, then test once),
-    DeepSeek pilot (10) then test (needs `DEEPSEEK_API_KEY`); CP-5 decision; then the playtest.
+  - Step 2 part 2 (2026-10-31, D-022): set frozen after the owner's spot-check (30/30). Test
+    split: rules 89.2% [83.2%, 93.2%]; local Qwen 7B (prompt tuned on dev, 3 rounds) 77.0%
+    [69.6%, 83.1%], significantly worse than rules (McNemar p = 0.003) and charging twice as
+    many wrong answers: a negative result for the local model.
+  - Next: DeepSeek pilot (10) then test (needs `DEEPSEEK_API_KEY`); CP-5 decision; then the
+    playtest.
 
 ## P3 — Evaluation study · `planned`
 

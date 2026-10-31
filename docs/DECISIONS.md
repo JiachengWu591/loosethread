@@ -390,3 +390,40 @@ directly.
   0.2–1.6 s per call. Prompt tuning waits for the frozen dev split.
 - **Not done yet**: freezing the set (after the owner's spot-check), any accuracy measurement,
   any DeepSeek call (`DEEPSEEK_API_KEY` is not set).
+## D-022 — Parser set frozen; rule and local-model accuracy measured
+
+- **Date**: 2026-10-31 · **Type**: tactical (within D-018); results reported as measured
+- **Spot-check and freeze**: the owner checked the 30 random items in
+  `docs/review/p2/parser-spotcheck.md` and found no wrong label (chat: "全部正确"). 30/30 bounds
+  the label error rate below 11.4% (Wilson 95% upper bound); it cannot rule out a few wrong labels
+  among the other 169. `data/parser/questions.jsonl` is frozen at SHA-256
+  `13e22acc0eaf413cfede733e6138169ccdb9e668fada5db0c14060b0ba57d60d`.
+- **Harness**: dev runs are numbered rounds (all kept); the test split is measured once per
+  backend; rows record a hash of the parser prompt.
+- **Model parser, tuned on dev only** (local Qwen2.5-7B Q4_K_M, three rounds, then stopped):
+  r1 35.3% (slot indices computed by the model were mostly wrong) → r2 74.5% (the model returns
+  the clock time it read, code maps it to a slot; worked examples built from the case's own names,
+  checked never to equal a set question; `{"clarify": "out_of_scope"}` read as that kind) → r3
+  82.4% [69.7%, 90.4%] (`time: null` for where/with_whom read as "needs a time", ranges mapped in
+  code, explicit rules for "when" and for roles).
+- **Test split, measured once** (148 items; accuracy pools clarify reasons, see
+  `data/parser/README.md`):
+
+  | parser | accuracy | charged wrong | needless rephrase | invalid |
+  |---|---|---|---|---|
+  | rules | 132/148 = 89.2% [83.2%, 93.2%] | 8 | 8 | 0 |
+  | local Qwen 7B, time guard | 114/148 = 77.0% [69.6%, 83.1%] | 16 | 14 | 4 |
+  | local Qwen 7B, raw | 111/148 = 75.0% [67.5%, 81.3%] | 25 | 8 | 4 |
+
+  Rules vs guarded Qwen on the same items: only rules right 26, only Qwen right 8, exact McNemar
+  p = 0.003. The guard vs raw difference is not significant (5 vs 2, p = 0.45), but the guard
+  removes 9 of 25 charged errors. Qwen drops from 82.4% on dev to 77.0% on test.
+- **Negative result**: the local 7B parser is worse than the rule parser on this set and charges
+  the player twice as often. Exploratory and post hoc (decided after seeing test): "rules first,
+  model only when the rules ask to rephrase" scores the same 89.2% on test but turns 5 free
+  rephrases into charged errors (8 → 13), so it is not adopted.
+- **Caveat**: the rule parser and the question set have the same author (Claude). Although the set
+  deliberately includes phrasings the rules cannot read, it may still favour them; the owner's
+  playtest (8 free-form questions, all misread before D-020) is the only real-player sample.
+- **Not done**: DeepSeek (the P2 criterion of >= 85% applies to it, D-018); `DEEPSEEK_API_KEY` is
+  not set. If DeepSeek does not beat the rule parser, the parser design itself needs a CP.
