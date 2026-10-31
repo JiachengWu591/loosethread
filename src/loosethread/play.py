@@ -390,12 +390,18 @@ def main(
 
     case = generate(seed, DAILY).case
     game = Game(case, RuleParser(), TemplateWriter(), Lang(args.lang), budget=args.budget)
-    Session(game, read, write, hints=not args.hard).run()
-    if args.log:
-        rows = session_rows(game, seed, "template")
-        text = "".join(json.dumps(r, ensure_ascii=False) + "\n" for r in rows)
-        args.log.write_text(text, encoding="utf-8", newline="\n")
-    return 0
+    code = 0
+    try:
+        Session(game, read, write, hints=not args.hard).run()
+    except KeyboardInterrupt:  # Ctrl-C ends the session quietly
+        code = 130
+    finally:  # a cut-short or crashed playtest still keeps its turns
+        if args.log:
+            rows = session_rows(game, seed, "template")
+            text = "".join(json.dumps(r, ensure_ascii=False) + "\n" for r in rows)
+            args.log.parent.mkdir(parents=True, exist_ok=True)
+            args.log.write_text(text, encoding="utf-8", newline="\n")
+    return code
 
 
 if __name__ == "__main__":

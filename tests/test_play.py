@@ -32,7 +32,7 @@ def _run(argv: list[str], lines: list[str]) -> str:
 
 
 def test_zh_session_from_question_to_truth(tmp_path: Path) -> None:
-    log = tmp_path / "session.jsonl"
+    log = tmp_path / "logs" / "session.jsonl"  # the folder does not exist yet
     text = _run(
         ["--seed", "213", "--log", str(log)],
         [
@@ -81,6 +81,22 @@ def test_en_session_and_quit() -> None:
     assert "(hard mode: no contradiction hints)" in text
     assert "Goodbye." in text
     assert "Truth (spoilers)" not in text
+
+
+def test_ctrl_c_keeps_the_log(tmp_path: Path) -> None:
+    log = tmp_path / "cut.jsonl"
+    feed = iter(["林小雨：你 21:15 在哪？"])
+
+    def read(prompt: str) -> str:
+        try:
+            return next(feed)
+        except StopIteration:
+            raise KeyboardInterrupt from None
+
+    assert main(["--seed", "213", "--log", str(log)], read=read, write=lambda _: None) == 130
+    rows = [json.loads(line) for line in log.read_text(encoding="utf-8").splitlines()]
+    assert [r["type"] for r in rows] == ["turn", "summary"]
+    assert rows[-1]["outcome"] is None
 
 
 def test_running_out_forces_an_accusation() -> None:
