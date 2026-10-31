@@ -226,7 +226,7 @@ class Game:
         """One accusation per game: a suspect plus two notebook items that cannot both be true."""
         a, b = self.check_accusation(suspect, first, second)
         view = self.case.view
-        exposes = self._exposes_culprit_lie(a, b)
+        exposes = self.exposes_culprit_lie(a, b)
         culprit = self.case.truth.culprit
         min_q = len(question_plan(view, Solver(view))[0])
         stars = 0
@@ -251,10 +251,14 @@ class Game:
         """After the accusation: the notebook pairs that would have exposed the culprit's lie."""
         if self.verdict is None:
             raise RuntimeError("the answer is shown only after the accusation")
-        return tuple(p for p in self.notebook.conflicts() if self._exposes_culprit_lie(*p))
+        return tuple(p for p in self.notebook.conflicts() if self.exposes_culprit_lie(*p))
 
-    def _exposes_culprit_lie(self, a: str, b: str) -> bool:
-        """The pair conflicts, and one side is a false claim whose source is the culprit."""
+    def exposes_culprit_lie(self, a: str, b: str) -> bool:
+        """The pair conflicts, and one side is a false claim whose source is the culprit.
+
+        Reads the truth: used to score accusations and by the simulated player. The terminal
+        front end reaches it only through `exposing_pairs`, after the accusation.
+        """
         if not self.notebook.in_conflict(a, b):
             return False
         culprit = self.case.truth.culprit

@@ -121,8 +121,13 @@ Commands below use the package name `loosethread` (originally `alibi`; renamed b
     conflict (☆, 19/20 questions). All 8 free-form questions were misread by the rule parser and
     4 were charged; fixed fail-closed (one slot per question, relative times refused). Answers now
     echo how the question was read; the accusation warns about a pair that is not a contradiction.
-  - Next: DeepSeek and llama.cpp backends (needs `DEEPSEEK_API_KEY` set by the owner), parser test
-    set, parser accuracy, simulated-player metric, then the owner's playtest.
+  - Step 2 part 1 (2026-10-31, D-021): DeepSeek and llama.cpp backends (fail closed, model list
+    checked before use, costs as upper bounds); parser question set drafted (199 items, scoring
+    fixed in `data/parser/README.md`), waiting for the owner's 30-item spot-check before freezing;
+    evaluation harness with the spending guardrails; simulated-player metric done, which led to
+    CP-5 (open): a methodical sweep fits the budget in every daily case and never earns ★★★.
+  - Next: owner spot-check → freeze → rule baseline, local Qwen (dev tuning, then test once),
+    DeepSeek pilot (10) then test (needs `DEEPSEEK_API_KEY`); CP-5 decision; then the playtest.
 
 ## P3 — Evaluation study · `planned`
 

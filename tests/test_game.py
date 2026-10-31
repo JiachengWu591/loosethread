@@ -44,7 +44,7 @@ def _ask(game: Game, query: Query) -> Turn:
 
 
 def _exposing_pairs(game: Game) -> list[tuple[str, str]]:
-    return [p for p in game.notebook.conflicts() if game._exposes_culprit_lie(*p)]
+    return [p for p in game.notebook.conflicts() if game.exposes_culprit_lie(*p)]
 
 
 # --- Solving -------------------------------------------------------------------------------------

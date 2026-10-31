@@ -105,3 +105,38 @@ alibi style). Full outputs: `docs/review/p1/batch-naive.txt`, `docs/review/p1/ba
 - **Recommendation**: B. With an exact solver behind every case and 213 showing the sheet is fair
   to a person, two more manual reviews add little. Also add to the P2 playability gate the question
   "do cases feel formulaic?", since 99.2% of cases need exactly one contradiction.
+
+## CP-5 — Stars and budget measured against a systematic player · `open`
+
+- **Trigger**: the simulated systematic player (CP-1 option C, D-018 item 5, D-021). It asks every
+  suspect "who was with you" for every slot of the theft window in a random order, then the
+  client, then everything else; 200 daily cases (seeds 0–199) × 20 orders, rows in
+  `results/rows/simulated-player.jsonl`, summary recomputed offline with
+  `python -m loosethread.simulate --score results/rows/simulated-player.jsonl`. Cases are the unit
+  (orders within a case are correlated); each case is represented by its median run.
+  - Every daily case has 5 suspects and a 3-slot window: that sweep is 15 questions, inside the
+    budget of 20. The sweep alone solves 161/200 = 80.5% [Wilson 95%: 74.5%, 85.4%] of cases;
+    per-case median 12 questions.
+  - ★★★ (minimum + 2; oracle minimum 3–6, mean 3.7) is reached by the median run in 0/200 cases
+    [0.0%, 1.9%], and by the best of 20 orders in 105/200 = 52.5% [45.6%, 59.3%].
+  - ★★ (≤ 14) by the median run in 160/200 = 80.0% [73.9%, 85.0%]; within the budget in
+    166/200 = 83.0% [77.2%, 87.6%]. The other ~17% need questions beyond the sweep, where an
+    untargeted player runs out.
+  - The owner's playtest matches: a full sweep, 19 questions, culprit found.
+  - The D-019 concern (culprit pinned down by elimination with no exposing pair yet) is small for
+    this player: 339/4000 runs, then 3.1 more questions on average.
+- **Impact**: scoring (DESIGN §9), budget (CP-3), the playability gate ("do cases feel
+  formulaic?"). No exit criterion changes.
+- **Options**
+  - A. Keep stars and budget; decide after the step 3 playtest. Cost: the playtest runs with a
+    top tier that methodical play never reaches, and the 15-question sweep stays a safe default.
+  - B. Grade against the simulated player instead of the oracle: per case, ★★★ = at most the best
+    quarter of simulated runs (25th percentile), ★★ = at most the median run, ★ otherwise; the
+    budget stays 20. Cost: about 20 simulated runs when a case loads (well under a second); stars
+    then reward targeted questions over the sweep, but the sweep still always fits.
+  - C. Make the budget bite: a budget below the sweep (e.g. 12), or larger cases (6 suspects or a
+    4-slot window, CP-3 option C). Cost: C1 needs new data on how many cases stay solvable; C2
+    changes the generator and the P1 numbers must be re-measured.
+- **Recommendation**: B now, since it is cheap and makes the stars reachable by skill rather than
+  by knowing the oracle plan; decide on C with the step 3 playtest, which can compare budget 20
+  and budget 12 on the same cases.

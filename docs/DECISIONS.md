@@ -355,3 +355,38 @@ directly.
 - **Consequences**: 174 tests pass; the playtest questions are parser regression tests; demos
   regenerated. The rule parser still cannot answer relative or multi-slot questions, it only
   refuses them for free; step 2 measures the LLM parser on such phrasings too.
+## D-021 — P2 step 2 (part 1): model backends, question set draft, simulated player
+
+- **Date**: 2026-10-31 · **Type**: tactical (within the plan approved in D-018)
+- **Decision**:
+  - `loosethread.llm` (optional extra): `backends.toml` names each backend's URL, model, key
+    variable and prices (DeepSeek's zh pricing page, read 2026-10-31: `deepseek-flash` CNY 2 / 8
+    and `deepseek-v4-pro` CNY 9 / 27 per 1M input / output tokens at peak; costs are computed at
+    peak price with every input token a cache miss, so they are upper bounds). `OpenAIChat` lists
+    the server's models before first use and refuses an unlisted name; the key is read from the
+    named variable and never stored, printed or logged, and failures are recorded by exception
+    type only. CI now installs the `llm` extra (tests use a fake model; no network).
+  - `LLMParser`: prompt = public lexicon (names, aliases, slot times), addressee, question. The
+    reply must be one JSON object; malformed JSON, an unknown kind, reason or id, a bad slot or an
+    impossible shape raises `BackendError`, which the game turns into a free rephrase while
+    keeping the usage. Time guard (default on): the deterministic clock reading
+    (`parser.time_reading`) must agree with the model's slot.
+  - `LLMWriter`: prompt = `lines.line_payload` and a system text in the target language; a reply
+    cut off by the token limit falls back to the template line. `play.py --backend NAME`.
+  - Parser question set (D-018 item 2): 199 items (119 zh, 80 en) on cases 213, 7 and 42,
+    stratified into dev 51 / test 148; scoring rules fixed in `data/parser/README.md` before any
+    measurement (accuracy pools clarify reasons; errors split into charged wrong / needless
+    rephrase / invalid). `python -m loosethread.parser_eval` refuses an unfrozen set, measures the
+    test split once per backend, and requires a DeepSeek pilot of at most 10 items with a projected
+    total under CNY 20. Owner spot-check of 30 items: `docs/review/p2/parser-spotcheck.md`.
+  - Simulated systematic player (D-018 item 5): `python -m loosethread.simulate`; results and the
+    resulting proposal in CP-5. It answers the D-019 observation: for this player, an identified
+    culprit without an exposing pair occurs in 339/4000 runs and costs 3.1 more questions on
+    average, so that observation needs no change on its own.
+  - `Game.exposes_culprit_lie` is public (scoring and the simulation read the truth through it;
+    the terminal front end only after the accusation).
+- **Smoke check, not a measurement**: the local Qwen2.5-7B (Q4_K_M, llama.cpp) answered end to end
+  on case 0 with 8 questions outside the set: 3 parsed as intended; prompts are ~1,970 tokens;
+  0.2–1.6 s per call. Prompt tuning waits for the frozen dev split.
+- **Not done yet**: freezing the set (after the owner's spot-check), any accuracy measurement,
+  any DeepSeek call (`DEEPSEEK_API_KEY` is not set).
