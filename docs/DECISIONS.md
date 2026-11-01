@@ -901,7 +901,7 @@ directly.
     need exactly one contradiction (D-031).
   - Why the owner kept asking for eight questions after the ⚠ that settled the en game, and whether
     the stars read as fair. "This case can be solved in 1" after a clean solve is unchanged.
-  - The owner's view of the en lines; both AI players and the en player called the lines report-like.
+  - The owner's view of the en lines; all four AI players called the lines report-like.
   - Whether the evidence shape is too easy (oracle minimum 1).
 - **Known limits carried forward**: Mistpine's study still has one door; the follow-up and lead-in rules
   were never measured against a labelled set; the settings check covers plain questions only; parser
