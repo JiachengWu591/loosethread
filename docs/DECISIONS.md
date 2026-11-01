@@ -580,13 +580,24 @@ directly.
     started from a chat Run button connects its input. The game now says when this happens.
 - **Owner's answers to the gate questions**, verbatim: 1 fun, stuck: "有点繁琐，东西太多了"; 2 formulaic:
   "这几个案子都太像了"; 3 lines: "台词太像人说的"; 4 latency: "挺快的"; 5 budget: "松"; 6 misread: "没有".
-  Answer 3 can be read as praise or as the opposite, and answer 2 could mean the setting or the
-  deduction. Both were asked back and are **not yet answered**. One player, two cases.
+  Answers 2 and 3 were ambiguous and were asked back (2026-11-01). What is too similar: "两者都有",
+  both the setting and the deduction. The lines: "挺好的，就这样", so the writer stays as it is.
+  One player, two cases.
 - **Sameness, measured** (`generate(seed, DAILY)`, seeds 0–199, one-off script): scene the study in
   200/200 [98.1%, 100%], same map and owner (one content pack), 4 stolen items. The culprit's lie is
   the occupied-room style in 200/200 by design (D-012): one other person really in the claimed
   room in 92/200 = 46.0% [39.2%, 52.9%], two in the rest. Claimed room: lobby 81, kitchen 57, guest
   wing 44, corridor 18. This measures structure; it does not show which sameness the owner noticed.
+- **Shortcuts in daily cases, found while scoping step 4b; not changed yet** (seeds 0–199, one-off
+  scripts; players are not told any of these):
+  - Evidence near the window never names the culprit: 0/200 [0.0%, 1.9%], by construction
+    (`generator.avoid`). Reading the evidence alone clears 1.79 of 5 suspects on average, and 4 of 5
+    in 5/200 = 2.5% [1.1%, 5.7%] of cases, before any question.
+  - The liar always says "alone" at the lie slot (200/200 [98.1%, 100%], `lookup._company`). This
+    gives away little: innocents say it in 869/2400 = 36.2% [34.3%, 38.2%] of window answers
+    (correlated within a case), and 3.77 of 5 suspects say it at least once per case on average.
+  - The study has one door, so in the slot after the theft the culprit is in the corridor in every
+    case, by the map. This is fair deduction (rule 2), but it is the same deduction every time.
 - **Decision**: CP-6 option B. Step 4a now, playtest 3 (zh and en), then step 4b, then a further
   playtest, all before P3.
 - **Step 4a**
@@ -612,5 +623,5 @@ directly.
 - **Checks**: `visited_place` matches 0/199 frozen items and no recorded reply says "unavailable", so
   the parser accuracies of D-022 and D-025 are unaffected. The tests cover behaviour only: nothing
   here shows that the game is more fun, that 12 suits a human player, or that the hints are understood.
-- **Open**: the English game (a P2 exit criterion), the gate, and the two questions back to the owner.
+- **Open**: the English game (a P2 exit criterion), the gate, and the plan for step 4b.
   Known 苏曼 refusal (D-026) unchanged.
