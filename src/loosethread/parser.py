@@ -82,6 +82,12 @@ _LEAD_IN = re.compile(
 _WHOLE_EVENING = _keywords(
     "今晚", "今天晚上", "整晚", "一晚上", "tonight", "this evening", "all evening", "all night",
 )  # fmt: skip
+_RANGE_WORD = _keywords("between", "from", "until", "till", "到", "至", "之间")
+_SPOKEN_TIME = _keywords(
+    "刻", "差", "分", "过一", "过二", "过两", "过三", "过四", "过五", "过六", "过七", "过八", "过九",
+    "过十",
+    "past", "half", "quarter", "five", "ten", "twenty", "thirty", "forty", "fifty",
+)  # fmt: skip
 _FILLER = re.compile(
     r"[\W_]+|(?<![a-z])(?:and|then|so|ok|okay|what about|how about|about|around|at|say)(?![a-z])"
     r"|那|呢|吗|啊|还有|大概|左右|时候"
@@ -156,6 +162,23 @@ def follows_up(question: str, lex: Lexicon) -> bool:
         or _WHOLE_EVENING.search(rest)
         or _THEFT.search(rest)
     )
+
+
+def clearly_one_slot(question: str, lex: Lexicon) -> SlotIndex | None:
+    """The slot a question names, when the clock reader can be trusted over a model's refusal.
+
+    In general it cannot (D-026, D-032): it misses a bare hour, so "between 8:15 and 9" looks like
+    one time, and it reads 九点过一刻 and 差一刻九点 as 九点. So nothing may be left over that could
+    be part of a time: no digit, no word of a spoken time, and no range word unless two times were
+    read. Refusing here only keeps the free "please rephrase".
+    """
+    rest = without_times(question)
+    if any(ch.isdigit() for ch in rest) or _SPOKEN_TIME.search(rest):
+        return None
+    if _RANGE_WORD.search(rest) and len(lex.times(question)) != 2:
+        return None
+    reading = time_reading(question, lex)
+    return None if reading is None or isinstance(reading, ClarifyReason) else reading
 
 
 def only_a_time(question: str, lex: Lexicon) -> bool:

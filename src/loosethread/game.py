@@ -50,7 +50,7 @@ from loosethread.npc import (
     Usage,
     tone_for,
 )
-from loosethread.parser import follows_up, only_a_time, time_reading
+from loosethread.parser import clearly_one_slot, follows_up, only_a_time
 from loosethread.solver import Solver
 
 # CP-6 (D-027): below the 15-question sweep of every daily case; provisional until the next
@@ -216,17 +216,20 @@ class Game:
             problems.append(f"parser_error:{type(exc).__name__}")
             return ParseResult(None, ClarifyReason.UNCLEAR)
 
-    def _find_time(
-        self, addressee: PersonId, question: str, first: ParseResult, problems: list[str]
-    ) -> ParseResult:
-        """The parser asked which time. The question may name it ("那九点呢", with no other words
-        for a model to read), or may follow up on the time just discussed."""
-        named = time_reading(question, self.lexicon)
-        if isinstance(named, int):
-            return ParseResult(Query(QueryKind.WHERE, addressee, slot=named), usage=first.usage)
-        if self._last_slot is None or not follows_up(question, self.lexicon):
-            return first
-        return self._with_last_slot(addressee, question, first, problems)
+    def _refused_a_named_time(self, parsed: ParseResult, question: str) -> bool:
+        """The parser refused over the time, and `clearly_one_slot` found one in the question.
+
+        DeepSeek answers "where were you at 20:00 and who was with you?" with `one_slot` (D-032),
+        and "那九点呢", which gives it nothing else to read, with `need_time` or `unclear`. Any
+        other `need_time` stands: the time guard also says that when model and clock reader
+        disagree.
+        """
+        if parsed.reason is ClarifyReason.ONE_SLOT:
+            return True
+        return parsed.reason in (
+            ClarifyReason.NEED_TIME,
+            ClarifyReason.UNCLEAR,
+        ) and only_a_time(question, self.lexicon)
 
     def _with_last_slot(
         self, addressee: PersonId, question: str, first: ParseResult, problems: list[str]
@@ -249,10 +252,15 @@ class Game:
     ) -> tuple[ParseResult, AllowedFacts]:
         unclear = ParseResult(None, ClarifyReason.UNCLEAR)
         parsed = self._read(addressee, question, problems)
-        if parsed.reason is ClarifyReason.NEED_TIME or (
-            parsed.reason is ClarifyReason.UNCLEAR and only_a_time(question, self.lexicon)
+        named = clearly_one_slot(question, self.lexicon)
+        if named is not None and self._refused_a_named_time(parsed, question):
+            parsed = ParseResult(Query(QueryKind.WHERE, addressee, slot=named), usage=parsed.usage)
+        elif (
+            parsed.reason is ClarifyReason.NEED_TIME
+            and self._last_slot is not None
+            and follows_up(question, self.lexicon)
         ):
-            parsed = self._find_time(addressee, question, parsed, problems)
+            parsed = self._with_last_slot(addressee, question, parsed, problems)
         query = parsed.query
         if query is not None and query.kind is QueryKind.WHERE:
             # The usual contradiction needs the company, and "where" is what players ask first:

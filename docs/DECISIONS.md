@@ -835,3 +835,44 @@ directly.
   - Whether the variety is felt, and whether any of this is fun: only the owner's games can say.
 - **Spending**: CNY 0.30 for 4b against the expected 1–2; about CNY 2.4 in total of the cap of 20.
 - **Open**: the owner's zh and en games on new seeds (the exit criterion), then the gate.
+
+## D-032 — The owner's zh and en games; the exit criterion is met, the gate is still open
+
+- **Date**: 2026-11-01 · **Type**: tactical (results, one fix). The gate itself is the owner's call.
+- **Results, from the logs** (`docs/review/p2/playtest-20261110-zh.jsonl`, `playtest-20261111-en.jsonl`;
+  spoilers), DeepSeek, budget 12, CNY 0.14:
+
+  | game | setting, shape | outcome | questions | first ⚠ | free refusals | stars set at |
+  |---|---|---|---|---|---|---|
+  | zh 20261110 | night ferry, false companion | solved ★ | 10/12 | at question 8 | 0 | ★★★ ≤ 7, ★★ ≤ 8 |
+  | en 20261111 | theatre, ruled out by evidence | solved ★ | 10/12 | at question 2 | 5 | ★★★ ≤ 6, ★★ ≤ 8 |
+
+- **The P2 exit criterion "the owner plays one case through in Chinese and one in English" is met.**
+  These are the owner's first solves with a valid pair, after two ☆ games. Two games by one person
+  who knows the project cannot say why: the hints, the new rules and experience are all candidates.
+- **What the logs show, which the owner has not yet commented on**
+  - Both games were one template asked of all five suspects, slot by slot. Every charged question in
+    each game was the same sentence. That is the play the budget was cut to discourage (CP-6), and
+    two slots of it fit inside 12.
+  - In the en game the pair the owner cited was on screen after question 2. Eight more questions
+    followed, and they turned ★★★ into ★. The logs cannot say whether that was caution, habit, or not
+    reading the ⚠ as enough. Evidence is always true and the slot was in the window, so one ⚠ settled it.
+  - The result then says "this case can be solved in 1", which may read as a rebuke after a clean solve.
+- **A bug the en game found, fixed**: "where were you 20:00–20:15 and who was with you?" was refused
+  5 times out of 5, with the misleading "one time at a time". Live, DeepSeek answers `one_slot` to this
+  two-part phrasing in English even with a single clock time. D-026 saw the same for one character
+  (the 苏曼 refusal) and left it. The game now overrules that `one_slot` when `parser.clearly_one_slot`
+  finds exactly one slot; live, all three phrasings now read correctly, and a three-slot range stays
+  refused.
+- **This revisits an option D-026 rejected**, because the clock reader misses a bare hour ("between 8:15
+  and 9", frozen item en190). `clearly_one_slot` therefore refuses when anything left over could be part
+  of a time: a digit, a spoken-time word, or a range word without two times read.
+- **A mistake of mine, caught by the same check**: the `need_time` overrule added in D-030 would have
+  answered 九点过一刻 and 差一刻九点 for 九点, charging for the wrong slot. The commit `85ac3b4` has this
+  bug; the owner's games did not hit it. It now applies only to a question that is nothing but a time.
+- **Checks and what they cannot show**: replaying the recorded DeepSeek replies (dev and test, no new
+  calls; this consulted the test rows, as D-026 did), 33 refusals, 0 overruled, so 0 made wrong. That
+  also means the recorded set does not exercise the new path at all: it rests on the unit tests and
+  four live phrasings. The parser's reported accuracies are unaffected, since this is the game loop.
+- **Spending**: about CNY 2.6 in total of the cap of 20.
+- **Open**: the owner's answers to the gate's questions. Friends' games (ideally 2–3) have not happened.

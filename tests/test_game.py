@@ -307,6 +307,68 @@ def test_an_unclear_reading_of_nothing_but_a_time_is_answered_for_that_time() ->
     assert (other.reason, other.cost) == (ClarifyReason.UNCLEAR, 0)
 
 
+class _OneSlot:
+    """DeepSeek's reply to the owner's "where were you at 20:00 and who was with you?" (D-032)."""
+
+    def parse(self, request: ParseRequest) -> ParseResult:
+        return ParseResult(None, ClarifyReason.ONE_SLOT, _ONE)
+
+
+@pytest.mark.parametrize(
+    "question",
+    ["where were you at 20:15 and who was with you?", "where were you 20:15–20:30 and with whom?"],
+)
+def test_a_model_s_one_slot_is_overruled_when_the_question_names_one_slot(question: str) -> None:
+    game = _game(parser=_OneSlot())
+    slot = next(s.index for s in VIEW.world.slots if s.label.startswith("20:15"))
+    turn = game.ask(INNOCENT, question)
+    assert turn.query == Query(QueryKind.WITH_WHOM, INNOCENT, slot=slot)
+    assert (turn.reason, turn.cost, turn.parse_usage.calls) == (None, 1, 1)
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "where were you between 20:15 and 21:00?",
+        "where did you go after that?",
+        "where were you between 8:15 and 9?",  # the clock reader misses the bare 9 (D-026)
+        "where were you between 8:15 and 9, and who was with you?",
+        "8:15 or 9, where were you?",
+        "八点一刻到九你在哪？",
+    ],
+)
+def test_a_model_s_one_slot_stands_when_the_question_does_not_name_one_slot(question: str) -> None:
+    game = _game(parser=_OneSlot())
+    game.ask(INNOCENT, "20:15")  # a time was just discussed: it must not be taken from there
+    turn = game.ask(INNOCENT, question)
+    assert (turn.reason, turn.cost) == (ClarifyReason.ONE_SLOT, 0)
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "九点过一刻你在哪",
+        "差一刻九点你在厨房还是哪儿",
+        "twenty to ten, where were you?",
+        "九点你在哪",
+    ],
+)
+def test_a_need_time_stands_unless_the_question_is_only_a_time(question: str) -> None:
+    # The first two are where the clock reader and the model disagree: the time guard's need_time.
+    game = _game(parser=_NoReading())
+    turn = game.ask(INNOCENT, question)
+    assert (turn.reason, turn.cost) == (ClarifyReason.NEED_TIME, 0)
+
+
+@pytest.mark.parametrize(
+    "question", ["九点过一刻你在哪，和谁在一起", "twenty to ten, who was with you?"]
+)
+def test_a_spoken_time_the_clock_reader_misreads_never_overrules(question: str) -> None:
+    game = _game(parser=_OneSlot())
+    turn = game.ask(INNOCENT, question)
+    assert (turn.reason, turn.cost) == (ClarifyReason.ONE_SLOT, 0)
+
+
 def test_where_were_you_when_it_went_missing_asks_which_time() -> None:
     game = _game()
     start = VIEW.world.slots[VIEW.crime.window[0]].label.split("–")[0]

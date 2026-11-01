@@ -162,8 +162,10 @@ Commands below use the package name `loosethread` (originally `alibi`; renamed b
   - **4b done in code (D-031)**: the game draws one of four lie shapes per case and takes turns through
     three settings. 300/300 cases pass the audit and the solver; existing seeds unchanged. The
     shortcuts of D-027 are weakened, not gone. Every case still needs exactly one contradiction.
-  - Next: the owner's own zh and en games on new seeds (the exit criterion), then the gate. P3 only
-    after the gate passes.
+  - **Owner's zh and en games (D-032): both solved with a valid pair, ★, 10/12.** The exit criterion
+    "plays one case through in Chinese and one in English" is met. Both were the same sentence asked
+    of everyone, slot by slot. The en game found a parser refusal, now fixed.
+  - Next: the owner's verdict on the gate. P3 only after the gate passes.
 
 ## P3 — Evaluation study · `planned`
 
