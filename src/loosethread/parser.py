@@ -84,8 +84,8 @@ _WHOLE_EVENING = _keywords(
 )  # fmt: skip
 _RANGE_WORD = _keywords("between", "from", "until", "till", "到", "至", "之间")
 _SPOKEN_TIME = _keywords(
-    "刻", "差", "分", "过一", "过二", "过两", "过三", "过四", "过五", "过六", "过七", "过八", "过九",
-    "过十",
+    "刻", "差", "分", "过一", "过二", "过两", "过三", "过四", "过五", "过六", "过七", "过八",
+    "过九", "过十",
     "past", "half", "quarter", "five", "ten", "twenty", "thirty", "forty", "fifty",
 )  # fmt: skip
 _FILLER = re.compile(
