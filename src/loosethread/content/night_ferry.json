@@ -1,0 +1,178 @@
+{
+  "id": "night_ferry",
+  "setting": {"zh": "晚潮号", "en": "the Evening Tide"},
+  "start_minute": 1260,
+  "slot_minutes": 15,
+  "crime_location": "stateroom",
+  "locations": [
+    {"id": "wheelhouse", "name": {"zh": "驾驶室", "en": "wheelhouse"}, "neighbors": ["stairwell"]},
+    {"id": "stairwell", "name": {"zh": "楼梯间", "en": "stairwell"}, "neighbors": ["wheelhouse", "lounge", "stateroom"]},
+    {"id": "lounge", "name": {"zh": "观景厅", "en": "lounge"}, "neighbors": ["stairwell", "bar"]},
+    {"id": "bar", "name": {"zh": "酒吧", "en": "bar"}, "neighbors": ["lounge", "mess"]},
+    {"id": "stateroom", "name": {"zh": "贵宾舱", "en": "stateroom"}, "neighbors": ["stairwell", "cabins"]},
+    {"id": "cabins", "name": {"zh": "客舱区", "en": "cabins"}, "neighbors": ["stateroom", "mess"]},
+    {"id": "mess", "name": {"zh": "餐室", "en": "mess room"}, "neighbors": ["cabins", "bar", "galley"]},
+    {"id": "galley", "name": {"zh": "厨房", "en": "galley"}, "neighbors": ["mess"]}
+  ],
+  "optional_locations": [],
+  "intro": {
+    "zh": [
+      "海上起了大雾。九点整，船长下令抛锚，等天亮再走。",
+      "{setting}停在航道中央：谁也上不来，谁也下不去。",
+      "",
+      "{found}，{client}回到贵宾舱，发现{item}不见了。",
+      "最后一次确认它还在桌上，是 {seen}。",
+      "",
+      "你是搭这班船回家的退休侦探，刚在铺位上躺下，有人敲响了舱门。",
+      "所有人都在观景厅等你。"
+    ],
+    "en": [
+      "Fog on the water. At nine o'clock the captain of {setting} dropped anchor to wait for daylight. The ferry sits in the middle of the channel: nobody gets on, nobody gets off.",
+      "",
+      "At {found}, {client} returned to the stateroom and found the {item} gone. It was last confirmed on the table during {seen}.",
+      "",
+      "You are a retired detective taking this boat home. You have just lain down in your berth when someone knocks. Everyone is waiting in the lounge."
+    ]
+  },
+  "map_art": {
+    "zh": [
+      "驾驶室 ── 楼梯间 ── 观景厅 ── 酒吧",
+      "            │                  │",
+      "          贵宾舱 ── 客舱区 ── 餐室 ── 厨房",
+      "          (现场)"
+    ],
+    "en": [
+      "wheelhouse ── stairwell ── lounge ── bar",
+      "                  │                   │",
+      "              stateroom ── cabins ── mess room ── galley",
+      "               (scene)"
+    ]
+  },
+  "map_art_optional": {},
+  "aliases": {
+    "han": {"zh": ["失主", "韩老板"], "en": ["owner"]},
+    "zheng": {"zh": [], "en": ["skipper"]},
+    "luo": {"zh": ["乘务员"], "en": ["steward"]},
+    "gao": {"zh": ["机修"], "en": ["mechanic"]},
+    "meng": {"zh": ["调酒师"], "en": ["barman", "barmaid"]},
+    "fang": {"zh": ["医生", "大夫", "船医"], "en": ["doctor"]},
+    "bai": {"zh": ["大厨"], "en": ["chef"]},
+    "ye": {"zh": ["掮客"], "en": ["broker", "dealer"]},
+    "tang": {"zh": ["唐记者"], "en": ["reporter"]},
+    "wheelhouse": {"zh": ["驾驶台", "舰桥"], "en": ["bridge"]},
+    "stairwell": {"zh": ["楼梯"], "en": ["stairs", "stairway"]},
+    "lounge": {"zh": ["大厅", "休息厅"], "en": ["saloon"]},
+    "bar": {"zh": ["吧台"], "en": ["pub"]},
+    "stateroom": {"zh": ["贵宾室", "贵宾间"], "en": ["suite", "state room"]},
+    "cabins": {"zh": ["客舱", "舱房", "房间"], "en": ["cabin", "berth", "your cabin"]},
+    "mess": {"zh": ["餐厅", "饭堂"], "en": ["mess", "dining room", "canteen"]},
+    "galley": {"zh": ["后厨"], "en": ["kitchen"]},
+    "sextant": {"zh": ["六分仪"], "en": ["sextant"]},
+    "logbook": {"zh": ["航海日志", "日志"], "en": ["logbook", "log book"]},
+    "brooch": {"zh": ["胸针"], "en": ["brooch", "pearl brooch"]},
+    "music_box": {"zh": ["八音盒", "音乐盒"], "en": ["music box"]}
+  },
+  "client": {
+    "id": "han", "haunts": ["stairwell", "lounge"],
+    "name": {"zh": "韩月华", "en": "Han Yuehua"},
+    "role": {"zh": "船东", "en": "shipowner"},
+    "persona": {"zh": "说话利落，不喜欢被打断，对船上的事一清二楚。", "en": "Brisk, hates being interrupted, knows every rivet of the boat."}
+  },
+  "roster": [
+    {
+      "id": "zheng", "haunts": ["wheelhouse", "stairwell"],
+      "name": {"zh": "郑海", "en": "Zheng Hai"},
+      "role": {"zh": "船长", "en": "captain"},
+      "persona": {"zh": "沉稳，话少，爱用海上的说法打比方。", "en": "Steady and sparing with words, likes a nautical turn of phrase."},
+      "motive": {"zh": "船东要卖掉这条航线，退休金悬在半空。", "en": "The owner is selling the route, and the pension is up in the air."}
+    },
+    {
+      "id": "luo", "haunts": ["lounge", "cabins"],
+      "name": {"zh": "罗婉", "en": "Luo Wan"},
+      "role": {"zh": "乘务长", "en": "purser"},
+      "persona": {"zh": "周到得体，记得每位乘客的舱号。", "en": "Tactful and attentive, remembers every passenger's cabin."},
+      "motive": {"zh": "替家里还债，已经预支了三个月工资。", "en": "Paying off a family debt, already three months' wages in advance."}
+    },
+    {
+      "id": "gao", "haunts": ["galley", "stairwell", "mess"],
+      "name": {"zh": "高大勇", "en": "Gao Dayong"},
+      "role": {"zh": "机修工", "en": "engineer"},
+      "persona": {"zh": "嗓门大，手上总有机油，脾气直。", "en": "Loud, oil on the hands, says what comes to mind."},
+      "motive": {"zh": "修船的零件钱被拖了半年没结。", "en": "Half a year of parts money still unpaid by the owner."}
+    },
+    {
+      "id": "meng", "haunts": ["bar", "lounge"],
+      "name": {"zh": "孟小棠", "en": "Meng Xiaotang"},
+      "role": {"zh": "酒保", "en": "bartender"},
+      "persona": {"zh": "爱搭话，什么客人都聊得来。", "en": "Chatty, gets on with any customer."},
+      "motive": {"zh": "想开自己的小店，本钱还差一大截。", "en": "Saving for a place of their own, and still far short."}
+    },
+    {
+      "id": "tang", "haunts": ["lounge", "stairwell"],
+      "name": {"zh": "唐知秋", "en": "Tang Zhiqiu"},
+      "role": {"zh": "记者", "en": "journalist"},
+      "persona": {"zh": "问的比答的多，随手记笔记。", "en": "Asks more than answers, always jotting something down."},
+      "motive": {"zh": "在查这家船运公司的旧账，正缺一条独家。", "en": "Digging into the company's old books and short of an exclusive."}
+    },
+    {
+      "id": "fang", "haunts": ["cabins", "mess"],
+      "name": {"zh": "方怡", "en": "Fang Yi"},
+      "role": {"zh": "随船医生", "en": "ship's doctor"},
+      "persona": {"zh": "冷静，说话有条理，不爱闲聊。", "en": "Calm and orderly in speech, no taste for chit-chat."},
+      "motive": {"zh": "诊所欠着房租，已经收到第二封催款信。", "en": "The clinic is behind on rent, and the second demand letter has arrived."}
+    },
+    {
+      "id": "bai", "haunts": ["galley", "mess", "bar"],
+      "name": {"zh": "白石", "en": "Bai Shi"},
+      "role": {"zh": "厨师", "en": "cook"},
+      "persona": {"zh": "闷头干活，开口就是抱怨食材。", "en": "Keeps head down, opens mouth only to complain about supplies."},
+      "motive": {"zh": "船东当众说过要换掉这条船的伙食承包。", "en": "The owner said in front of everyone that the galley contract would go."}
+    },
+    {
+      "id": "ye", "haunts": ["bar", "cabins"],
+      "name": {"zh": "叶青", "en": "Ye Qing"},
+      "role": {"zh": "古董掮客", "en": "antiques broker"},
+      "persona": {"zh": "客气圆滑，话里总留三分。", "en": "Smooth and courteous, never says quite everything."},
+      "motive": {"zh": "曾替买家出价被拒，一笔佣金泡了汤。", "en": "A buyer's offer was refused, and a fat commission went with it."}
+    }
+  ],
+  "items": [
+    {"id": "sextant", "name": {"zh": "黄铜六分仪", "en": "brass sextant"}},
+    {"id": "logbook", "name": {"zh": "旧航海日志", "en": "old logbook"}},
+    {"id": "brooch", "name": {"zh": "珍珠胸针", "en": "pearl brooch"}},
+    {"id": "music_box", "name": {"zh": "老八音盒", "en": "antique music box"}}
+  ],
+  "last_seen_template": {
+    "kind": "photo",
+    "text": {
+      "zh": "{client}手机里的照片：{time}，{item}还好好地放在贵宾舱的桌上。",
+      "en": "A photo on {client}'s phone shows the {item} on the stateroom table at {time}."
+    }
+  },
+  "evidence_templates": {
+    "wheelhouse": [
+      {"kind": "record", "text": {"zh": "驾驶室的值班日志写着：{time}，{person}上来过。", "en": "The wheelhouse duty log reads: {time}, {person} came up."}}
+    ],
+    "stairwell": [
+      {"kind": "record", "text": {"zh": "楼梯间的监控截图：{time}，{person}正在这里。", "en": "A stairwell camera still shows {person} there at {time}."}}
+    ],
+    "lounge": [
+      {"kind": "record", "text": {"zh": "观景厅的借书登记上有{person}的名字，时间是 {time}。", "en": "The lounge book-loan sheet lists {person} at {time}."}}
+    ],
+    "bar": [
+      {"kind": "record", "text": {"zh": "酒吧的账单上有{person}的签名，时间是 {time}。", "en": "A bar tab bears {person}'s signature, timed {time}."}}
+    ],
+    "cabins": [
+      {"kind": "record", "text": {"zh": "客舱区门禁记录显示，{person}的房卡在 {time} 刷开了舱门。", "en": "The cabin door log shows {person}'s key card at {time}."}}
+    ],
+    "mess": [
+      {"kind": "record", "text": {"zh": "餐室点单本上写着：{time}，{person}要了一碗姜汤。", "en": "The mess-room order pad reads: {time}, {person} asked for ginger soup."}}
+    ],
+    "galley": [
+      {"kind": "record", "text": {"zh": "厨房白板上有{person}留的字条，落款时间 {time}。", "en": "A note on the galley whiteboard, signed by {person}, is timed {time}."}}
+    ]
+  },
+  "fallback_templates": [
+    {"kind": "photo", "text": {"zh": "{person}的手机里有一张 {time} 在{location}拍的照片。", "en": "{person}'s phone holds a photo taken in the {location} at {time}."}}
+  ]
+}

@@ -13,6 +13,7 @@ The solver is a perfect reasoner, so this measures how much testimony a case nee
 it is to see the deduction. Orders are seeded per case, so results are reproducible.
 
 python -m loosethread.simulate --seeds 200 --orders 20
+python -m loosethread.simulate --game --budget 12   # the cases the game plays (D-031), per shape
 """
 
 import argparse
@@ -26,7 +27,7 @@ from pathlib import Path
 
 from loosethread.difficulty import question_plan
 from loosethread.game import DEFAULT_BUDGET, Game, StarRule
-from loosethread.generator import DAILY, generate
+from loosethread.generator import DAILY, AlibiStyle, daily_case, daily_setup, generate
 from loosethread.lines import TemplateWriter
 from loosethread.lookup import in_scope_queries
 from loosethread.model import Case, Lang, Query, QueryKind
@@ -35,6 +36,7 @@ from loosethread.solver import Solver
 from loosethread.stats import percentile, wilson
 
 ROWS = Path("results/rows/simulated-player.jsonl")
+GAME_ROWS = Path("results/rows/simulated-player-game.jsonl")
 STAR_RUNS = 20  # simulated players behind each case's star thresholds (CP-5)
 CP5_BUDGET = 20  # the budget CP-5 was measured with; the summary's default, to reproduce it
 OLD_TWO_STARS_SHARE = 0.7  # the oracle-based rule before CP-5, kept to reproduce its evidence
@@ -49,6 +51,8 @@ class Run:
     suspects: int
     identified_at: int | None  # questions asked when one suspect was left
     solved_at: int | None  # questions asked when an exposing pair was also in the notebook
+    pack: str = "mistpine"  # the defaults describe the rows from before step 4b
+    shape: str = AlibiStyle.OCCUPIED.value
 
 
 def question_order(case: Case, rng: random.Random) -> list[Query]:
@@ -85,7 +89,9 @@ def _solve(case: Case, rng: random.Random) -> tuple[int | None, int | None]:
     return identified_at, None
 
 
-def play(case: Case, seed: int, order: int, min_questions: int) -> Run:
+def play(
+    case: Case, seed: int, order: int, min_questions: int, shape: AlibiStyle = AlibiStyle.OCCUPIED
+) -> Run:
     identified_at, solved_at = _solve(case, random.Random(f"{seed}:{order}"))
     view = case.view
     return Run(
@@ -96,6 +102,8 @@ def play(case: Case, seed: int, order: int, min_questions: int) -> Run:
         len(view.suspects),
         identified_at,
         solved_at,
+        view.pack_id,
+        shape.value,
     )
 
 
@@ -117,6 +125,43 @@ def simulate(seeds: Sequence[int], orders: int) -> list[Run]:
         min_q = len(question_plan(case.view, Solver(case.view))[0])
         runs += [play(case, seed, order, min_q) for order in range(orders)]
     return runs
+
+
+def simulate_game(seeds: Sequence[int], orders: int) -> list[Run]:
+    """The same players on the cases the game plays."""
+    runs = []
+    for seed in seeds:
+        case = daily_case(seed).case
+        shape = daily_setup(seed)[1]
+        min_q = len(question_plan(case.view, Solver(case.view))[0])
+        runs += [play(case, seed, order, min_q, shape) for order in range(orders)]
+    return runs
+
+
+def by_group(runs: Sequence[Run], budget: int) -> list[str]:
+    """Per lie shape and per setting. Rates are over cases, each represented by its median run."""
+    lines: list[str] = []
+    for field in ("shape", "pack"):
+        groups: dict[str, dict[int, list[Run]]] = {}
+        for run in runs:
+            groups.setdefault(getattr(run, field), {}).setdefault(run.seed, []).append(run)
+        for name, cases in sorted(groups.items()):
+            never = budget * 1000
+            medians = [
+                statistics.median(r.solved_at if r.solved_at is not None else never for r in rs)
+                for rs in cases.values()
+            ]
+            n, within = len(cases), sum(m <= budget for m in medians)
+            lo, hi = wilson(within, n)
+            oracle = statistics.median(rs[0].min_questions for rs in cases.values())
+            lines.append(
+                f"  {name}: {n} cases; oracle minimum median {oracle:.0f};"
+                f" questions to solve, median run: median {statistics.median(medians):.0f},"
+                f" p90 {percentile([float(m) for m in medians], 90):.0f};"
+                f" within {budget}: {within}/{n} = {within / n:.1%}"
+                f" [Wilson 95%: {lo:.1%}, {hi:.1%}]"
+            )
+    return lines
 
 
 def summary(runs: Sequence[Run], budget: int = CP5_BUDGET) -> list[str]:
@@ -187,20 +232,24 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="python -m loosethread.simulate", description=__doc__)
     parser.add_argument("--seeds", type=int, default=200, help="daily cases 0..N-1")
     parser.add_argument("--orders", type=int, default=20, help="random orders per case")
-    parser.add_argument("--out", type=Path, default=ROWS)
+    parser.add_argument("--game", action="store_true", help="the cases the game plays (D-031)")
+    parser.add_argument("--out", type=Path, help=f"default {ROWS}, or {GAME_ROWS} with --game")
     parser.add_argument("--score", type=Path, help="only recompute the summary from rows")
     parser.add_argument(
         "--budget", type=int, default=CP5_BUDGET, help=f"for the summary (game: {DEFAULT_BUDGET})"
     )
     args = parser.parse_args(argv)
     if args.score:
-        print("\n".join(summary(load_runs(args.score), args.budget)))
-        return 0
-    runs = simulate(range(args.seeds), args.orders)
-    args.out.parent.mkdir(parents=True, exist_ok=True)
-    text = "".join(json.dumps(asdict(r)) + "\n" for r in runs)
-    args.out.write_text(text, encoding="utf-8", newline="\n")
+        runs = load_runs(args.score)
+    else:
+        runs = (simulate_game if args.game else simulate)(range(args.seeds), args.orders)
+        out: Path = args.out or (GAME_ROWS if args.game else ROWS)
+        out.parent.mkdir(parents=True, exist_ok=True)
+        text = "".join(json.dumps(asdict(r)) + "\n" for r in runs)
+        out.write_text(text, encoding="utf-8", newline="\n")
     print("\n".join(summary(runs, args.budget)))
+    if args.game or len({r.shape for r in runs}) > 1:
+        print("\n".join(by_group(runs, args.budget)))
     return 0
 
 

@@ -11,14 +11,21 @@ import re
 import sys
 import time
 from collections import Counter
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass, replace
 from pathlib import Path
 
 from loosethread.audit import audit
 from loosethread.content import load_pack
 from loosethread.difficulty import Metrics, measure
-from loosethread.generator import DAILY, ContradictionRule, Generated, GenParams, generate
+from loosethread.generator import (
+    DAILY,
+    ContradictionRule,
+    Generated,
+    GenParams,
+    daily_case,
+    generate,
+)
 from loosethread.lookup import AnswerBook
 from loosethread.model import (
     Basis,
@@ -66,7 +73,7 @@ _UI: dict[str, tuple[str, str]] = {
         "失主：{name}（{role}），不是嫌疑人。",
         "Owner: {name} ({role}), not a suspect.",
     ),
-    "map": ("山庄地图", "Map"),
+    "map": ("地图", "Map"),
     "rules": ("推理规则", "Rules"),
     "key_rules": ("推理要点", "Key rules"),
     "evidence": (
@@ -105,9 +112,11 @@ _UI: dict[str, tuple[str, str]] = {
     ),
     "lies": ("谎言：", "Lies:"),
     "lie": (
-        "{name}（{why}）声称 {time} 在{claim}，实际在{real}。能揭穿它的：{by}",
-        "{name} ({why}) claims the {claim} at {time}, was really in the {real}. Exposed by: {by}",
+        "{name}（{why}）声称 {time} 在{claim}{company}，实际在{real}。能揭穿它的：{by}",
+        "{name} ({why}) claims the {claim}{company} at {time}, was really in the {real}."
+        " Exposed by: {by}",
     ),
+    "lie_with": ("，和{others}在一起", " with {others}"),
     "alibi": ("编造不在场证明", "alibi"),
     "privacy": ("隐私小谎", "privacy"),
     "metrics": ("难度（调试数据）", "Difficulty (debug)"),
@@ -327,7 +336,7 @@ def render_sheet(view: PlayerView, lang: Lang, full: bool = True) -> list[str]:
     """
     world = view.world
     nm = _Names(world, lang)
-    pack = load_pack()
+    pack = load_pack(view.pack_id)
     item = world.items[0]
     client = next(p for p in world.people if p.id not in view.suspects)
     crime, window = view.crime, view.crime.window
@@ -428,8 +437,7 @@ def _testimony_block(view: PlayerView, nm: _Names, unknown: str = "?") -> list[s
         at = {
             int(s.claim.slot): nm.loc[s.claim.location]
             for s in stmts
-            if (isinstance(s.claim, PersonAt) and s.claim.person == person.id)
-            or isinstance(s.claim, Occupants)  # "in the kitchen with Lin" says where, too
+            if s.basis is Basis.WITNESSED  # "with Lin in the kitchen" and "saw Lin there" say where
         }
         company = {
             int(s.claim.slot): s.claim.people - {person.id}
@@ -507,9 +515,10 @@ def render_truth(case: Case, lang: Lang) -> list[str]:
     sep = "、" if lang is Lang.ZH else ", "
     for lie in truth.lies:
         claim = lie.statement.claim
-        assert isinstance(claim, PersonAt)
         speaker, slot = lie.statement.speaker, int(claim.slot)
         by = [x if isinstance(x, str) else nm.person[x.speaker] for x in lie.exposed_by]
+        others = claim.people - {speaker} if isinstance(claim, Occupants) else frozenset()
+        named = sep.join(nm.person[p] for p in nm.order if p in others)
         text = _t(
             "lie",
             lang,
@@ -517,6 +526,7 @@ def render_truth(case: Case, lang: Lang) -> list[str]:
             why=_t("alibi" if lie.reason is LieReason.ALIBI else "privacy", lang),
             time=nm.time(slot),
             claim=nm.loc[book.claimed_location(speaker, slot)],
+            company=_t("lie_with", lang, others=named) if named else "",
             real=nm.loc[where[(speaker, slot)]],
             by=sep.join(dict.fromkeys(by)),
         )
@@ -559,7 +569,14 @@ def _render_query(query: Query, nm: _Names, item: str) -> str:
 # --- Batch ---------------------------------------------------------------------------------------
 
 
-def run_batch(count: int, start: int, params: GenParams, with_metrics: bool) -> str:
+def run_batch(
+    count: int,
+    start: int,
+    params: GenParams,
+    with_metrics: bool,
+    make: Callable[[int], Generated] | None = None,
+) -> str:
+    """`make` builds each seed's case, by default `generate(seed, params)`."""
     durations: list[float] = []
     attempts = 0
     rejections: Counter[str] = Counter()
@@ -569,7 +586,7 @@ def run_batch(count: int, start: int, params: GenParams, with_metrics: bool) -> 
     metric_secs: list[float] = []
     for seed in range(start, start + count):
         began = time.perf_counter()
-        generated: Generated = generate(seed, params)
+        generated: Generated = make(seed) if make else generate(seed, params)
         durations.append(time.perf_counter() - began)
         attempts += generated.attempts
         for reason, n in generated.rejections:
@@ -588,7 +605,7 @@ def run_batch(count: int, start: int, params: GenParams, with_metrics: bool) -> 
     lo, hi = wilson(verified, count)
     rlo, rhi = wilson(rejected, attempts)
     lines = [
-        f"Batch: seeds {start}..{start + count - 1}, params {params}",
+        f"Batch: seeds {start}..{start + count - 1}, " + ("game cases" if make else f"{params}"),
         f"Cases generated: {count}; audited OK (unique + all guarantees): {verified}/{count}"
         f" = {verified / count:.1%} [Wilson 95%: {lo:.1%}, {hi:.1%}]",
         f"Attempts: {attempts}; rejected {rejected} = {rejected / attempts:.1%}"
@@ -634,6 +651,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--batch", type=int, default=0, help="generate N cases and report stats")
     parser.add_argument("--rule", choices=[r.value for r in ContradictionRule], default="trusting")
     parser.add_argument("--daily", action="store_true", help="use the daily-case preset (CP-3)")
+    parser.add_argument(
+        "--game", action="store_true", help="the case the game plays for this number (D-031)"
+    )
     parser.add_argument("--out", type=Path, help="write UTF-8 output to this file")
     args = parser.parse_args(argv)
     params = replace(
@@ -641,10 +661,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
 
     if args.batch:
-        text = run_batch(args.batch, args.seed, params, args.metrics)
+        make = daily_case if args.game else None
+        text = run_batch(args.batch, args.seed, params, args.metrics, make)
     else:
         lang = Lang(args.lang)
-        generated = generate(args.seed, params)
+        generated = daily_case(args.seed) if args.game else generate(args.seed, params)
         text = render_case(generated.case, lang, show_truth=not args.hide_truth)
         if args.metrics and not args.hide_truth:
             case = generated.case

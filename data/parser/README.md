@@ -10,6 +10,13 @@ spot-checked 30 random items (`docs/review/p2/parser-spotcheck.md`) and found no
 30/30, so the label error rate is below 11.4% (Wilson 95% upper bound); the check cannot rule out
 a few wrong labels among the other 169 items.
 
+## The settings check (not part of the frozen set)
+
+`settings-check.jsonl`: 36 plain questions (20 zh, 16 en) with the names of the two newer settings
+(D-031), each read once by each backend. Its only job is to show that a parser takes the new names;
+it is plain on purpose, has no spoken forms, ranges or injections, and its score says nothing about
+the frozen set's measure. Its SHA-256 is `loosethread.parser_eval.SETTINGS_SHA256`.
+
 ## Provenance and limits
 
 - Drafted and labelled by an LLM (Claude), as approved in D-018; the owner spot-checks 30 items.

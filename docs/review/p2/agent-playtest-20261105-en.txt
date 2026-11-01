@@ -1,0 +1,157 @@
+════════════════════════════════════════════════════════════════════════════════
+                 Loose Thread · Mistpine Lodge · case #20261105
+════════════════════════════════════════════════════════════════════════════════
+
+  A night of driving rain. At eight o'clock a landslide warning closed the only
+  road up to Mistpine Lodge: nobody gets in, nobody gets out.
+
+  At 21:30, Shen Huaishan returned to the study and found the first-edition
+  thread-bound book gone. It was last confirmed on the shelf during 20:30–20:45.
+
+  You are a retired detective who turned in early. A knock at the door wakes
+  you. Everyone is waiting in the lobby.
+
+─── The case ───────────────────────────────────────────────────────────────────
+  Stolen         the first-edition thread-bound book (owner: Shen Huaishan)
+  Scene          study
+  Last seen      20:30–20:45
+  Found missing  21:30–21:45
+  Theft window   20:45–21:30, 3 slots of 15 minutes
+
+─── Who was there ──────────────────────────────────────────────────────────────
+  Suspects: Chen Mo (novelist), Zhou Dachuan (cook), Ma Jianguo (mechanic), He
+  Xiulan (lodge owner), Su Man (antiques dealer)
+  Owner: Shen Huaishan (collector), not a suspect.
+
+─── Map ────────────────────────────────────────────────────────────────────────
+  kitchen ── dining room ── lobby ── tea room
+     │                        │
+     └─────── corridor ───────┘
+            ┌─────┴─────┐
+          study    guest wing
+         (scene)
+
+─── Key rules ──────────────────────────────────────────────────────────────────
+  · During the theft window the culprit was alone at the scene for at least one
+    slot.
+  · Innocent people never lie about the theft window; evidence is always true.
+  · People in the same room in the same slot see each other; between slots a
+    person stays put or moves one step along a map line.
+
+─── Evidence (always true; [ ] = the slot it belongs to) ───────────────────────
+  E1 [20:30] A photo on Shen Huaishan's phone shows the first-edition
+             thread-bound book on the study shelf at 20:31.
+  E2 [20:30] Ma Jianguo's phone holds a photo taken in the corridor at 20:44.
+  E3 [21:30] A note on the kitchen whiteboard, signed by He Xiulan, is timed
+             21:34.
+  E4 [21:00] The guest-wing door log shows Shen Huaishan's key card at 21:06.
+  E5 [21:15] A note on the kitchen whiteboard, signed by He Xiulan, is timed
+             21:26.
+  E6 [20:15] The guest-wing door log shows Zhou Dachuan's key card at 20:25.
+
+How to play
+  Goal: name the culprit, with two items that cannot both be true, to expose
+  their lie.
+  Ask several people about the same time; ⚠ shows when their stories clash.
+  Ask:  Lin Xiaoyu: where were you at 21:15?  (or @Lin; then just type)
+  One person, one time each. Costs 1; unclear questions, repeats, small talk:
+  free.
+  Accuse: /accuse SUSPECT ID ID
+  Other commands: /notes  /rules  /case (the full sheet)  /help  /quit
+    [player's thought] That was a lot of text. Antiques dealer plus rare old book feels way too obvious but I'm starting there anyway. Also who is Lin Xiaoyu in the example? Not on the list, weird.
+[12 left]> Su Man, where were you when the book got stolen?
+  Su Man: I can't help you with that. Ask me something specific: when, where,
+          with whom.
+(read as “a question outside the case”; free)
+    [player's thought] Huh, it said my question was outside the case, which is odd because it is literally the case. Fine, it wants a specific time. 9pm is in the middle of the window.
+[12 left] Su Man> ok where were you around 9pm
+  Su Man: Between 21:00 and 21:15 I was in the guest wing with Shen Huaishan and
+          Zhou Dachuan.
+→ read as “where Su Man was at 21:00–21:15, and with whom”; noted: S1
+    [player's thought] Okay Su Man has company at 9. Let me try the novelist. The little @ thing says I can pick someone and then just type, so I'll do that.
+[11 left] Su Man> @Chen Mo
+Now asking: Chen Mo
+    [player's thought] Just asking him straight out, a novelist might go and browse an old book. See what he says.
+[11 left] Chen Mo> were you in the study at all that night?
+  Chen Mo: I wasn't in the study at all tonight.
+→ read as “when Chen Mo was in the study”
+    [player's thought] Well of course he says no, and that cost me a question. Should have seen that coming. Let me get something I can actually compare with Su Man.
+[10 left] Chen Mo> so where were you at 9 then
+  Chen Mo: Between 21:00 and 21:15 I was alone in the kitchen.
+→ read as “where Chen Mo was at 21:00–21:15, and with whom”; noted: S2
+    [player's thought] Chen Mo alone in the kitchen, no one to back that up. The owner keeps leaving notes on the kitchen board so maybe she was in there and will say she never saw him.
+[9 left] Chen Mo> He Xiulan, what about you, where were you at nine?
+  He Xiulan: Between 21:00 and 21:15 I was in the kitchen with Ma Jianguo.
+→ read as “where He Xiulan was at 21:00–21:15, and with whom”; noted: S3
+⚠ S2 and S3 cannot both be true
+    [player's thought] Oh nice, the warning popped up! So Chen Mo says alone in the kitchen, she says she was in there with the mechanic. One of them is fibbing. If the mechanic backs her up then it's Chen Mo, surely.
+[8 left] He Xiulan> Ma Jianguo were you in the kitchen at 9 with He Xiulan?
+  Ma Jianguo: Yes. Between 21:00 and 21:15 I was in the kitchen with He Xiulan.
+→ read as “whether Ma Jianguo saw He Xiulan at 21:00–21:15”; noted: S4
+⚠ S2 and S4 cannot both be true
+    [player's thought] Two people against one, so it has to be Chen Mo. That was quicker than I figured. Let me flip back through the notes before I point fingers, I already forget which S number was which.
+[7 left] Ma Jianguo> /notes
+─── Notebook (4 statements) ────────────────────────────────────────────────────
+  Two rows per person. at: where they say they were; with: who they say was in
+  the room (surnames), "alone" meaning nobody else. Slot 21:15 means
+  21:15–21:30.
+
+                                   ┌────── theft window ───────┐
+              20:00  20:15  20:30  │ 20:45  21:00       21:15  │ 21:30  21:45
+  Shen  at    ·      ·      ·      │ ·      ·           ·      │ ·      ·
+        with                       │                           │
+                                   │                           │
+  Chen  at    ·      ·      ·      │ ·      kitchen     ·      │ ·      ·
+        with                       │        alone              │
+                                   │                           │
+  Zhou  at    ·      ·      ·      │ ·      ·           ·      │ ·      ·
+        with                       │                           │
+                                   │                           │
+  Ma    at    ·      ·      ·      │ ·      kitchen     ·      │ ·      ·
+        with                       │        He                 │
+                                   │                           │
+  He    at    ·      ·      ·      │ ·      kitchen     ·      │ ·      ·
+        with                       │        Ma                 │
+                                   │                           │
+  Su    at    ·      ·      ·      │ ·      guest wing  ·      │ ·      ·
+        with                       │        Shen,Zhou          │
+
+  Statements (slot starts):
+  S1  Su Man: in the guest wing at 21:00 with Shen Huaishan, Zhou Dachuan
+  S2  Chen Mo: alone in the kitchen at 21:00
+  S3  He Xiulan: in the kitchen at 21:00 with Ma Jianguo
+  S4  Ma Jianguo: in the kitchen at 21:00 with He Xiulan
+
+  Contradiction hints:
+  ⚠ S2 and S3 cannot both be true
+  ⚠ S2 and S4 cannot both be true
+  Evidence ids are on /case.
+    [player's thought] Okay it's all there. He says alone, the two others put themselves in the same kitchen and don't mention him. Going with Chen Mo and the two numbers the warning told me.
+[7 left] Ma Jianguo> /accuse Chen Mo S2 S3
+    [player's thought] Slight nerves since it is one shot, but I'm pretty sure. Go.
+You get one accusation. Accuse Chen Mo, because S2 and S3 cannot both be true? (y/n) y
+
+Solved! ★★★
+You used 5/12 questions; this case can be solved in 3.
+(This case: ★★★ within 9 questions, ★★ within 11, ★ otherwise.)
+
+─── Truth (spoilers) ───────────────────────────────────────────────────────────
+  Culprit: Chen Mo, alone in the study at 21:00–21:15.
+
+  True whereabouts (* the theft; ! they lied about this slot)
+                                           ┌─────────── theft window ───────────┐
+        20:00     20:15       20:30        │ 20:45        21:00       21:15     │ 21:30     21:45
+  Shen  corridor  corridor    study        │ corridor     guest wing  corridor  │ study     corridor
+  Chen  corridor  lobby       lobby        │ corridor     study*!     corridor  │ corridor  guest wing
+  Zhou  corridor  guest wing  guest wing   │ guest wing   guest wing  corridor  │ corridor  corridor
+  Ma    lobby     corridor    corridor!    │ kitchen      kitchen     kitchen   │ kitchen   corridor
+  He    tea room  lobby       dining room  │ dining room  kitchen     kitchen   │ kitchen!  dining room
+  Su    lobby     corridor    guest wing   │ corridor     guest wing  corridor  │ kitchen   kitchen
+
+  Lies:
+  · Chen Mo (alibi) claims the kitchen at 21:00, was really in the study.
+    Exposed by: He Xiulan, Ma Jianguo
+  · Ma Jianguo (privacy) claims the kitchen at 20:30, was really in the
+    corridor. Exposed by: E2
+  · He Xiulan (privacy) claims the dining room at 21:30, was really in the
+    kitchen. Exposed by: Ma Jianguo, Su Man, E3

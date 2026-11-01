@@ -16,7 +16,8 @@ a range that is exactly one slot ("20:15-20:30") reaches the model as its start 
 names the place too. A third (D-027): "did you go to <place> between 21:00 and 21:45?" is read as
 "when were you at <place>" before any call (`parser.visited_place`), as the rule parser reads it.
 A fourth (D-029): a relative word that only leads in to the time ("and after that, around 9:20?")
-does not reach the model, whose rules read any relative word as "no time named".
+does not reach the model, whose rules read any relative word as "no time named". A fifth (D-030):
+"where were you when the book went missing?" asks which time, before any call.
 """
 
 import json
@@ -35,7 +36,13 @@ from loosethread.model import (
     query_fields,
 )
 from loosethread.npc import BackendError, ClarifyReason, ParseRequest, ParseResult
-from loosethread.parser import asks_company, time_reading, visited_place, without_lead_in
+from loosethread.parser import (
+    asks_company,
+    asks_theft_time,
+    time_reading,
+    visited_place,
+    without_lead_in,
+)
 
 SYSTEM = """\
 You turn a detective's question to one character in a mystery game into one JSON object. Never \
@@ -253,6 +260,8 @@ class LLMParser:
             place := visited_place(request.question, request.addressee, request.lexicon)
         ) is not None:
             return ParseResult(Query(QueryKind.WHEN, request.addressee, location=place))
+        if asks_theft_time(request.question, request.lexicon):
+            return ParseResult(None, ClarifyReason.NEED_TIME)
         system, user = parse_prompt(request)
         reply = self.model.complete(system, user, json_mode=True, max_tokens=self.max_tokens)
         if reply.finish_reason == "length":

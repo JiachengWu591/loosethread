@@ -230,17 +230,25 @@ def _evening(hour: int, minute: int) -> int:
 
 
 def clock_times(text: str) -> tuple[int, ...]:
-    return tuple(minute for _, minute in _clock_readings(normalize(text)))
+    return tuple(minute for _, minute in _clock_readings(normalize(text))[0])
 
 
 def first_time_at(norm: str) -> int | None:
     """Where the first clock time starts in normalised text, if it names one."""
-    readings = _clock_readings(norm)
+    readings = _clock_readings(norm)[0]
     return readings[0][0] if readings else None
 
 
-def _clock_readings(norm: str) -> list[tuple[int, int]]:
-    """(position, minute) of every clock time in normalised text, in reading order."""
+def without_times(text: str) -> str:
+    """`text`, normalised, with its clock times taken out."""
+    norm = normalize(text)
+    taken = _clock_readings(norm)[1]
+    return "".join(ch for ch, gone in zip(norm, taken, strict=True) if not gone)
+
+
+def _clock_readings(norm: str) -> tuple[list[tuple[int, int]], list[bool]]:
+    """(position, minute) of every clock time in normalised text, in reading order, and which
+    characters they cover."""
     found: list[tuple[int, int]] = []  # (position, minute)
     taken = [False] * len(norm)
     for kind, pattern in _PATTERNS:
@@ -253,7 +261,7 @@ def _clock_readings(norm: str) -> list[tuple[int, int]]:
             for i in range(m.start(), m.end()):
                 taken[i] = True
             found.append((m.start(), minute))
-    return sorted(found)
+    return sorted(found), taken
 
 
 def _reading(kind: str, m: re.Match[str]) -> int | None:

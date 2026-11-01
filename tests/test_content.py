@@ -2,11 +2,13 @@
 
 import json
 from importlib.resources import files
+from itertools import combinations
 from typing import Any
 
 import pytest
 
 from loosethread.content import _parse_pack, load_pack
+from loosethread.generator import PACKS
 from loosethread.model import Lang
 
 
@@ -27,8 +29,37 @@ def test_default_pack_loads_and_is_consistent() -> None:
     assert all(e.haunts for e in pack.roster)
 
 
-def test_every_template_formats_in_both_languages() -> None:
-    pack = load_pack()
+@pytest.mark.parametrize("pack_id", PACKS)
+def test_every_setting_loads_with_its_own_map_and_people(pack_id: str) -> None:
+    pack = load_pack(pack_id)
+    assert pack.id == pack_id
+    assert len(pack.roster) >= 6
+    people = [pack.client, *(e.person for e in pack.roster)]
+    assert all(e.haunts for e in pack.roster)
+    # The notebook grid writes surnames; they must tell people apart in both languages.
+    assert len({p.name.zh[0] for p in people}) == len(people)
+    assert len({p.name.en.split()[0] for p in people}) == len(people)
+    assert pack.intro.zh
+    assert pack.intro.en
+
+
+@pytest.mark.parametrize("pack_id", ["night_ferry", "backstage"])
+def test_the_new_scenes_have_more_than_one_door(pack_id: str) -> None:
+    pack = load_pack(pack_id)
+    scene = next(x for x in pack.locations if x.id == pack.crime_location)
+    assert len(scene.neighbors) >= 2
+
+
+def test_settings_do_not_share_people_or_maps() -> None:
+    packs = [load_pack(p) for p in PACKS]
+    for a, b in combinations(packs, 2):
+        assert not {p.person.name.zh for p in a.roster} & {p.person.name.zh for p in b.roster}
+        assert {x.id for x in a.locations} != {x.id for x in b.locations}
+
+
+@pytest.mark.parametrize("pack_id", PACKS)
+def test_every_template_formats_in_both_languages(pack_id: str) -> None:
+    pack = load_pack(pack_id)
     fields = {"person": "X", "client": "Y", "item": "Z", "location": "L", "time": "20:00"}
     templates = [pack.last_seen_template, *pack.fallback_templates]
     templates += [t for _, ts in pack.evidence_templates for t in ts]

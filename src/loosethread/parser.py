@@ -15,7 +15,7 @@ the time only leads in to it ("and after that, around 9:20?"), so it is not an a
 
 import re
 
-from loosethread.lexicon import EntityKind, Lexicon, first_time_at, normalize
+from loosethread.lexicon import EntityKind, Lexicon, first_time_at, normalize, without_times
 from loosethread.model import (
     ItemId,
     Lang,
@@ -82,6 +82,15 @@ _LEAD_IN = re.compile(
 _WHOLE_EVENING = _keywords(
     "今晚", "今天晚上", "整晚", "一晚上", "tonight", "this evening", "all evening", "all night",
 )  # fmt: skip
+_FILLER = re.compile(
+    r"[\W_]+|(?<![a-z])(?:and|then|so|ok|okay|what about|how about|about|around|at|say)(?![a-z])"
+    r"|那|呢|吗|啊|还有|大概|左右|时候"
+)
+_THEFT = _keywords(
+    "被偷", "偷走", "丢了", "丢的", "失窃", "不见", "被拿走",
+    "stolen", "went missing", "gone missing", "was taken", "got taken", "disappeared", "vanished",
+    "the theft",
+)  # fmt: skip
 _VISIT = _keywords(
     "去过", "到过", "进过", "来过", "进入", "有没有去", "去没去", "进没进",
     "been to", "been in", "go to", "went to", "go into", "went into", "enter", "entered", "visit",
@@ -137,11 +146,35 @@ def time_reading(question: str, lex: Lexicon) -> SlotIndex | ClarifyReason | Non
 def follows_up(question: str, lex: Lexicon) -> bool:
     """Whether a question that needs a time may take the one just discussed.
 
-    Not when it names a clock time, has a relative word ("后来呢" asks about another time) or asks
-    about the whole evening.
+    Not when it names a clock time, has a relative word ("后来呢" asks about another time), asks
+    about the whole evening or about the moment of the theft.
     """
     rest = lex.without_names(question)
-    return not (lex.times(question) or _RELATIVE.search(rest) or _WHOLE_EVENING.search(rest))
+    return not (
+        lex.times(question)
+        or _RELATIVE.search(rest)
+        or _WHOLE_EVENING.search(rest)
+        or _THEFT.search(rest)
+    )
+
+
+def only_a_time(question: str, lex: Lexicon) -> bool:
+    """Nothing but a clock time and filler: "and after that, around 9:20?", "那九点呢"."""
+    if not lex.times(question):
+        return False
+    return not _FILLER.sub("", without_times(without_lead_in(question)))
+
+
+def asks_theft_time(question: str, lex: Lexicon) -> bool:
+    """ "Where were you when the book went missing?": asked by players in three of four AI games.
+
+    Nobody knows that moment, the player least of all, so the answer is "which time?". Not a
+    question that also names a time or asks who did it.
+    """
+    rest = lex.without_names(question)
+    return not (lex.times(question) or _OUT_OF_SCOPE.search(normalize(question))) and bool(
+        _WHERE.search(rest) and _THEFT.search(rest)
+    )
 
 
 def asks_company(question: str, lex: Lexicon) -> bool:
@@ -223,6 +256,8 @@ class RuleParser:
         def clarify(reason: ClarifyReason) -> ParseResult:
             return ParseResult(None, reason)
 
+        if asks_theft_time(text, lex):
+            return clarify(ClarifyReason.NEED_TIME)
         if _OUT_OF_SCOPE.search(text):
             return ok(QueryKind.OUT_OF_SCOPE)
         mentions = lex.mentions(text)

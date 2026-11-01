@@ -1,0 +1,177 @@
+{
+  "id": "backstage",
+  "setting": {"zh": "青檐剧场", "en": "the Blue Eaves Theatre"},
+  "start_minute": 1140,
+  "slot_minutes": 15,
+  "crime_location": "props",
+  "locations": [
+    {"id": "foyer", "name": {"zh": "前厅", "en": "foyer"}, "neighbors": ["auditorium"]},
+    {"id": "auditorium", "name": {"zh": "观众席", "en": "auditorium"}, "neighbors": ["foyer", "wings", "corridor"]},
+    {"id": "wings", "name": {"zh": "侧台", "en": "wings"}, "neighbors": ["auditorium", "props"]},
+    {"id": "dressing", "name": {"zh": "化妆间", "en": "dressing room"}, "neighbors": ["corridor"]},
+    {"id": "corridor", "name": {"zh": "后台走廊", "en": "corridor"}, "neighbors": ["auditorium", "dressing", "props", "greenroom"]},
+    {"id": "props", "name": {"zh": "道具间", "en": "prop room"}, "neighbors": ["wings", "corridor", "dock"]},
+    {"id": "greenroom", "name": {"zh": "休息室", "en": "green room"}, "neighbors": ["corridor", "dock"]},
+    {"id": "dock", "name": {"zh": "装卸口", "en": "loading dock"}, "neighbors": ["greenroom", "props"]}
+  ],
+  "optional_locations": [],
+  "intro": {
+    "zh": [
+      "首演前夜的最后一次彩排。七点整，剧场的电子门禁出了故障，",
+      "所有门都锁死了，维修要到半夜才能赶来：谁也进不来，谁也出不去。",
+      "",
+      "{found}，{client}回到道具间，发现{item}不见了。",
+      "最后一次确认它还在箱子里，是 {seen}。",
+      "",
+      "你是受邀来看彩排的退休侦探，在前厅的长椅上打了个盹，被人摇醒。",
+      "所有人都在休息室等你。"
+    ],
+    "en": [
+      "The last rehearsal before opening night. At seven o'clock the electronic door system at {setting} failed and locked every door. Repairs will not arrive until midnight: nobody gets in, nobody gets out.",
+      "",
+      "At {found}, {client} returned to the prop room and found the {item} gone. It was last confirmed in its case during {seen}.",
+      "",
+      "You are a retired detective invited to watch the rehearsal. You dozed off on a bench in the foyer, and someone shakes you awake. Everyone is waiting in the green room."
+    ]
+  },
+  "map_art": {
+    "zh": [
+      "前厅 ── 观众席 ────── 侧台",
+      "           │           │",
+      "化妆间 ── 后台走廊 ── 道具间 (现场)",
+      "             │         │",
+      "           休息室 ──── 装卸口"
+    ],
+    "en": [
+      "        foyer ── auditorium ── wings",
+      "                     │           │",
+      "dressing room ── corridor ── prop room (scene)",
+      "                     │           │",
+      "                green room ── loading dock"
+    ]
+  },
+  "map_art_optional": {},
+  "aliases": {
+    "gu": {"zh": ["失主", "团长", "顾团长"], "en": ["director"]},
+    "wei": {"zh": ["作者", "写剧本的"], "en": ["writer", "author"]},
+    "du": {"zh": ["主角", "女主角", "男主角"], "en": ["actor", "star", "lead"]},
+    "kang": {"zh": ["舞监"], "en": ["manager"]},
+    "nie": {"zh": ["灯光"], "en": ["electrician", "lighting"]},
+    "tian": {"zh": ["化妆的"], "en": ["makeup"]},
+    "cao": {"zh": ["拉琴的", "老琴师"], "en": ["musician"]},
+    "xie": {"zh": ["实习的"], "en": ["trainee"]},
+    "qiu": {"zh": ["木工", "做布景的"], "en": ["carpenter"]},
+    "foyer": {"zh": ["门厅", "大堂"], "en": ["lobby", "front of house"]},
+    "auditorium": {"zh": ["观众厅"], "en": ["seats", "stalls", "the house"]},
+    "wings": {"zh": ["舞台侧面"], "en": ["side stage", "the wing"]},
+    "dressing": {"zh": ["化妆室"], "en": ["dressing"]},
+    "corridor": {"zh": ["走廊", "后台"], "en": ["hallway", "passage", "backstage corridor"]},
+    "props": {"zh": ["道具房", "道具室"], "en": ["props room", "props", "property room"]},
+    "greenroom": {"zh": ["茶水间"], "en": ["greenroom", "break room"]},
+    "dock": {"zh": ["卸货口", "后门"], "en": ["dock", "back door"]},
+    "headdress": {"zh": ["凤冠"], "en": ["headdress", "phoenix headdress", "crown"]},
+    "manuscript": {"zh": ["手稿", "剧本手稿"], "en": ["manuscript", "script"]},
+    "fan": {"zh": ["折扇", "扇子"], "en": ["fan", "folding fan"]},
+    "bell": {"zh": ["银铃", "手铃"], "en": ["bell", "hand bell"]}
+  },
+  "client": {
+    "id": "gu", "haunts": ["wings", "greenroom"],
+    "name": {"zh": "顾长风", "en": "Gu Changfeng"},
+    "role": {"zh": "剧团团长", "en": "company director"},
+    "persona": {"zh": "爱讲从前的事，一急就背台词。", "en": "Loves old stories, slips into quoting lines when flustered."}
+  },
+  "roster": [
+    {
+      "id": "wei", "haunts": ["auditorium", "greenroom"],
+      "name": {"zh": "魏清", "en": "Wei Qing"},
+      "role": {"zh": "编剧", "en": "playwright"},
+      "persona": {"zh": "敏感挑剔，爱改别人的用词。", "en": "Touchy and exacting, corrects other people's wording."},
+      "motive": {"zh": "剧本署名闹过纠纷，一直咽不下这口气。", "en": "A dispute over the script credit still rankles."}
+    },
+    {
+      "id": "du", "haunts": ["dressing", "wings"],
+      "name": {"zh": "杜若兰", "en": "Du Ruolan"},
+      "role": {"zh": "主演", "en": "lead actor"},
+      "persona": {"zh": "声音好听，说话带点戏腔。", "en": "A fine voice, and a touch of the stage in every sentence."},
+      "motive": {"zh": "合约快到期，下一部戏还没着落。", "en": "The contract is nearly up, with no next part in sight."}
+    },
+    {
+      "id": "kang", "haunts": ["wings", "corridor"],
+      "name": {"zh": "康小满", "en": "Kang Xiaoman"},
+      "role": {"zh": "舞台监督", "en": "stage manager"},
+      "persona": {"zh": "总在看表，说话像报时。", "en": "Always checking the time, speaks like a countdown."},
+      "motive": {"zh": "工资已经拖欠了三个月。", "en": "Three months of wages are still owed."}
+    },
+    {
+      "id": "nie", "haunts": ["auditorium", "foyer"],
+      "name": {"zh": "聂远", "en": "Nie Yuan"},
+      "role": {"zh": "灯光师", "en": "lighting technician"},
+      "persona": {"zh": "寡言，爱盯着天花板想事情。", "en": "Quiet, thinks with eyes on the ceiling."},
+      "motive": {"zh": "和团长为加班费吵过一架。", "en": "Had a shouting match with the director over overtime."}
+    },
+    {
+      "id": "tian", "haunts": ["dressing", "greenroom"],
+      "name": {"zh": "田果", "en": "Tian Guo"},
+      "role": {"zh": "化妆师", "en": "makeup artist"},
+      "persona": {"zh": "快人快语，爱打听别人的事。", "en": "Quick-tongued, curious about everybody's business."},
+      "motive": {"zh": "家里急用钱，这阵子到处在借。", "en": "The family needs money fast, and borrowing has run out."}
+    },
+    {
+      "id": "cao", "haunts": ["foyer", "greenroom"],
+      "name": {"zh": "曹永年", "en": "Cao Yongnian"},
+      "role": {"zh": "琴师", "en": "accompanist"},
+      "persona": {"zh": "老派，说话慢，爱讲当年。", "en": "Old-fashioned and slow of speech, full of how things used to be."},
+      "motive": {"zh": "当年把家传的东西卖给了团长，一直后悔。", "en": "Once sold a family piece to the director, and has regretted it since."}
+    },
+    {
+      "id": "xie", "haunts": ["corridor", "dock"],
+      "name": {"zh": "谢宁", "en": "Xie Ning"},
+      "role": {"zh": "实习生", "en": "intern"},
+      "persona": {"zh": "紧张，爱道歉，跑得很快。", "en": "Nervous, apologetic, always running somewhere."},
+      "motive": {"zh": "实习工资不够房租，转正又没指望。", "en": "The stipend does not cover the rent, and no job is on offer."}
+    },
+    {
+      "id": "qiu", "haunts": ["dock", "wings"],
+      "name": {"zh": "邱实", "en": "Qiu Shi"},
+      "role": {"zh": "制景师", "en": "set builder"},
+      "persona": {"zh": "憨厚，手里总拿着工具，三句不离木头。", "en": "Good-natured, tool in hand, always comes back to timber."},
+      "motive": {"zh": "还欠着木料行一大笔货款。", "en": "Owes the timber yard a large sum."}
+    }
+  ],
+  "items": [
+    {"id": "headdress", "name": {"zh": "点翠凤冠", "en": "kingfisher phoenix headdress"}},
+    {"id": "manuscript", "name": {"zh": "老剧本手稿", "en": "original script manuscript"}},
+    {"id": "fan", "name": {"zh": "檀香折扇", "en": "sandalwood folding fan"}},
+    {"id": "bell", "name": {"zh": "旧银铃", "en": "old silver hand bell"}}
+  ],
+  "last_seen_template": {
+    "kind": "photo",
+    "text": {
+      "zh": "{client}手机里的照片：{time}，{item}还好好地放在道具间的箱子里。",
+      "en": "A photo on {client}'s phone shows the {item} in its case in the prop room at {time}."
+    }
+  },
+  "evidence_templates": {
+    "foyer": [
+      {"kind": "record", "text": {"zh": "前厅的签到表上有{person}的名字，时间是 {time}。", "en": "The foyer sign-in sheet lists {person} at {time}."}}
+    ],
+    "auditorium": [
+      {"kind": "record", "text": {"zh": "观众席的灯光控制记录显示，{person}在 {time} 调过灯。", "en": "The house-light log shows {person} at the panel at {time}."}}
+    ],
+    "wings": [
+      {"kind": "record", "text": {"zh": "侧台的候场单上有{person}的记号，时间是 {time}。", "en": "The call sheet in the wings has {person}'s mark, timed {time}."}}
+    ],
+    "dressing": [
+      {"kind": "record", "text": {"zh": "化妆间的镜子旁贴着{person}留的便条，落款时间 {time}。", "en": "A note by the dressing-room mirror, signed by {person}, is timed {time}."}}
+    ],
+    "greenroom": [
+      {"kind": "record", "text": {"zh": "休息室的咖啡机记录：{time}，{person}的工牌刷过一次。", "en": "The green-room coffee machine logged {person}'s badge at {time}."}}
+    ],
+    "dock": [
+      {"kind": "record", "text": {"zh": "装卸口的出入登记本上有{person}的签名，时间是 {time}。", "en": "The loading-dock register bears {person}'s signature, timed {time}."}}
+    ]
+  },
+  "fallback_templates": [
+    {"kind": "photo", "text": {"zh": "{person}的手机里有一张 {time} 在{location}拍的照片。", "en": "{person}'s phone holds a photo taken in the {location} at {time}."}}
+  ]
+}

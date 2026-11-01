@@ -50,7 +50,7 @@ from loosethread.npc import (
     Usage,
     tone_for,
 )
-from loosethread.parser import follows_up
+from loosethread.parser import follows_up, only_a_time, time_reading
 from loosethread.solver import Solver
 
 # CP-6 (D-027): below the 15-question sweep of every daily case; provisional until the next
@@ -134,7 +134,7 @@ class Game:
     writer: LineWriter
     lang: Lang = Lang.ZH
     budget: int = DEFAULT_BUDGET
-    pack: ContentPack = field(default_factory=load_pack)
+    pack: ContentPack | None = None  # by default the one the case was made from
     used: int = 0
     turns: list[Turn] = field(default_factory=list)
     verdict: Verdict | None = None
@@ -142,7 +142,7 @@ class Game:
 
     def __post_init__(self) -> None:
         view = self.case.view
-        self.lexicon = Lexicon.build(view.world, view.crime, self.pack)
+        self.lexicon = Lexicon.build(view.world, view.crime, self.pack or load_pack(view.pack_id))
         self.notebook = Notebook(view)
         self._book = AnswerBook.from_truth(view.world, self.case.truth)
         self._asked: dict[PersonId, int] = {}
@@ -216,6 +216,18 @@ class Game:
             problems.append(f"parser_error:{type(exc).__name__}")
             return ParseResult(None, ClarifyReason.UNCLEAR)
 
+    def _find_time(
+        self, addressee: PersonId, question: str, first: ParseResult, problems: list[str]
+    ) -> ParseResult:
+        """The parser asked which time. The question may name it ("那九点呢", with no other words
+        for a model to read), or may follow up on the time just discussed."""
+        named = time_reading(question, self.lexicon)
+        if isinstance(named, int):
+            return ParseResult(Query(QueryKind.WHERE, addressee, slot=named), usage=first.usage)
+        if self._last_slot is None or not follows_up(question, self.lexicon):
+            return first
+        return self._with_last_slot(addressee, question, first, problems)
+
     def _with_last_slot(
         self, addressee: PersonId, question: str, first: ParseResult, problems: list[str]
     ) -> ParseResult:
@@ -237,12 +249,10 @@ class Game:
     ) -> tuple[ParseResult, AllowedFacts]:
         unclear = ParseResult(None, ClarifyReason.UNCLEAR)
         parsed = self._read(addressee, question, problems)
-        if (
-            parsed.reason is ClarifyReason.NEED_TIME
-            and self._last_slot is not None
-            and follows_up(question, self.lexicon)
+        if parsed.reason is ClarifyReason.NEED_TIME or (
+            parsed.reason is ClarifyReason.UNCLEAR and only_a_time(question, self.lexicon)
         ):
-            parsed = self._with_last_slot(addressee, question, parsed, problems)
+            parsed = self._find_time(addressee, question, parsed, problems)
         query = parsed.query
         if query is not None and query.kind is QueryKind.WHERE:
             # The usual contradiction needs the company, and "where" is what players ask first:

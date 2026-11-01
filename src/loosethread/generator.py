@@ -55,6 +55,8 @@ class ContradictionRule(Enum):
 class AlibiStyle(Enum):
     OCCUPIED = "occupied"  # claims a room where one or two suspects were, unseen by them
     UNREACHABLE = "unreachable"  # claims an empty room out of reach of where they were seen
+    EVIDENCE = "evidence"  # claims an empty room out of reach of where evidence places them
+    COMPANION = "companion"  # claims an empty room with a suspect a third person saw elsewhere
 
 
 class RejectReason(Enum):
@@ -92,6 +94,11 @@ class GenParams:
             (self.max_hearsay >= 0, "max_hearsay must be >= 0"),
             (self.max_attempts >= 1, "max_attempts must be >= 1"),
             (bool(self.alibi_styles), "alibi_styles must not be empty"),
+            (
+                len(self.alibi_styles) == 1
+                or set(self.alibi_styles) <= {AlibiStyle.OCCUPIED, AlibiStyle.UNREACHABLE},
+                "only occupied and unreachable share an option pool",
+            ),
         )
         for ok, message in checks:
             if not ok:
@@ -113,6 +120,20 @@ class GenerationError(RuntimeError):
 # the oracle question count at most 6. Values above 2 are upper bounds (CP-1).
 DAILY = GenParams(min_questions=(3, 6))
 
+# What the game plays since CP-6 step 4b (D-030): each seed picks a setting and a lie shape. `DAILY`
+# stays as it was, so existing seeds, the frozen parser set and the P1 numbers stay valid. The lower
+# bounds differ because the shapes do: asking the culprit about one slot is enough to break an
+# alibi that evidence rules out, and about two slots to break one the culprit's own story rules out.
+PACKS = ("mistpine", "night_ferry", "backstage")
+SHAPE_PARAMS: dict[AlibiStyle, GenParams] = {
+    AlibiStyle.OCCUPIED: DAILY,
+    AlibiStyle.UNREACHABLE: GenParams(alibi_styles=(AlibiStyle.UNREACHABLE,), min_questions=(2, 6)),
+    AlibiStyle.EVIDENCE: GenParams(alibi_styles=(AlibiStyle.EVIDENCE,), min_questions=(1, 6)),
+    AlibiStyle.COMPANION: GenParams(alibi_styles=(AlibiStyle.COMPANION,), min_questions=(3, 6)),
+}
+# An evidence-shape case places at least this many suspects near the window, the culprit among them.
+_NEAR_WINDOW_PEOPLE = 3
+
 
 def generate(
     seed: int, params: GenParams | None = None, pack: ContentPack | None = None
@@ -130,6 +151,26 @@ def generate(
             return Generated(outcome, attempt + 1, rejections)
         counts[outcome] = counts.get(outcome, 0) + 1
     raise GenerationError(f"seed {seed}: no acceptable case in {params.max_attempts} attempts")
+
+
+def daily_setup(seed: int) -> tuple[ContentPack, AlibiStyle]:
+    """The setting and the lie shape of a seed's case: settings in turn, the shape drawn."""
+    style = random.Random(f"loosethread:shape:{seed}").choice(list(AlibiStyle))
+    return load_pack(PACKS[seed % len(PACKS)]), style
+
+
+def daily_case(seed: int) -> Generated:
+    pack, style = daily_setup(seed)
+    return generate(seed, SHAPE_PARAMS[style], pack)
+
+
+def _placed_near(evidence: Sequence[Evidence], slots: Sequence[int]) -> frozenset[PersonId]:
+    return frozenset(
+        f.person
+        for e in evidence
+        for f in e.establishes
+        if isinstance(f, PersonAt) and f.slot in slots
+    )
 
 
 class _Attempt:
@@ -214,6 +255,24 @@ class _Attempt:
                 or (loc not in self.closed[after] and seen_after)
             )
 
+        def provable(loc: LocationId) -> list[int]:
+            """The neighbouring slots where evidence of the true room would rule `loc` out."""
+            return [
+                t
+                for t in (theta - 1, theta + 1)
+                if self.pos[culprit][t] != crime and loc not in self.closed[self.pos[culprit][t]]
+            ]
+
+        def quiet(loc: LocationId) -> bool:
+            reachable = loc in self.closed[before] and loc in self.closed[after]
+            return reachable and not occ[theta][loc]
+
+        def seen_elsewhere(person: PersonId) -> bool:
+            # A third person must place the companion, or "A says B, B denies" has no answer:
+            # either could be lying. Not the client, for the reason above.
+            others = occ[theta][self.pos[person][theta]] - {person}
+            return bool(others) and client.id not in others
+
         styles = params.alibi_styles
         alibi_options = [
             loc
@@ -222,13 +281,23 @@ class _Attempt:
             and (
                 (AlibiStyle.OCCUPIED in styles and crowded(loc))
                 or (AlibiStyle.UNREACHABLE in styles and unreachable(loc))
+                or (AlibiStyle.EVIDENCE in styles and not occ[theta][loc] and bool(provable(loc)))
+                or (AlibiStyle.COMPANION in styles and quiet(loc))
             )
         ]
         if not alibi_options:
             return RejectReason.UNEXPOSABLE
-        lie_cells: dict[tuple[PersonId, int], LocationId] = {
-            (culprit, theta): rng.choice(alibi_options)
-        }
+        alibi = rng.choice(alibi_options)
+        pinned: list[tuple[PersonId, int]] = []
+        if AlibiStyle.EVIDENCE in styles:
+            pinned.append((culprit, rng.choice(provable(alibi))))
+        companion: PersonId | None = None
+        if AlibiStyle.COMPANION in styles:
+            candidates = [p for p in innocents if seen_elsewhere(p)]
+            if not candidates:
+                return RejectReason.UNEXPOSABLE
+            companion = rng.choice(candidates)
+        lie_cells: dict[tuple[PersonId, int], LocationId] = {(culprit, theta): alibi}
         privacy = self._privacy_lies(innocents, window, lie_cells)
 
         # --- Evidence --------------------------------------------------------------------------
@@ -243,7 +312,15 @@ class _Attempt:
             for t in window
             if p != culprit and self.pos[p][t] == claimed[t]
         }
-        evidence = self._evidence(item, client.id, last_seen, privacy, lie_cells, people_ids, avoid)
+        if companion is not None:
+            avoid.add((companion, theta))
+        required = [*privacy, *pinned]
+        evidence = self._evidence(
+            item, client.id, last_seen, required, lie_cells, people_ids, avoid
+        )
+        suspects = frozenset(e.person.id for e in entries)
+        if pinned and len(suspects & _placed_near(evidence, near)) < _NEAR_WINDOW_PEOPLE:
+            return RejectReason.TOO_EASY  # the only suspect placed near the window would stand out
 
         # --- Knowledge and testimony ----------------------------------------------------------
         knowledge = self._knowledge(people_ids, occ, item, theta, lie_cells)
@@ -251,22 +328,29 @@ class _Attempt:
             cell: Statement(cell[0], PersonAt(cell[0], loc, SlotIndex(cell[1])), Basis.WITNESSED)
             for cell, loc in lie_cells.items()
         }
+        if companion is not None:
+            lie_statements[(culprit, theta)] = Statement(
+                culprit,
+                Occupants(alibi, SlotIndex(theta), frozenset({culprit, companion})),
+                Basis.WITNESSED,
+            )
         book = AnswerBook(world, knowledge, lie_statements.values())
         view = PlayerView(
             seed=self.seed,
             world=world,
-            suspects=frozenset(e.person.id for e in entries),
+            suspects=suspects,
             motives=tuple(Motive(e.person.id, e.motive) for e in entries),
             crime=CrimeReport(item.id, crime, SlotIndex(last_seen), SlotIndex(discovered)),
             evidence=evidence,
             testimony=book.testimony(),
+            pack_id=pack.id,
         )
 
         # --- Acceptance (player view only) --------------------------------------------------------
         solver = Solver(view)
         if solver.consistent().consistent != {culprit}:
             return RejectReason.NOT_UNIQUE
-        if any(
+        if not pinned and any(
             solver.evidence_contradicts(i)
             for i, s in enumerate(solver.statements)
             if (s.source or s.speaker) == culprit and s.claim.slot in window
@@ -414,7 +498,7 @@ class _Attempt:
         item: Item,
         client: PersonId,
         last_seen: int,
-        privacy: Sequence[tuple[PersonId, int]],
+        required: Sequence[tuple[PersonId, int]],
         lie_cells: dict[tuple[PersonId, int], LocationId],
         people_ids: Sequence[PersonId],
         avoid: set[tuple[PersonId, int]],
@@ -427,7 +511,7 @@ class _Attempt:
             (ItemAt(item.id, self.crime, SlotIndex(last_seen)), *photo.establishes),
             photo.text,
         )
-        cells = list(privacy)
+        cells = list(required)
         pool = [
             (p, t)
             for p in people_ids

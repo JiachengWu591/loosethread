@@ -3,12 +3,19 @@
 import pytest
 
 from loosethread.content import load_pack
-from loosethread.generator import DAILY, generate
-from loosethread.lexicon import Lexicon, clock_times
+from loosethread.generator import DAILY, PACKS, SHAPE_PARAMS, AlibiStyle, generate
+from loosethread.lexicon import Lexicon, clock_times, normalize
 from loosethread.lookup import in_scope_queries
 from loosethread.model import Lang, LocationId, PersonId, Query, QueryKind, SlotIndex
 from loosethread.npc import ClarifyReason, ParseRequest
-from loosethread.parser import RuleParser, canonical_question, follows_up, without_lead_in
+from loosethread.parser import (
+    RuleParser,
+    asks_theft_time,
+    canonical_question,
+    follows_up,
+    only_a_time,
+    without_lead_in,
+)
 
 CASE = generate(213, DAILY).case  # Lin, Zhou, Chen, Su, Zhao and the client Shen
 VIEW = CASE.view
@@ -176,6 +183,65 @@ def test_a_relative_word_before_the_time_only_leads_in(
 )
 def test_follows_up(question: str, expected: bool) -> None:
     assert follows_up(question, LEX) is expected
+
+
+@pytest.mark.parametrize(
+    ("question", "expected"),
+    [
+        ("where were you when the book went missing?", True),
+        ("where were you when the book got stolen?", True),
+        ("东西被偷的时候你在哪？", True),
+        ("书丢了那会儿你在什么地方", True),
+        ("where were you when it went missing, around 9?", False),  # names a time
+        ("who stole it, and where were you?", False),  # who did it: out of scope
+        ("Did you see the stolen item?", False),  # no "where"
+    ],
+)
+def test_asks_theft_time(question: str, expected: bool) -> None:
+    assert asks_theft_time(question, LEX) is expected
+    if expected:
+        assert _parse(question) is ClarifyReason.NEED_TIME
+        assert not follows_up(question, LEX)
+
+
+@pytest.mark.parametrize("pack_id", PACKS)
+@pytest.mark.parametrize("lang", list(Lang))
+def test_every_setting_s_names_read_back(pack_id: str, lang: Lang) -> None:
+    pack = load_pack(pack_id)
+    view = generate(11, SHAPE_PARAMS[AlibiStyle.OCCUPIED], pack).case.view
+    lexicon = Lexicon.build(view.world, view.crime, pack)
+    for query in in_scope_queries(view.world):
+        text = canonical_question(query, view.world, lang)
+        request = ParseRequest(text, query.addressee, lexicon)
+        assert RuleParser().parse(request).query == query, text
+
+
+@pytest.mark.parametrize("pack_id", PACKS)
+def test_no_alias_of_a_setting_is_lost_to_a_clash(pack_id: str) -> None:
+    pack = load_pack(pack_id)
+    view = generate(11, SHAPE_PARAMS[AlibiStyle.OCCUPIED], pack).case.view
+    lexicon = Lexicon.build(view.world, view.crime, pack)
+    for entry in lexicon.entries:
+        kept = set(entry.aliases)
+        assert set(map(normalize, pack.aliases_for(entry.id))) <= kept, entry.id
+        assert normalize(entry.name.zh) in kept
+        assert normalize(entry.name.en) in kept
+
+
+@pytest.mark.parametrize(
+    ("question", "expected"),
+    [
+        ("and after that, around 9:20?", True),
+        ("那九点呢", True),
+        ("and 21:15?", True),
+        ("那 22:45 呢？", True),
+        ("did you argue at 9:20?", False),  # says something else
+        ("你们九点吵架了吗", False),
+        ("and after that?", False),  # no time
+    ],
+)
+def test_only_a_time(question: str, expected: bool) -> None:
+    assert only_a_time(question, LEX) is expected
 
 
 def test_without_lead_in_leaves_other_questions_as_typed() -> None:

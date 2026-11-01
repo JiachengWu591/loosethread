@@ -5,6 +5,7 @@ python -m loosethread.parser_eval run --backend local --split dev
 python -m loosethread.parser_eval run --backend deepseek --split dev --limit 10   # pilot
 python -m loosethread.parser_eval run --backend deepseek-think --split dev
 python -m loosethread.parser_eval score results/rows/parser-rule-test.jsonl [more rows ...]
+python -m loosethread.parser_eval run --backend deepseek --split all --settings  # D-031
 
 `run` writes one row per question to `results/rows/` and prints the scores; `score` recomputes
 them offline from rows. Guardrails: the set must match `FROZEN_SHA256`; the test split is measured
@@ -29,7 +30,7 @@ from loosethread.generator import DAILY, generate
 from loosethread.lexicon import Lexicon
 from loosethread.model import ItemId, LocationId, PersonId, Query, QueryKind, SlotIndex
 from loosethread.npc import BackendUnavailable, ClarifyReason, ParseRequest, Usage
-from loosethread.parser import RuleParser, visited_place
+from loosethread.parser import RuleParser, asks_theft_time, visited_place
 from loosethread.stats import mcnemar_exact, wilson
 
 if TYPE_CHECKING:
@@ -39,6 +40,10 @@ SET = Path("data/parser/questions.jsonl")
 ROWS = Path("results/rows")
 # Frozen 2026-10-31 after the owner's spot-check of 30 items found no error (D-022).
 FROZEN_SHA256: str | None = "13e22acc0eaf413cfede733e6138169ccdb9e668fada5db0c14060b0ba57d60d"
+# A small check on the names of the two newer settings, labelled before measuring (D-031). It is
+# outside the frozen set and does not change or extend what the frozen set measured.
+SETTINGS_SET = Path("data/parser/settings-check.jsonl")
+SETTINGS_SHA256 = "4c019fc60c72a1525d97f0a050c20f74baa00858dea28a5e3d580c92b3502213"
 CAP_CNY = 20.0  # P2 spending cap for API calls (D-018 item 4)
 PILOT = 10
 
@@ -65,6 +70,7 @@ class Item:
     expect: Label
     also: tuple[Label, ...]
     tag: str
+    pack: str = "mistpine"  # the content pack whose names the question uses
 
 
 # --- Labels as JSON ------------------------------------------------------------------------------
@@ -121,6 +127,7 @@ def load_items(path: Path = SET) -> list[Item]:
                 expect=_label(raw["expect"], who),
                 also=tuple(_label(a, who) for a in raw["also"]),
                 tag=raw["tag"],
+                pack=raw.get("pack", "mistpine"),
             )
         )
     return items
@@ -252,6 +259,8 @@ def model_parse(backend: str) -> tuple[Parse, "Backend"]:
         ) is not None:
             read = Query(QueryKind.WHEN, request.addressee, location=place)  # as `LLMParser`
             return read, read, None, Usage()
+        if asks_theft_time(request.question, request.lexicon):  # as `LLMParser`
+            return ClarifyReason.NEED_TIME, ClarifyReason.NEED_TIME, None, Usage()
         system, user = parse_prompt(request)
         try:
             reply = model.complete(system, user, json_mode=True, max_tokens=120)
@@ -300,6 +309,8 @@ def run(
     items = [i for i in load_items(set_path) if split in (i.split, "all")]
     items = items[:limit] if limit is not None else items
     stem = f"parser-{backend}-{split}" + (f"-first{limit}" if limit is not None else "")
+    if set_path == SETTINGS_SET:
+        stem = f"parser-{backend}-{set_path.stem}"
     if split == "dev":  # tuning rounds are numbered and all kept
         out = rows_dir / f"{stem}-r{len(list(rows_dir.glob(f'{stem}-r*.jsonl'))) + 1}.jsonl"
     else:
@@ -327,14 +338,16 @@ def run(
         prompt = hashlib.sha256(SYSTEM.encode("utf-8")).hexdigest()[:12]
     assert parse is not None
 
-    lexicons: dict[int, Lexicon] = {}
+    lexicons: dict[tuple[str, int], Lexicon] = {}
     rows = []
     for item in items:
-        if item.seed not in lexicons:
-            view = generate(item.seed, DAILY).case.view
-            lexicons[item.seed] = Lexicon.build(view.world, view.crime, load_pack())
+        key = (item.pack, item.seed)
+        if key not in lexicons:
+            pack = load_pack(item.pack)
+            view = generate(item.seed, DAILY, pack).case.view
+            lexicons[key] = Lexicon.build(view.world, view.crime, pack)
         raw, guarded, reply, usage = parse(
-            ParseRequest(item.question, item.addressee, lexicons[item.seed])
+            ParseRequest(item.question, item.addressee, lexicons[key])
         )
         rows.append(
             {
@@ -379,12 +392,18 @@ def main(argv: Sequence[str] | None = None) -> int:
     go.add_argument("--backend", required=True, help="rule, local, deepseek, ...")
     go.add_argument("--split", choices=["dev", "test", "all"], required=True)
     go.add_argument("--limit", type=int, help="only the first N items (pilot)")
+    go.add_argument("--settings", action="store_true", help="the check on the newer settings")
     again = sub.add_parser("score", help="recompute scores from rows files, offline")
     again.add_argument("rows", type=Path, nargs="+")
     args = parser.parse_args(argv)
     if isinstance(sys.stdout, io.TextIOWrapper):
         sys.stdout.reconfigure(encoding="utf-8")
-    paths = [run(args.backend, args.split, args.limit)] if args.command == "run" else args.rows
+    if args.command == "score":
+        paths = args.rows
+    elif args.settings:
+        paths = [run(args.backend, args.split, None, SETTINGS_SET, frozen=SETTINGS_SHA256)]
+    else:
+        paths = [run(args.backend, args.split, args.limit)]
     loaded = [read_rows(p) for p in paths]
     for path, rows in zip(paths, loaded, strict=True):
         print("\n".join(report(rows, path.stem)))

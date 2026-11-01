@@ -5,9 +5,10 @@ from dataclasses import dataclass, field, replace
 
 import pytest
 
+from loosethread.content import load_pack
 from loosethread.difficulty import question_plan
 from loosethread.game import AccusationError, Game, GameOver, Outcome, Turn
-from loosethread.generator import DAILY, generate
+from loosethread.generator import DAILY, PACKS, SHAPE_PARAMS, AlibiStyle, generate
 from loosethread.lines import TemplateWriter, line_payload, template_line
 from loosethread.lookup import AnswerBook, in_scope_queries
 from loosethread.model import (
@@ -272,6 +273,84 @@ def test_a_second_reading_that_fails_stays_free(
     assert turn.parse_usage.calls == calls
 
 
+class _NoReading:
+    """A parser that asks which time, whatever the question says."""
+
+    def parse(self, request: ParseRequest) -> ParseResult:
+        return ParseResult(None, ClarifyReason.NEED_TIME, _ONE)
+
+
+def test_a_question_that_names_a_time_is_answered_for_that_time() -> None:
+    """ "那九点呢" gives a model nothing but the time, and it asked which time."""
+    game = _game(parser=_NoReading())
+    slot = next(s.index for s in VIEW.world.slots if s.label.startswith("21:00"))
+    turn = game.ask(INNOCENT, "那九点呢")
+    assert turn.query == Query(QueryKind.WITH_WHOM, INNOCENT, slot=slot)
+    assert turn.cost == 1
+    relative = game.ask(INNOCENT, "九点以后呢")  # an anchor: still which time
+    assert (relative.reason, relative.cost) == (ClarifyReason.NEED_TIME, 0)
+
+
+class _Unclear:
+    """A parser that follows nothing, as a model may on a bare time."""
+
+    def parse(self, request: ParseRequest) -> ParseResult:
+        return ParseResult(None, ClarifyReason.UNCLEAR, _ONE)
+
+
+def test_an_unclear_reading_of_nothing_but_a_time_is_answered_for_that_time() -> None:
+    game = _game(parser=_Unclear())
+    slot = next(s.index for s in VIEW.world.slots if s.label.startswith("21:15"))
+    turn = game.ask(INNOCENT, "and after that, around 9:20?")
+    assert turn.query == Query(QueryKind.WITH_WHOM, INNOCENT, slot=slot)
+    other = game.ask(INNOCENT, "did you argue at 9:20?")  # it says something else: still free
+    assert (other.reason, other.cost) == (ClarifyReason.UNCLEAR, 0)
+
+
+def test_where_were_you_when_it_went_missing_asks_which_time() -> None:
+    game = _game()
+    start = VIEW.world.slots[VIEW.crime.window[0]].label.split("–")[0]
+    game.ask(INNOCENT, f"{start} 你在哪？")
+    turn = game.ask(INNOCENT, "东西被偷的时候你在哪？")
+    assert (turn.reason, turn.cost) == (ClarifyReason.NEED_TIME, 0)  # not the last time discussed
+
+
+@pytest.mark.parametrize("style", list(AlibiStyle))
+def test_every_lie_shape_raises_the_hint_and_can_be_solved_in_play(style: AlibiStyle) -> None:
+    for pack_id in PACKS:
+        case = generate(7, SHAPE_PARAMS[style], load_pack(pack_id)).case
+        game = _game(case, budget=120)
+        view = case.view
+        for person in view.world.people:
+            for slot in view.world.slots:
+                if _exposing_pairs(game):
+                    break
+                _ask(game, Query(QueryKind.WHERE, person.id, slot=slot.index))
+        pair = _exposing_pairs(game)[0]
+        assert game.notebook.in_conflict(*pair)
+        assert game.accuse(case.truth.culprit, *pair).outcome is Outcome.SOLVED
+
+
+def test_a_named_companion_is_said_to_be_there_and_says_otherwise() -> None:
+    case = generate(7, SHAPE_PARAMS[AlibiStyle.COMPANION]).case
+    culprit = case.truth.culprit
+    claim = next(x.statement.claim for x in case.truth.lies if x.statement.speaker == culprit)
+    assert isinstance(claim, Occupants)
+    (companion,) = claim.people - {culprit}
+    game = _game(case)
+    first = _ask(game, Query(QueryKind.WHERE, culprit, slot=claim.slot))
+    names = {p.id: p.name.zh for p in case.view.world.people}
+    assert names[companion] in first.line
+    second = _ask(game, Query(QueryKind.WHERE, companion, slot=claim.slot))
+    assert second.new_conflicts
+    book = AnswerBook.from_truth(case.view.world, case.truth)
+    saw = book.answer(Query(QueryKind.SAW_PERSON, culprit, person=companion))
+    assert any(
+        isinstance(s.claim, PersonAt) and s.claim.slot == claim.slot and s.claim.person == companion
+        for s in saw.claims
+    )
+
+
 def test_budget_runs_out() -> None:
     game = _game(budget=1)
     _ask(game, Query(QueryKind.WHERE, INNOCENT, slot=VIEW.crime.window[0]))
@@ -340,7 +419,7 @@ def test_bad_lines_fall_back_to_the_template() -> None:
         game = _game(writer=writer)
         turn = _ask(game, query)
         assert turn.problems == (problem,)
-        assert turn.line == "是啊，这雨下得人心里发慌。"
+        assert turn.line == "是啊，今晚谁心里都不踏实。"
 
 
 # --- Prompt isolation ----------------------------------------------------------------------------

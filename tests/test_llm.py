@@ -25,7 +25,7 @@ from loosethread.llm.writer import LLMWriter, line_prompt
 from loosethread.lookup import AnswerBook
 from loosethread.model import Lang, LocationId, PersonId, Query, QueryKind, SlotIndex
 from loosethread.npc import BackendUnavailable, ClarifyReason, LineRequest, ParseRequest, Usage
-from loosethread.parser import RuleParser, without_lead_in
+from loosethread.parser import RuleParser, asks_theft_time, without_lead_in
 from loosethread.parser_eval import SET, load_items
 
 CASE = generate(213, DAILY).case
@@ -161,6 +161,13 @@ def test_no_question_in_the_frozen_set_is_rewritten() -> None:
         assert without_lead_in(item.question) == item.question, item.id
 
 
+def test_the_theft_time_rule_touches_one_frozen_question_and_its_numbers_stay() -> None:
+    # D-030: all three parsers got en186 wrong in the test split. The rule, made after that
+    # measurement, reads it as labelled. The reported accuracies stay as measured, not raised.
+    touched = {i.id: i.expect for i in load_items(ROOT / SET) if asks_theft_time(i.question, LEX)}
+    assert touched == {"en186": ClarifyReason.NEED_TIME}
+
+
 def test_a_word_leading_in_to_the_time_does_not_reach_the_model() -> None:
     sent = json.loads(parse_prompt(_request("and after that, around 9:20?"))[1])["question"]
     assert "after" not in sent
@@ -269,7 +276,7 @@ def test_an_unreachable_writer_falls_back_to_the_template() -> None:
     game = Game(CASE, RuleParser(), LLMWriter(_Down()), Lang.ZH)
     turn = game.ask(LIN, "这雨下得真大")
     assert turn.problems == ("writer_unavailable:APIConnectionError",)
-    assert turn.line == "是啊，这雨下得人心里发慌。"
+    assert turn.line == "是啊，今晚谁心里都不踏实。"
 
 
 # --- Writer --------------------------------------------------------------------------------------
@@ -313,7 +320,7 @@ def test_a_cut_off_line_falls_back_to_the_template() -> None:
     game = Game(CASE, RuleParser(), LLMWriter(fake), Lang.ZH)
     turn = game.ask(LIN, "这雨下得真大")
     assert turn.problems == ("writer_invalid:too_long",)
-    assert turn.line == "是啊，这雨下得人心里发慌。"
+    assert turn.line == "是啊，今晚谁心里都不踏实。"
     assert turn.line_usage == USED
 
 

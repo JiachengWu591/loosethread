@@ -233,6 +233,7 @@ class PlayerView:
     crime: CrimeReport
     evidence: tuple[Evidence, ...]
     testimony: tuple["Testimony", ...]
+    pack_id: str = "mistpine"  # the content pack: its setting, story, map and name aliases
 
     def __post_init__(self) -> None:
         person_ids = {p.id for p in self.world.people}

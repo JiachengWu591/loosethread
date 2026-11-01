@@ -17,6 +17,11 @@ starting points; P1 metrics and the P2 playtest will tune them.
   public, plausible **motive** (debt, resentment, collector's envy…) so that motive alone never
   decides the case.
 - Copy always says 犯人 / 窃贼 / culprit, never 凶手 / murderer.
+- **Settings** (D-031): the game takes turns through three fictional closed settings, each a content
+  pack with its own map, people, items, evidence and opening: Mistpine Lodge, the night ferry 晚潮号 /
+  the Evening Tide (fog; 21:00–23:00) and the backstage of 青檐剧场 / the Blue Eaves Theatre (doors
+  locked by a fault; 19:00–21:00). The two newer scenes have two and three doors. The rest of this
+  document uses Mistpine as its example.
 
 ## 2. Scale
 
@@ -77,17 +82,24 @@ considered and deferred (§11).
 
 - All lies are fixed at generation time and stored in the case's truth. The same question always gets
   the same answer, in both languages.
-- **Culprit (alibi lies)**: claims another location for the theft slot and claims to have been alone
-  there. Two styles (P1 implementation):
-  - *occupied room* (default): a reachable room where one or two other suspects were — their account
-    of who was there leaves the culprit out (W3 + T2). The client is never one of these witnesses:
-    the client is not a suspect, so a clash with the client would name the culprit outright.
-  - *unreachable room* (off by default): an empty room the culprit could not have reached from where
-    they were seen just before or after (W2). Measured on 150 seeds, this makes the culprit's own
-    story self-contradictory and every case solvable in two questions.
-- The generator never hands out evidence that by itself breaks the culprit's alibi (no evidence about
-  the culprit near the window, nobody evidenced in the claimed room during the window); otherwise one
-  question plus the evidence would solve the case under T2.
+- **Culprit (alibi lies)**: claims another location for the theft slot. Four shapes; since D-031 the
+  game draws one per case, about a quarter each. `generator.DAILY` stays occupied-only, so existing
+  seeds are unchanged.
+  - *occupied room*: a reachable room where one or two other suspects were, claiming to be alone there.
+    Their account of who was there leaves the culprit out (W3 + T2). The client is never one of these
+    witnesses: the client is not a suspect, so a clash with the client would name the culprit outright.
+  - *unreachable room*: an empty room, claiming to be alone, that the culprit could not have reached
+    from where they were seen just before or after (W2). The culprit's own story contradicts itself,
+    so two questions can solve it if the player knows whom to ask (D-012; allowed again by D-031).
+  - *ruled out by evidence*: an empty room, claiming to be alone, out of reach of where evidence places
+    the culprit in the slot before or after. One question can solve it if the player knows whom to ask,
+    so at least two other suspects are also placed near the window (D-031).
+  - *false companion*: a reachable empty room, naming an innocent suspect as company. That suspect says
+    otherwise, which alone does not show who lies, so a third person, not the client, must have been
+    with them.
+- Except in the evidence shape, the generator never hands out evidence that by itself breaks the
+  culprit's alibi (no evidence about the culprit near the window, nobody evidenced in the claimed room
+  during the window); otherwise one question plus the evidence would solve the case under T2.
 - **Innocents (privacy lies)**: 0–2 per case, outside the window, each contradicted by an evidence item
   (T3). They are red herrings: catching one proves a lie but not the theft.
 - The generator never produces evidence that directly places the culprit at the scene during the
@@ -203,7 +215,9 @@ Disjunctive evidence ("someone came in from the terrace") is a later extension.
 - **Daily target** (CP-3, provisional): minimum questions 3–6 (preset `generator.DAILY`), question
   budget 12 since CP-6 (20 before), below the 15-question sweep of suspects × window. Both stay
   provisional until the playability gate passes; the oracle minimum understates human effort because
-  players do not know whom to ask about which slot.
+  players do not know whom to ask about which slot. Since D-031 the lower bound depends on the lie's
+  shape: 3 for occupied room and false companion, 2 for unreachable room, 1 for ruled out by evidence
+  (`generator.SHAPE_PARAMS`).
 
 ## 11. Review outcomes (2026-10-30)
 

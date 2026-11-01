@@ -150,15 +150,20 @@ Commands below use the package name `loosethread` (originally `alibi`; renamed b
     - 4a, done in code: budget 12 (provisional), a shorter opening (zh 73 → 52 lines), accusation
       hints, a separate message for an unreachable model, a message when input ends, and "did you
       go to X between A and B?" read as "when were you at X" (0/199 frozen items affected).
-    - 4b, plan approved (D-027), starts after playtest 3: four lie shapes drawn per case, two new
-      content packs with different maps; the writer's lines stay as they are.
+    - 4b, plan approved (D-027), done (D-031): four lie shapes drawn per case, two new content
+      packs with different maps; the writer's lines stay as they are.
   - Two AI role-play playtests of 4a (D-028; they do not count for the exit criterion or the gate):
     neither saw a contradiction hint in 12 questions; asking "where" cannot show the usual
     contradiction; a misread question was charged in both; follow-ups forget the time.
   - Fixes from those games (D-029, approved): "where" also names the company, answers with no case
     facts are free, follow-ups keep the time, the notebook grid bug, and a stated goal.
-  - Next, in the approved order: two new AI games as a regression check; 4b; the owner's own zh and
-    en games on new seeds. P3 only after the gate passes.
+  - Two more AI games (D-030; primed by their report questions, so they do not show the opening
+    works): both named a valid pair, ⚠ appeared in both. Small fixes from them.
+  - **4b done in code (D-031)**: the game draws one of four lie shapes per case and takes turns through
+    three settings. 300/300 cases pass the audit and the solver; existing seeds unchanged. The
+    shortcuts of D-027 are weakened, not gone. Every case still needs exactly one contradiction.
+  - Next: the owner's own zh and en games on new seeds (the exit criterion), then the gate. P3 only
+    after the gate passes.
 
 ## P3 — Evaluation study · `planned`
 

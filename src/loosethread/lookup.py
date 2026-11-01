@@ -6,9 +6,11 @@ same answer.
 
 Answer rules (DESIGN.md §5, §7):
 - a person's claimed location is the true one, except at their lie slots;
-- at a lie slot the liar claims to have been alone at the claimed location;
+- at a lie slot the liar claims to have been alone at the claimed location, or with the companion
+  the lie names;
 - at other slots a person reports exactly who shared their location (W3);
-- sightings of the item or of others are only reported for slots where the speaker tells the truth;
+- sightings of the item are only reported for slots where the speaker tells the truth, and sightings
+  of others for the people the speaker says were there;
 - hearsay is repeated as told, with its source.
 """
 
@@ -64,11 +66,16 @@ class AnswerBook:
                     raise ValueError(f"unsupported knowledge: {k!r}")
 
         self._lie_at: dict[tuple[PersonId, int], LocationId] = {}
+        self._lie_company: dict[tuple[PersonId, int], frozenset[PersonId]] = {}
         for lie in lies:
-            claim = lie.claim
-            if not isinstance(claim, PersonAt) or claim.person != lie.speaker:
-                raise ValueError("lies are claims about the liar's own location")
-            self._lie_at[(lie.speaker, claim.slot)] = claim.location
+            match lie.claim:
+                case PersonAt(person, location, slot) if person == lie.speaker:
+                    self._lie_company[(lie.speaker, slot)] = frozenset({lie.speaker})
+                case Occupants(location, slot, people) if lie.speaker in people:
+                    self._lie_company[(lie.speaker, slot)] = people
+                case _:
+                    raise ValueError("lies are claims about the liar's own location")
+            self._lie_at[(lie.speaker, slot)] = location
 
         for person in self._people:
             for t in range(self._n_slots):
@@ -91,11 +98,12 @@ class AnswerBook:
         where = self.claimed_location(person, slot)
         return Statement(person, PersonAt(person, where, SlotIndex(slot)), Basis.WITNESSED)
 
+    def _claimed_company(self, person: PersonId, slot: int) -> frozenset[PersonId]:
+        return self._lie_company.get((person, slot), self._occupants[(person, slot)])
+
     def _company(self, person: PersonId, slot: int) -> Statement:
         where = self.claimed_location(person, slot)
-        people = (
-            frozenset({person}) if self._lies_at(person, slot) else self._occupants[(person, slot)]
-        )
+        people = self._claimed_company(person, slot)
         return Statement(person, Occupants(where, SlotIndex(slot), people), Basis.WITNESSED)
 
     # --- Answers -------------------------------------------------------------------------------
@@ -138,7 +146,7 @@ class AnswerBook:
                 Basis.WITNESSED,
             )
             for t in range(self._n_slots)
-            if not self._lies_at(speaker, t) and other in self._occupants[(speaker, t)]
+            if other in self._claimed_company(speaker, t)
         ]
         heard = [
             Statement(speaker, fact, Basis.HEARSAY, source=source)

@@ -43,7 +43,7 @@ _LINES: dict[str, tuple[str, str]] = {
     "deny": ("这个我答不上来。", "I can't answer that."),
     "dont_know": ("这个我不清楚。", "I don't know."),
     "opinion": ("{p}？不熟，不好乱说。", "{p}? I don't know them well enough to say."),
-    "small_talk": ("是啊，这雨下得人心里发慌。", "Yes, this rain is getting on everyone's nerves."),
+    "small_talk": ("是啊，今晚谁心里都不踏实。", "Yes, nobody is easy in their mind tonight."),
     "out_of_scope": (
         "这种话我可接不了。要问就问具体的：几点、在哪、和谁。",
         "I can't help you with that. Ask me something specific: when, where, with whom.",

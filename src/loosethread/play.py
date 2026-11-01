@@ -1,7 +1,7 @@
 """Play a case in the terminal.
 
 python -m loosethread.play                      # today's case, Chinese, offline template backend
-python -m loosethread.play --seed 213 --lang en
+python -m loosethread.play --seed 213 --lang en  # the number picks the setting and the lie's shape
 python -m loosethread.play --hard               # no contradiction hints
 python -m loosethread.play --log session.jsonl  # per-turn log: questions, parses, lines, usage
 """
@@ -18,7 +18,7 @@ from typing import Any
 
 from loosethread.case import hang, render_notebook, render_rules, render_sheet, render_truth, rule
 from loosethread.game import DEFAULT_BUDGET, AccusationError, Game, Outcome, Turn
-from loosethread.generator import DAILY, generate
+from loosethread.generator import DAILY, daily_case, generate
 from loosethread.lexicon import normalize
 from loosethread.lines import TemplateWriter
 from loosethread.model import Lang, PersonId, Query, QueryKind, Stance, World
@@ -32,21 +32,22 @@ _UI: dict[str, tuple[str, str]] = {
         "怎么玩\n"
         "  目标：找出犯人，并拿出两条不能同时成立的记录，揭穿犯人的谎。\n"
         "  同一时段多问几个人，说法对不上时会亮 ⚠。\n"
-        "  提问：林小雨：你 21:15 在哪？（或用 @林小雨 开头；接着问同一个人直接输入）\n"
-        "  一次问一个人、一个时段。每问花 1 次；没听懂的、问过的、闲聊不花。\n"
+        "  提问：{name}：你 {time} 在哪？（或用 @{name} 开头；接着问同一个人直接输入）\n"
+        "  一次问一个人、一个时段。每问花 1 次；没听懂的、问过的、闲聊不花。问得越少，星越多。\n"
         "  指认：/指认 嫌疑人 编号 编号\n"
         "  其他命令：/笔记  /规则  /案情（人物、动机、全部规则）  /帮助  /退出",
         "How to play\n"
         "  Goal: name the culprit, with two items that cannot both be true, to expose their lie.\n"
         "  Ask several people about the same time; ⚠ shows when their stories clash.\n"
-        "  Ask:  Lin Xiaoyu: where were you at 21:15?  (or @Lin; then just type)\n"
+        "  Ask:  {name}: where were you at {time}?  (or @{name}; then just type)\n"
         "  One person, one time each. Costs 1; unclear questions, repeats, small talk: free.\n"
+        "  Fewer questions earn more stars.\n"
         "  Accuse: /accuse SUSPECT ID ID\n"
         "  Other commands: /notes  /rules  /case (the full sheet)  /help  /quit",
     ),
     "help": (
         "怎么玩\n"
-        "  向某人提问：林小雨：你 21:15 在哪？（也可以用 @林小雨 开头）\n"
+        "  向某人提问：{name}：你 {time} 在哪？（也可以用 @{name} 开头）\n"
         "  接着问同一个人：直接输入问题。\n"
         "  能问的：某个时段在哪、和谁在一起、见没见过某人、什么时候去过某处、见没见过失物。\n"
         "  一次问一个人、一个时段。每个问题花 1 次；没听懂的、问过的、闲聊和案情外的话不花。\n"
@@ -54,7 +55,7 @@ _UI: dict[str, tuple[str, str]] = {
         "其中一条是犯人的谎话。只能指认一次。\n"
         "  命令：/笔记  /规则  /案情  /指认  /帮助  /退出",
         "How to play\n"
-        "  Ask someone:  Lin Xiaoyu: where were you at 21:15?  (or start with @Lin)\n"
+        "  Ask someone:  {name}: where were you at {time}?  (or start with @{name})\n"
         "  Ask the same person again: just type the question.\n"
         "  You can ask: where they were at a time, who was with them, whether they saw someone,"
         " when they were somewhere, whether they saw the stolen item.\n"
@@ -66,8 +67,8 @@ _UI: dict[str, tuple[str, str]] = {
     ),
     "prompt": ("[还剩 {left} 问]{who}> ", "[{left} left]{who}> "),
     "no_addressee": (
-        "先说明问谁，比如：林小雨：你 21:15 在哪？",
-        "Say whom you are asking first, e.g.  Lin Xiaoyu: where were you at 21:15?",
+        "先说明问谁，比如：{name}：你 {time} 在哪？",
+        "Say whom you are asking first, e.g.  {name}: where were you at {time}?",
     ),
     "to": ("现在问的是：{name}", "Now asking: {name}"),
     "unknown_person": ("没有这个人：{name}", "No such person: {name}"),
@@ -85,6 +86,7 @@ _UI: dict[str, tuple[str, str]] = {
     "notes_title": ("笔记（已记 {n} 条说法）", "Notebook ({n} statements)"),
     "statements": ("说法（时间指时段开始，21:15 即 21:15–21:30）：", "Statements (slot starts):"),
     "notes_empty": ("还没有问到任何说法。", "No statements yet."),
+    "denials": ("否认过的（不能当指认的编号）：", "Denials (not usable as accusation ids):"),
     "hints": ("矛盾提示：", "Contradiction hints:"),
     "no_hints": ("目前没有发现不能同时成立的两条。", "No contradictions found yet."),
     "hard": ("（困难模式：不提示矛盾）", "(hard mode: no contradiction hints)"),
@@ -230,14 +232,21 @@ class Session:
         self.game, self.read, self.write, self.hints = game, read, write, hints
         self.lang = game.lang
         self.current: PersonId | None = None
-        self.names = {p.id: p.name.get(self.lang) for p in game.case.view.world.people}
+        view = game.case.view
+        self.names = {p.id: p.name.get(self.lang) for p in view.world.people}
+        # The help's example, in this case's own people and times. Neither says anything: the order
+        # of the people is drawn, and the window is on the sheet.
+        self.example = {
+            "name": next(self.names[p.id] for p in view.world.people if p.id in view.suspects),
+            "time": view.world.slots[view.crime.window[0]].label.split("–")[0],
+        }
 
     def say(self, key: str, **fields: object) -> None:
         self.write(_t(key, self.lang, **fields))
 
     def help(self, key: str = "help") -> None:
         lines: list[str] = []
-        for line in _t(key, self.lang).split("\n"):
+        for line in _t(key, self.lang, **self.example).split("\n"):
             body = line.lstrip()
             lines += hang(line[: len(line) - len(body)], body)
         self.write("\n".join(lines))
@@ -281,7 +290,7 @@ class Session:
         if addressee is not None:
             self.current = addressee
         if self.current is None:
-            self.say("no_addressee")
+            self.say("no_addressee", **self.example)
             return
         if not question.strip():
             self.say("to", name=self.names[self.current])
@@ -355,12 +364,16 @@ class Session:
         if not statements:
             self.write(rule(title))
             self.say("notes_empty")
+            if denials := self._denials():
+                self.write("\n".join(denials))
             return
         lines = render_notebook(nb.obtained_view(), self.lang, title=title, unknown="·")
         lines += ["", "  " + _t("statements", self.lang)]
         world = self.game.case.view.world
         for note_id, s in statements:
             lines += hang(f"  {note_id:<4}", describe(s, world, self.lang))
+        if denials := self._denials():
+            lines += ["", *denials]
         lines += ["", "  " + _t("hints", self.lang)]
         if not self.hints:
             lines.append("  " + _t("hard", self.lang))
@@ -370,6 +383,17 @@ class Session:
             lines.append("  " + _t("no_hints", self.lang))
         lines.append("  " + _t("evidence_ids", self.lang))
         self.write("\n".join(lines))
+
+    def _denials(self) -> list[str]:
+        """Answers that cost a question and hold no claim: paid for, so they stay on the page."""
+        denied = [t for t in self.game.turns if t.stance is Stance.DENY]
+        if not denied:
+            return []
+        colon = "：" if self.lang is Lang.ZH else ": "
+        lines = ["  " + _t("denials", self.lang)]
+        for turn in denied:
+            lines += hang(f"  · {self.names[turn.addressee]}{colon}", turn.line)
+        return lines
 
     def confirm(self, prompt: str) -> bool:
         try:
@@ -547,6 +571,11 @@ def main(
     parser.add_argument("--budget", type=int, default=DEFAULT_BUDGET)
     parser.add_argument("--log", type=Path, help="write a JSONL session log here")
     parser.add_argument(
+        "--classic",
+        action="store_true",
+        help="the case this number meant before step 4b: Mistpine Lodge, occupied-room lie",
+    )
+    parser.add_argument(
         "--backend",
         default="template",
         help="template (offline, default) or a model backend from llm/backends.toml"
@@ -557,7 +586,7 @@ def main(
     if write is print and isinstance(sys.stdout, io.TextIOWrapper):
         sys.stdout.reconfigure(encoding="utf-8")
 
-    case = generate(seed, DAILY).case
+    case = (generate(seed, DAILY) if args.classic else daily_case(seed)).case
     query_parser: QueryParser = RuleParser()
     writer: LineWriter = TemplateWriter()
     cost: Callable[[Usage], float] | None = None

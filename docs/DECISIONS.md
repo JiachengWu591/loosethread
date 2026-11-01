@@ -728,3 +728,110 @@ directly.
     `--score`. A re-run could differ only after the first sweep, where `where` questions now repeat
     or carry more.
 - **Open**: the regression games, step 4b, the owner's zh and en games, the gate.
+
+## D-030 — Two regression games with AI players; small fixes from them
+
+- **Date**: 2026-11-01 · **Type**: tactical (method, findings, fixes).
+- **Method**: as D-028, on commit `4be51ab`, frozen in a copy so step 4b could proceed: zh on case
+  20261104, en on case 20261105. Logs and transcripts: `docs/review/p2/agent-playtest-*`. CNY 0.12.
+- **What this cannot show**: all of D-028's limits apply. In addition **the players were primed**: the
+  report questions they read before playing asked about the goal and about ⚠, and the zh player
+  said this made it notice contradictions sooner. So these two games do not show that the new
+  opening worked. The cases are also different ones, so no comparison with D-028 is possible.
+- **Results, checked against the logs**:
+
+  | game | outcome | questions | ⚠ shown | free rephrases | misread and charged |
+  |---|---|---|---|---|---|
+  | zh 20261104 | solved ★ | 12/12 | 1, at the 11th question | 4 | 1 |
+  | en 20261105 | solved ★★★ | 5/12 | 2 | 1 | 0 |
+
+- **What they found**
+  - Both named a valid pair, the first time in six games, and in both the pair came straight from ⚠.
+  - The en player found the case too easy: ask about one time, copy the ids, settle who lies by asking
+    a third person. **Not changed**: it is one game, on a first guess at the right slot, and 4b's shapes
+    change exactly this.
+  - The zh player found the stars harsh: a clean solve in 12 questions earned ★ with no warning that
+    question count matters. The help now says so. The thresholds are unchanged.
+  - No follow-up inherited a time in either game, so these games say nothing about that fix. A live
+    run in D-031 covers the path.
+  - Star thresholds at budget 12 on 200 daily seeds are identical before and after D-029 (0/200 differ),
+    since the simulated player's first questions are all "with whom".
+- **Fixes**
+  - The help's example named Lin Xiaoyu even when the case had no such person; it now uses this case's
+    first suspect and the window's first slot. Both are public and say nothing.
+  - "那九点呢" and "and after that, around 9:20?" gave the model nothing but a time and came back as
+    "which time?" or "unclear" although the question names it. The game now answers for that time
+    (`parser.only_a_time`). A question that says anything else stays a free rephrase.
+  - "Where were you when the book went missing?" (three of the four AI games) now gets "which time?"
+    with no model call (`parser.asks_theft_time`). It is never read as a follow-up.
+  - The notebook's "at" row also reads witnessed sightings: a clue the zh player relied on, that the
+    culprit was in the corridor either side of the theft, was in the statements and not in the grid.
+  - Denials are listed in `/notes`, without ids: two players paid for one and could not find it again.
+- **A disclosure about the frozen set**: `asks_theft_time` touches one frozen test item, en186 "Where were
+  you when the watch went missing?", labelled `need_time`. All three parsers got it wrong when
+  measured. The rule was prompted by the playtests, but it now reads that item as labelled, after the
+  measurement. **The reported accuracies stay as measured** (rules 89.2%, DeepSeek 93.2%) and are not
+  re-measured or raised; a test pins that exactly this item is touched.
+- **Not fixed**: "你是老板,今晚你看见谁进书房了没" was read as "whether you saw 沈怀山", charged, with four
+  statements in reply. The echo showed the reading. "He" as a surname in the en notebook reads like a
+  pronoun. All characters speak alike, in both languages; the owner's view on zh stands (D-027).
+
+## D-031 — Step 4b: four lie shapes and two new settings
+
+- **Date**: 2026-11-01 · **Type**: strategic, approved in chat ("批准方案", then "好，先改再做 4b"); plan in D-027.
+  It reverses part of D-012 and CP-3, as approved: cases with an oracle minimum of 2 return. **One
+  thing goes beyond what the plan stated**: the evidence shape has an oracle minimum of 1, in all 77
+  such cases, which follows from its definition. See below.
+- **What changed**
+  - `generator.daily_case(seed)` is what the game plays: the setting by `seed % 3`, the shape drawn from
+    the seed. `generate(seed, DAILY)` is unchanged and `--classic` plays it. A case number therefore
+    means a different case in the game than before 4b.
+  - Shapes `EVIDENCE` and `COMPANION` join `OCCUPIED` and `UNREACHABLE` (DESIGN §5). The answer table
+    takes a lie with a named companion; the solver is unchanged.
+  - Packs `night_ferry` and `backstage`, with their own maps, eight suspects each, four items, evidence,
+    openings and hours. `PlayerView.pack_id` says which pack a case came from. Small talk no longer
+    mentions rain. All names are fictional.
+- **Checks, 300 game cases (seeds 0–299), offline**
+  - The truth-side audit and the independent solver accept 300/300 = 100.0% [98.7%, 100.0%]. Generation:
+    mean 0.085 s, p95 0.31 s, max 0.64 s. Shapes drawn: occupied 83, evidence 77, unreachable 74,
+    companion 66.
+  - Existing seeds: `generate(seed, DAILY)` gives identical cases before and after on 200 seeds, and a
+    test pins 10 of them, so the frozen set and the P1 numbers stay valid.
+  - Simulated player (`results/rows/simulated-player-game.jsonl`, 20 orders per case), median run per
+    case, budget 12. It asks in random order, so **it cannot show targeted play, and people may well
+    do these faster or slower**:
+
+    | shape | cases | oracle minimum, median | questions to solve, median | p90 | within 12 |
+    |---|---|---|---|---|---|
+    | occupied | 83 | 3 | 13 | 63 | 43.4% [33.2%, 54.1%] |
+    | companion | 66 | 3 | 10 | 12 | 90.9% [81.6%, 95.8%] |
+    | unreachable | 74 | 2 | 10 | 12 | 89.2% [80.1%, 94.4%] |
+    | evidence | 77 | 1 | 8 | 10 | 100.0% [95.2%, 100.0%] |
+
+  - Parser on the new names (`data/parser/settings-check.jsonl`, 36 plain questions labelled before
+    measuring, outside the frozen set): rules 36/36 and DeepSeek 36/36 = 100.0% [90.4%, 100.0%], CNY 0.17.
+    This shows the names are taken. It does not show how spoken questions read in the new settings.
+  - Live run of 20 turns in two new settings (`results/rows/live-deepseek-check-r3.jsonl`, CNY 0.13):
+    follow-ups, a switch of person, the false companion's ⚠, no-fact answers and refusals all behaved,
+    and the writer needed no fallback. One miss, "and after that, around 19:45?", read as unclear; fixed
+    by `only_a_time` and covered by a test, not re-run live.
+  - A test caught a real bug: the alias 过道 matched inside "去过道具间". It was removed.
+- **The shortcuts of D-027: weakened, not gone** (300 cases; classic → game)
+
+  | shortcut | classic | game |
+  |---|---|---|
+  | evidence near the window names the culprit | 0/300 | 77/300 = 25.7% [21.1%, 30.9%] |
+  | suspects that clears, mean of 4 | 1.80 | 1.41 |
+  | the culprit's lie says "alone" | 300/300 | 234/300 = 78.0% [73.0%, 82.3%] (truly alone: 36.8%) |
+  | commonest room right after the theft | corridor 100% | Mistpine corridor 100%, ferry stairwell 69%, theatre corridor 37% |
+
+- **What this does not fix**
+  - **Every one of the 300 cases still needs exactly one contradiction** (`contradictions_required`). The
+    shapes change which contradiction, not how many. That is the concern CP-4 raised.
+  - Mistpine's study still has one door, since changing it would change existing seeds.
+  - The evidence shape can be solved by one question to the right person. At least two other suspects
+    are placed near the window so the evidence does not point at one, but nothing yet shows whether
+    players find this too easy. If they do, the fix is to raise its lower bound or drop the shape.
+  - Whether the variety is felt, and whether any of this is fun: only the owner's games can say.
+- **Spending**: CNY 0.30 for 4b against the expected 1–2; about CNY 2.4 in total of the cap of 20.
+- **Open**: the owner's zh and en games on new seeds (the exit criterion), then the gate.

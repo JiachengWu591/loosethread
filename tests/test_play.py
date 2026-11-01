@@ -4,11 +4,14 @@ import json
 from collections.abc import Callable
 from pathlib import Path
 
+import pytest
+
 from loosethread.case import render_notebook
+from loosethread.content import load_pack
 from loosethread.game import Game
-from loosethread.generator import DAILY, generate
+from loosethread.generator import DAILY, PACKS, daily_case, generate
 from loosethread.lines import TemplateWriter
-from loosethread.model import Lang, Occupants
+from loosethread.model import Lang, Occupants, PersonAt, PersonId, Query, QueryKind
 from loosethread.npc import BackendUnavailable, ParseRequest, ParseResult
 from loosethread.parser import RuleParser
 from loosethread.play import Session, main
@@ -33,8 +36,9 @@ def _script(lines: list[str]) -> tuple[Callable[[str], str], list[str]]:
 
 
 def _run(argv: list[str], lines: list[str]) -> str:
+    """The case numbers below mean the classic cases, whose names the scripts rely on."""
     read, out = _script(lines)
-    assert main(argv, read=read, write=out.append) == 0
+    assert main(["--classic", *argv], read=read, write=out.append) == 0
     return "\n".join(out)
 
 
@@ -173,6 +177,77 @@ def test_the_opening_is_short_and_the_rest_is_one_command_away() -> None:
     assert "（输入结束，游戏退出。）" in text  # the script ran out: said, not silent
 
 
+def _play_game_case(seed: int, lang: str) -> str:
+    read, out = _script(["/quit", "y"])
+    assert main(["--seed", str(seed), "--lang", lang], read=read, write=out.append) == 0
+    return "\n".join(out)
+
+
+@pytest.mark.parametrize("lang", ["zh", "en"])
+@pytest.mark.parametrize("seed", [0, 1, 2])
+def test_each_number_opens_its_own_setting_and_the_help_uses_its_people(
+    seed: int, lang: str
+) -> None:
+    text = _play_game_case(seed, lang)
+    case = daily_case(seed).case
+    pack = load_pack(PACKS[seed % 3])
+    language = Lang(lang)
+    assert pack.setting.get(language) in text
+    assert pack.locations[0].name.get(language) in text  # the map
+    names = [p.name.get(language) for p in case.view.world.people if p.id in case.view.suspects]
+    start = case.view.world.slots[case.view.crime.window[0]].label.split("–")[0]
+    assert (
+        f"{names[0]}：你 {start} 在哪" in text or f"{names[0]}: where were you at {start}" in text
+    )
+    other = {
+        p.person.name.get(language) for e in PACKS if e != pack.id for p in load_pack(e).roster
+    }
+    assert not any(name in text for name in other)
+
+
+def test_a_game_case_plays_to_the_truth_in_any_setting() -> None:
+    for seed in (1, 2):
+        case = daily_case(seed).case
+        name = next(p.name.zh for p in case.view.world.people if p.id == case.truth.culprit)
+        read, out = _script([f"/指认 {name} E1 E2", "y"])
+        assert main(["--seed", str(seed)], read=read, write=out.append) == 0
+        text = "\n".join(out)
+        assert "─── 真相" in text
+        assert "人抓对了" in text
+
+
+def test_classic_keeps_the_old_case() -> None:
+    assert "雾松山庄" in _run(["--seed", "1"], ["/退出", "y"])
+
+
+def test_denials_stay_in_the_notes() -> None:
+    game = Game(CASE, RuleParser(), TemplateWriter(), Lang.ZH)
+    never = next(
+        loc
+        for loc in CASE.view.world.locations
+        if not game._book.answer(Query(QueryKind.WHEN, PersonId("lin"), location=loc.id)).claims
+    )
+    read, out = _script([f"林小雨：你什么时候去过{never.name.zh}？", "/笔记"])
+    Session(game, read, out.append).run()
+    text = "\n".join(out)
+    assert "否认过的（不能当指认的编号）：" in text
+    assert f"· 林小雨：我今晚没去过{never.name.zh}。" in text
+
+
+def test_the_notes_grid_shows_where_a_sighting_places_the_speaker() -> None:
+    game = Game(CASE, RuleParser(), TemplateWriter(), Lang.ZH)
+    lin = next(p for p in CASE.view.world.people if p.id == "lin")
+    game.ask(lin.id, "你今晚见过苏曼吗？")
+    statements = [s for _, s in game.notebook.statements]
+    assert statements
+    rooms = {x.id: x.name.zh for x in CASE.view.world.locations}
+    grid = render_notebook(game.notebook.obtained_view(), Lang.ZH, unknown="·")
+    row = next(line for line in grid if line.startswith(f"  {lin.name.zh}"))
+    for s in statements:
+        assert isinstance(s.claim, PersonAt)
+        assert rooms[s.claim.location] in row
+
+
 def test_a_name_and_a_space_address_that_person() -> None:
     text = _run(["--seed", "213"], ["沈怀山 21:15 你在哪？", "/退出", "y"])
     assert "[还剩 11 问] 沈怀山> " in text
@@ -222,7 +297,8 @@ def test_ctrl_c_keeps_the_log(tmp_path: Path) -> None:
             raise KeyboardInterrupt from None
 
     out: list[str] = []
-    assert main(["--seed", "213", "--log", str(log)], read=read, write=out.append) == 130
+    argv = ["--classic", "--seed", "213", "--log", str(log)]
+    assert main(argv, read=read, write=out.append) == 130
     assert out[-1] == "（已中断。）"
     rows = [json.loads(line) for line in log.read_text(encoding="utf-8").splitlines()]
     assert [r["type"] for r in rows] == ["turn", "summary"]

@@ -15,6 +15,8 @@ from loosethread.parser_eval import (
     INVALID,
     NEEDLESS,
     SET,
+    SETTINGS_SET,
+    SETTINGS_SHA256,
     Invalid,
     Outcome,
     classify,
@@ -110,6 +112,15 @@ def test_rule_run_writes_rows_once(tmp_path: Path) -> None:
     assert "accuracy 2/3" in report(rows, "rule")[0]
     with pytest.raises(SystemExit, match="measured once"):
         run("rule", "all", None, questions, rows_dir, frozen=sha256(questions))
+
+
+def test_settings_check_is_labelled_as_fixed_and_reads_back_with_rules() -> None:
+    assert sha256(ROOT / SETTINGS_SET) == SETTINGS_SHA256
+    items = load_items(ROOT / SETTINGS_SET)
+    assert {i.pack for i in items} == {"night_ferry", "backstage"}
+    rows = read_rows(ROOT / "results/rows/parser-rule-settings-check.jsonl")
+    assert score(rows, "guarded").correct == len(items)
+    assert all(i.pack == "mistpine" for i in load_items(ROOT / SET))
 
 
 def test_model_rows_keep_raw_and_guarded_outcomes(tmp_path: Path) -> None:
