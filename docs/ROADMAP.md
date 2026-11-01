@@ -155,8 +155,10 @@ Commands below use the package name `loosethread` (originally `alibi`; renamed b
   - Two AI role-play playtests of 4a (D-028; they do not count for the exit criterion or the gate):
     neither saw a contradiction hint in 12 questions; asking "where" cannot show the usual
     contradiction; a misread question was charged in both; follow-ups forget the time.
-  - Next: the owner decides on the changes from D-028; then 4b and the owner's own zh and en games.
-    P3 only after the gate passes.
+  - Fixes from those games (D-029, approved): "where" also names the company, answers with no case
+    facts are free, follow-ups keep the time, the notebook grid bug, and a stated goal.
+  - Next, in the approved order: two new AI games as a regression check; 4b; the owner's own zh and
+    en games on new seeds. P3 only after the gate passes.
 
 ## P3 — Evaluation study · `planned`
 

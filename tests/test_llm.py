@@ -25,7 +25,7 @@ from loosethread.llm.writer import LLMWriter, line_prompt
 from loosethread.lookup import AnswerBook
 from loosethread.model import Lang, LocationId, PersonId, Query, QueryKind, SlotIndex
 from loosethread.npc import BackendUnavailable, ClarifyReason, LineRequest, ParseRequest, Usage
-from loosethread.parser import RuleParser
+from loosethread.parser import RuleParser, without_lead_in
 from loosethread.parser_eval import SET, load_items
 
 CASE = generate(213, DAILY).case
@@ -155,9 +155,16 @@ def test_a_range_of_exactly_one_slot_reaches_the_model_as_its_start(
 
 
 def test_no_question_in_the_frozen_set_is_rewritten() -> None:
-    # The DeepSeek test measurement (D-025) predates the rewrite; it sent these same texts.
+    # The DeepSeek test measurement (D-025) predates the rewrites; it sent these same texts.
     for item in load_items(ROOT / SET):
         assert one_slot_ranges(item.question, LEX) == item.question, item.id
+        assert without_lead_in(item.question) == item.question, item.id
+
+
+def test_a_word_leading_in_to_the_time_does_not_reach_the_model() -> None:
+    sent = json.loads(parse_prompt(_request("and after that, around 9:20?"))[1])["question"]
+    assert "after" not in sent
+    assert "9:20" in sent
 
 
 @pytest.mark.parametrize(
@@ -288,7 +295,7 @@ def test_writer_payload_matches_the_template_request() -> None:
     game.ask(LIN, "Where were you at 9:15?")
     payload = json.loads(fake.prompts[0][1])
     assert payload["lang"] == "en"
-    assert payload["question"] == {"kind": "where", "time": "21:15 and 21:30"}
+    assert payload["question"] == {"kind": "with_whom", "time": "21:15 and 21:30"}
 
 
 def test_the_writer_sends_exactly_the_line_payload() -> None:

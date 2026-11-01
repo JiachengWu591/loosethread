@@ -22,7 +22,16 @@ from loosethread.model import (
     Stance,
     Tone,
 )
-from loosethread.npc import IRRITATED_AFTER, LineRequest, LineResult, ParseRequest, ParseResult
+from loosethread.npc import (
+    IRRITATED_AFTER,
+    BackendUnavailable,
+    ClarifyReason,
+    LineRequest,
+    LineResult,
+    ParseRequest,
+    ParseResult,
+    Usage,
+)
 from loosethread.parser import RuleParser, canonical_question
 from loosethread.solver import Solver
 
@@ -56,7 +65,10 @@ def test_plan_then_culprit_questions_solve_the_case(seed: int) -> None:
     game = _game(case, budget=60)
     plan = question_plan(case.view, Solver(case.view))[0]
     for query in plan:
-        assert _ask(game, query).query == query
+        asked = _ask(game, query).query
+        assert asked == (
+            replace(query, kind=QueryKind.WITH_WHOM) if query.kind is QueryKind.WHERE else query
+        )
     from_plan = bool(_exposing_pairs(game))
     # The oracle plan may rule suspects out by elimination alone. Then the lie has to be found:
     # the culprit's story for the window, and who else was in the rooms they name.
@@ -126,6 +138,138 @@ def test_clarifications_and_repeats_are_free() -> None:
     assert first.new_notes == ("S1",)
     assert again.new_notes == ()
     assert game.used == 1
+
+
+def test_where_is_answered_with_the_company_so_asking_who_after_it_is_free() -> None:
+    game = _game()
+    slot = VIEW.crime.window[0]
+    first = _ask(game, Query(QueryKind.WHERE, INNOCENT, slot=slot))
+    assert first.query == Query(QueryKind.WITH_WHOM, INNOCENT, slot=slot)
+    ((_, statement),) = game.notebook.statements
+    assert isinstance(statement.claim, Occupants)
+    again = _ask(game, Query(QueryKind.WITH_WHOM, INNOCENT, slot=slot))
+    assert (first.cost, again.cost, again.repeat, game.used) == (1, 0, True, 1)
+
+
+def test_the_culprit_lie_shows_on_a_where_question_alone() -> None:
+    """D-028: asking the liar and a witness "where" must raise the hint."""
+    for seed in (0, 3, 213):
+        case = generate(seed, DAILY).case
+        (lie, *_) = (x for x in case.truth.lies if x.statement.speaker == case.truth.culprit)
+        claim = lie.statement.claim
+        assert isinstance(claim, PersonAt)
+        game = _game(case, budget=60)
+        _ask(game, Query(QueryKind.WHERE, case.truth.culprit, slot=claim.slot))
+        witnesses = [
+            f.person
+            for f in case.truth.timeline
+            if f.slot == claim.slot and f.location == claim.location
+        ]
+        assert any(
+            _ask(game, Query(QueryKind.WHERE, w, slot=claim.slot)).new_conflicts for w in witnesses
+        )
+        assert _exposing_pairs(game)
+
+
+def test_answers_without_case_facts_are_free() -> None:
+    game = _game()
+    other = next(p for p in sorted(VIEW.suspects) if p != INNOCENT)
+    for query in (
+        Query(QueryKind.SMALL_TALK, INNOCENT),
+        Query(QueryKind.OUT_OF_SCOPE, INNOCENT),
+        Query(QueryKind.OPINION, INNOCENT, person=other),
+    ):
+        turn = _ask(game, query)
+        assert (turn.query, turn.cost, turn.repeat, turn.new_notes) == (query, 0, False, ())
+        assert turn.stance is Stance.DEFLECT
+    assert game.used == 0
+
+
+def test_a_denial_still_costs_a_question() -> None:
+    game = _game()
+    never = next(
+        loc.id
+        for loc in VIEW.world.locations
+        if not game._book.answer(Query(QueryKind.WHEN, INNOCENT, location=loc.id)).claims
+    )
+    turn = _ask(game, Query(QueryKind.WHEN, INNOCENT, location=never))
+    assert (turn.stance, turn.cost) == (Stance.DENY, 1)
+
+
+def test_a_follow_up_takes_the_time_just_discussed() -> None:
+    other = next(p for p in sorted(VIEW.suspects) if p != INNOCENT)
+    parser = _Recorder()
+    game = _game(parser=parser)
+    assert game.ask(INNOCENT, "你和谁在一起？").reason is ClarifyReason.NEED_TIME  # nothing yet
+    start = game.case.view.world.slots[VIEW.crime.window[0]].label.split("–")[0]
+    first = game.ask(INNOCENT, f"{start} 你在哪？")
+    same = game.ask(INNOCENT, "那你那会儿跟谁在一起？")
+    assert same.query == first.query
+    assert (same.cost, same.repeat) == (0, True)
+    assert parser.parses[-1].question == f"{start} 那你那会儿跟谁在一起？"
+    switched = game.ask(other, "你身边有谁？")  # the time carries over to the next person
+    assert switched.query == Query(QueryKind.WITH_WHOM, other, slot=VIEW.crime.window[0])
+    assert switched.cost == 1
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "后来你和谁在一起？",
+        "今晚你和谁在一起？",
+        "and who was with you after that?",
+        "21:00 之后你在哪？",
+    ],
+)
+def test_no_follow_up_for_relative_words_or_the_whole_evening(question: str) -> None:
+    parser = _Recorder()
+    game = _game(parser=parser)
+    game.ask(INNOCENT, "20:15 你在哪？")
+    asked = len(parser.parses)
+    turn = game.ask(INNOCENT, question)
+    assert (turn.reason, turn.cost) == (ClarifyReason.NEED_TIME, 0)
+    assert len(parser.parses) == asked + 1  # no second reading
+
+
+@dataclass
+class _NeedsTime:
+    """A parser that never reads a time, then answers `second` once a time is put in front."""
+
+    second: ParseResult | Exception
+
+    def parse(self, request: ParseRequest) -> ParseResult:
+        if request.question.startswith("20:15 "):
+            if isinstance(self.second, Exception):
+                raise self.second
+            return self.second
+        if request.question == "20:15":
+            slot = next(s.index for s in VIEW.world.slots if s.label.startswith("20:15"))
+            return ParseResult(Query(QueryKind.WHERE, request.addressee, slot=slot), usage=_ONE)
+        return ParseResult(None, ClarifyReason.NEED_TIME, _ONE)
+
+
+_ONE = Usage(calls=1)
+
+
+@pytest.mark.parametrize(
+    ("second", "reason", "problems", "calls"),
+    [
+        (ParseResult(None, ClarifyReason.UNCLEAR, _ONE), ClarifyReason.NEED_TIME, (), 2),
+        (BackendUnavailable("APITimeoutError"), ClarifyReason.UNAVAILABLE,
+         ("parser_unavailable:APITimeoutError",), 1),
+    ],
+)  # fmt: skip
+def test_a_second_reading_that_fails_stays_free(
+    second: ParseResult | Exception,
+    reason: ClarifyReason,
+    problems: tuple[str, ...],
+    calls: int,
+) -> None:
+    game = _game(parser=_NeedsTime(second))
+    game.ask(INNOCENT, "20:15")
+    turn = game.ask(INNOCENT, "那会儿呢？")
+    assert (turn.reason, turn.cost, turn.problems) == (reason, 0, problems)
+    assert turn.parse_usage.calls == calls
 
 
 def test_budget_runs_out() -> None:

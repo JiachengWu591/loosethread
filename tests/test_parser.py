@@ -8,7 +8,7 @@ from loosethread.lexicon import Lexicon, clock_times
 from loosethread.lookup import in_scope_queries
 from loosethread.model import Lang, LocationId, PersonId, Query, QueryKind, SlotIndex
 from loosethread.npc import ClarifyReason, ParseRequest
-from loosethread.parser import RuleParser, canonical_question
+from loosethread.parser import RuleParser, canonical_question, follows_up, without_lead_in
 
 CASE = generate(213, DAILY).case  # Lin, Zhou, Chen, Su, Zhao and the client Shen
 VIEW = CASE.view
@@ -136,6 +136,51 @@ def test_a_range_visit_to_one_place_reads_as_when(
     text: str, expected: Query | ClarifyReason
 ) -> None:
     assert _parse(text) == expected
+
+
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        # From the AI playtests (D-028): the word leads in to the time asked.
+        ("and after that, around 9:20?", Query(QueryKind.WHERE, LIN, slot=SlotIndex(5))),
+        ("where did you go after that? say 9:20", Query(QueryKind.WHERE, LIN, slot=SlotIndex(5))),
+        ("later, at 21:30, where were you?", Query(QueryKind.WHERE, LIN, slot=SlotIndex(6))),
+        ("然后 21:30 你在哪？", Query(QueryKind.WHERE, LIN, slot=SlotIndex(6))),
+        ("在那之后，九点半你和谁在一起？", Query(QueryKind.WITH_WHOM, LIN, slot=SlotIndex(6))),
+        # The word next to the time makes it an anchor: still "which time?".
+        ("after 9:20 where did you go?", ClarifyReason.NEED_TIME),
+        ("later than 9:20, where were you?", ClarifyReason.NEED_TIME),
+        ("before 21:30 where were you?", ClarifyReason.NEED_TIME),
+        ("21:00 之后你去哪了？", ClarifyReason.NEED_TIME),
+        ("at 9 you were in the kitchen. where did you go after that?", ClarifyReason.NEED_TIME),
+    ],
+)
+def test_a_relative_word_before_the_time_only_leads_in(
+    text: str, expected: Query | ClarifyReason
+) -> None:
+    assert _parse(text) == expected
+
+
+@pytest.mark.parametrize(
+    ("question", "expected"),
+    [
+        ("那你那会儿跟谁在一起", True),
+        ("and were you by yourself there?", True),
+        ("did you see anyone else in the lobby?", True),
+        ("后来你和谁在一起", False),
+        ("who was with you after that?", False),
+        ("今晚你都在哪", False),
+        ("where were you tonight?", False),
+        ("9:20 之后你在哪", False),
+    ],
+)
+def test_follows_up(question: str, expected: bool) -> None:
+    assert follows_up(question, LEX) is expected
+
+
+def test_without_lead_in_leaves_other_questions_as_typed() -> None:
+    assert without_lead_in("Ｗhere were you?") == "Ｗhere were you?"
+    assert without_lead_in("after 9:20，where?") == "after 9:20，where?"
 
 
 def test_asking_someone_about_themselves_drops_their_name() -> None:

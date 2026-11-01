@@ -230,7 +230,17 @@ def _evening(hour: int, minute: int) -> int:
 
 
 def clock_times(text: str) -> tuple[int, ...]:
-    norm = normalize(text)
+    return tuple(minute for _, minute in _clock_readings(normalize(text)))
+
+
+def first_time_at(norm: str) -> int | None:
+    """Where the first clock time starts in normalised text, if it names one."""
+    readings = _clock_readings(norm)
+    return readings[0][0] if readings else None
+
+
+def _clock_readings(norm: str) -> list[tuple[int, int]]:
+    """(position, minute) of every clock time in normalised text, in reading order."""
     found: list[tuple[int, int]] = []  # (position, minute)
     taken = [False] * len(norm)
     for kind, pattern in _PATTERNS:
@@ -243,7 +253,7 @@ def clock_times(text: str) -> tuple[int, ...]:
             for i in range(m.start(), m.end()):
                 taken[i] = True
             found.append((m.start(), minute))
-    return tuple(minute for _, minute in sorted(found))
+    return sorted(found)
 
 
 def _reading(kind: str, m: re.Match[str]) -> int | None:

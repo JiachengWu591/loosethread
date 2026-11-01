@@ -8,6 +8,10 @@ Fail closed: a parser that raises, or returns a query for someone else or with u
 yields "please rephrase" at no cost. A parser model that cannot be reached yields a free "ask
 again" that says so, without calling the writer. A writer that raises, returns nothing, or names
 anything its facts do not authorise is replaced by the template line; the turn records why.
+
+Three rules of the session itself (D-029): "where were you" is answered as "where, and with whom";
+an answer with no case facts is free; a question that needs a time and names none takes the time
+just discussed, when it has no relative word.
 """
 
 from dataclasses import dataclass, field, replace
@@ -27,6 +31,8 @@ from loosethread.model import (
     PersonAt,
     PersonId,
     Query,
+    QueryKind,
+    SlotIndex,
     Stance,
     Statement,
     Tone,
@@ -44,11 +50,14 @@ from loosethread.npc import (
     Usage,
     tone_for,
 )
+from loosethread.parser import follows_up
 from loosethread.solver import Solver
 
 # CP-6 (D-027): below the 15-question sweep of every daily case; provisional until the next
 # playtest. CP-3 had 20.
 DEFAULT_BUDGET = 12
+# Answers that state no case facts cost nothing (D-029; DESIGN §11 item 3 charged them).
+_NO_FACTS = frozenset({QueryKind.OPINION, QueryKind.SMALL_TALK, QueryKind.OUT_OF_SCOPE})
 
 
 class GameOver(RuntimeError):
@@ -139,6 +148,7 @@ class Game:
         self._asked: dict[PersonId, int] = {}
         self._queries: set[Query] = set()
         self._people = {p.id: p for p in view.world.people}
+        self._last_slot: SlotIndex | None = None  # the time just discussed, with anyone
 
     @property
     def left(self) -> int:
@@ -163,7 +173,9 @@ class Game:
         else:
             line, line_usage = self._write(request, problems)
 
-        cost = 1 if query is not None and not repeat else 0
+        cost = 1 if query is not None and not repeat and query.kind not in _NO_FACTS else 0
+        if query is not None and query.slot is not None:
+            self._last_slot = query.slot
         before = set(self.notebook.conflicts())
         new_notes: tuple[str, ...] = ()
         if query is not None and cost:
@@ -191,22 +203,52 @@ class Game:
         self.turns.append(turn)
         return turn
 
+    def _read(self, addressee: PersonId, question: str, problems: list[str]) -> ParseResult:
+        try:
+            return self.parser.parse(ParseRequest(question, addressee, self.lexicon))
+        except BackendUnavailable as exc:
+            problems.append(f"parser_unavailable:{exc.cause}")
+            return ParseResult(None, ClarifyReason.UNAVAILABLE)
+        except BackendError as exc:
+            problems.append(f"parser_invalid:{exc.detail}")
+            return ParseResult(None, ClarifyReason.UNCLEAR, exc.usage)
+        except Exception as exc:  # fail closed: any backend failure means "please rephrase"
+            problems.append(f"parser_error:{type(exc).__name__}")
+            return ParseResult(None, ClarifyReason.UNCLEAR)
+
+    def _with_last_slot(
+        self, addressee: PersonId, question: str, first: ParseResult, problems: list[str]
+    ) -> ParseResult:
+        """Read a question that named no time again, at the time just discussed; a second model
+        call, and the prompt's rules stay as they are. Keeps "which time?" if that reads no better.
+        """
+        assert self._last_slot is not None
+        start = self.case.view.world.slots[self._last_slot].label.split("–")[0]
+        again = self._read(addressee, f"{start} {question}", problems)
+        usage = first.usage + again.usage
+        if again.reason is ClarifyReason.UNAVAILABLE:
+            return replace(again, usage=usage)
+        if again.query is None or again.query.slot != self._last_slot:
+            return replace(first, usage=usage)
+        return replace(again, usage=usage)
+
     def _understand(
         self, addressee: PersonId, question: str, problems: list[str]
     ) -> tuple[ParseResult, AllowedFacts]:
         unclear = ParseResult(None, ClarifyReason.UNCLEAR)
-        try:
-            parsed = self.parser.parse(ParseRequest(question, addressee, self.lexicon))
-        except BackendUnavailable as exc:
-            problems.append(f"parser_unavailable:{exc.cause}")
-            parsed = ParseResult(None, ClarifyReason.UNAVAILABLE)
-        except BackendError as exc:
-            problems.append(f"parser_invalid:{exc.detail}")
-            parsed = replace(unclear, usage=exc.usage)
-        except Exception as exc:  # fail closed: any backend failure means "please rephrase"
-            problems.append(f"parser_error:{type(exc).__name__}")
-            parsed = unclear
+        parsed = self._read(addressee, question, problems)
+        if (
+            parsed.reason is ClarifyReason.NEED_TIME
+            and self._last_slot is not None
+            and follows_up(question, self.lexicon)
+        ):
+            parsed = self._with_last_slot(addressee, question, parsed, problems)
         query = parsed.query
+        if query is not None and query.kind is QueryKind.WHERE:
+            # The usual contradiction needs the company, and "where" is what players ask first:
+            # half of the questions in two AI playtests (D-028).
+            query = replace(query, kind=QueryKind.WITH_WHOM)
+            parsed = replace(parsed, query=query)
         if query is not None and query.addressee != addressee:
             problems.append("parser_wrong_addressee")
             parsed = replace(unclear, usage=parsed.usage)

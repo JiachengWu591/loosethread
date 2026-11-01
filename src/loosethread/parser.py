@@ -9,12 +9,13 @@ names one slot; "20:15–21:00" spans three), and a time next to a relative word
 "after") is an anchor, not the time asked about. Both cases ask the player to rephrase, because a
 first-time guess charges the player for an answer to a question they did not ask (P2 playtest).
 One range is read instead: "did you go to <place> between 21:00 and 21:45?" asks "when were you
-at <place>", whose answer covers the whole range (`visited_place`, D-027).
+at <place>", whose answer covers the whole range (`visited_place`, D-027). A relative word before
+the time only leads in to it ("and after that, around 9:20?"), so it is not an anchor (D-029).
 """
 
 import re
 
-from loosethread.lexicon import EntityKind, Lexicon, normalize
+from loosethread.lexicon import EntityKind, Lexicon, first_time_at, normalize
 from loosethread.model import (
     ItemId,
     Lang,
@@ -69,6 +70,18 @@ _RELATIVE = _keywords(
     "after", "afterwards", "before", "later", "earlier", "previous", "prior", "next slot",
     "next quarter",
 )  # fmt: skip
+# Relative words that can stand before the time asked. "after 9:20" and "later than 9:20" are not
+# here: there the time is an anchor. In Chinese the anchor's word follows the time (21:00 之后).
+_LEAD_IN = re.compile(
+    _keywords(
+        "之后", "以后", "后来", "然后", "接着", "随后", "之前", "以前",
+        "after that", "after this", "afterwards", "afterward", "before that",
+    ).pattern
+    + r"|(?<![a-z])(?:later|earlier)(?![a-z])(?! than)"
+)  # fmt: skip
+_WHOLE_EVENING = _keywords(
+    "今晚", "今天晚上", "整晚", "一晚上", "tonight", "this evening", "all evening", "all night",
+)  # fmt: skip
 _VISIT = _keywords(
     "去过", "到过", "进过", "来过", "进入", "有没有去", "去没去", "进没进",
     "been to", "been in", "go to", "went to", "go into", "went into", "enter", "entered", "visit",
@@ -98,6 +111,15 @@ def _slots(times: tuple[int, ...], lex: Lexicon) -> list[SlotIndex | None]:
     return slots
 
 
+def without_lead_in(question: str) -> str:
+    """`question` without the relative words that lead in to its first clock time, or as typed."""
+    norm = normalize(question)
+    at = first_time_at(norm)
+    if at is None or not _LEAD_IN.search(norm[:at]):
+        return question
+    return _LEAD_IN.sub(" ", norm[:at]) + norm[at:]
+
+
 def time_reading(question: str, lex: Lexicon) -> SlotIndex | ClarifyReason | None:
     """The one slot a question's clock times name, a reason to clarify, or None if it names none."""
     slots = _slots(lex.times(question), lex)
@@ -107,9 +129,19 @@ def time_reading(question: str, lex: Lexicon) -> SlotIndex | ClarifyReason | Non
         return ClarifyReason.BAD_TIME
     if len(set(slots)) > 1:
         return ClarifyReason.ONE_SLOT
-    if _RELATIVE.search(lex.without_names(question)):
+    if _RELATIVE.search(lex.without_names(without_lead_in(question))):
         return ClarifyReason.NEED_TIME
     return slots[0]
+
+
+def follows_up(question: str, lex: Lexicon) -> bool:
+    """Whether a question that needs a time may take the one just discussed.
+
+    Not when it names a clock time, has a relative word ("后来呢" asks about another time) or asks
+    about the whole evening.
+    """
+    rest = lex.without_names(question)
+    return not (lex.times(question) or _RELATIVE.search(rest) or _WHOLE_EVENING.search(rest))
 
 
 def asks_company(question: str, lex: Lexicon) -> bool:

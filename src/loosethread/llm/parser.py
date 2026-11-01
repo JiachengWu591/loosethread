@@ -15,6 +15,8 @@ a range that is exactly one slot ("20:15-20:30") reaches the model as its start 
 "where" reading of a question that also asks who was there becomes "with whom", whose answer
 names the place too. A third (D-027): "did you go to <place> between 21:00 and 21:45?" is read as
 "when were you at <place>" before any call (`parser.visited_place`), as the rule parser reads it.
+A fourth (D-029): a relative word that only leads in to the time ("and after that, around 9:20?")
+does not reach the model, whose rules read any relative word as "no time named".
 """
 
 import json
@@ -33,7 +35,7 @@ from loosethread.model import (
     query_fields,
 )
 from loosethread.npc import BackendError, ClarifyReason, ParseRequest, ParseResult
-from loosethread.parser import asks_company, time_reading, visited_place
+from loosethread.parser import asks_company, time_reading, visited_place, without_lead_in
 
 SYSTEM = """\
 You turn a detective's question to one character in a mystery game into one JSON object. Never \
@@ -142,7 +144,7 @@ def parse_prompt(request: ParseRequest) -> tuple[str, str]:
         "items": listed(EntityKind.ITEM),
         "evening": {"from": _clock(start), "to": _clock(end)},
         "examples": examples(request),
-        "question": one_slot_ranges(request.question, lex),
+        "question": one_slot_ranges(without_lead_in(request.question), lex),
     }
     return SYSTEM, json.dumps(data, ensure_ascii=False)
 

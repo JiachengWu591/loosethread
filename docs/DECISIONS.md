@@ -688,3 +688,43 @@ directly.
 - **Disagreement, no change**: both players called the lines report-like, and the owner said of the zh
   lines "挺好的，就这样". The owner's judgement stands. The owner has not seen the en lines yet.
 - **Open**: nothing here is changed. The owner's en game (exit criterion) and the gate stay open.
+
+## D-029 — Fixes from the AI playtests: "where" names the company, no-fact answers are free
+
+- **Date**: 2026-11-01 · **Type**: strategic for two rule changes, tactical for the rest. Approved by the
+  owner in chat ("好，先改再做 4b"), including the order: these fixes, two new AI games as a regression
+  check, step 4b, then the owner's own zh and en games on new seeds. The owner's next game therefore
+  comes after 4b; the exit criterion is not lowered.
+- **Rule changes**
+  - **"Where" is answered as "where, and with whom"**, in the game loop: the parser's `where` query
+    becomes `with_whom` before the lookup. Asking both for one slot now costs 1. The answer table,
+    solver, `in_scope_queries` and metrics are unchanged. The echo now says "在哪、和谁在一起".
+  - **Answers with no case facts are free** (small talk, opinion, out of scope), with no cap. This
+    reverses DESIGN §11 item 3. Denials still cost 1: "I was never in the study" is information. Each
+    such turn with a model backend still costs real money, as free rephrases already did.
+- **Tactical changes**
+  - **Follow-ups**: on `need_time`, if a slot was named earlier (to anyone) and the question has no
+    clock time, relative word or whole-evening word (`parser.follows_up`), the game reads it again with
+    that slot's start in front. This is a second model call for those questions, chosen so the
+    measured prompt stays as it is. If the second reading has no query at that slot, the player gets
+    "which time?" and pays nothing.
+  - **Lead-in words**: a relative word before the first clock time no longer makes it an anchor ("and
+    after that, around 9:20?"; `parser.without_lead_in`), and is removed from what the model sees.
+    "after 9:20", "later than 9:20" and "21:00 之后" stay refused.
+  - A name and a space address that person ("周大川 八点半你在厨房吗"). An English word after the name
+    must be a question word, so "Lin was with you at 9?" still asks the current person about Lin.
+  - The notebook's "at" row also reads "with whom" answers (the bug in D-028).
+  - The opening states the goal and that ⚠ appears when stories clash, and how long a slot is. The
+    result no longer mentions simulated players; DESIGN §9 still documents the rule.
+- **Checks and what they cannot show**
+  - `without_lead_in` changes 0/199 frozen items (now a test), and follow-ups live in the game loop,
+    so the parser accuracies of D-022 and D-025 stand. **Neither follow-ups nor lead-ins were measured
+    against a labelled set**: only the phrasings tested and the AI games' examples are covered, and a
+    follow-up can still be misread and charged ("你去过哪" right after another question). The answer
+    states the slot, so such a misreading is visible, not prevented.
+  - New test: on three seeds, asking the culprit and a witness "where" about the lie's slot raises ⚠.
+    It shows the hint can fire, not that players will ask those two people.
+  - The rows in `results/rows/simulated-player.jsonl` predate this change and still reproduce CP-5 with
+    `--score`. A re-run could differ only after the first sweep, where `where` questions now repeat
+    or carry more.
+- **Open**: the regression games, step 4b, the owner's zh and en games, the gate.

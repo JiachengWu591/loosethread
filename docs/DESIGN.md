@@ -130,8 +130,15 @@ Disjunctive evidence ("someone came in from the terrace") is a later extension.
   this only makes the solver more conservative than a player.
 - Hearsay ("B told me B was in the tea room at 20:30") appears in answers about B and is repeated
   exactly as B tells it, lies included (T5).
-- **Budget**: every successfully parsed question costs 1. Parse failures (the NPC asks for
-  clarification) and exact repeats of an earlier query cost 0 (the answer is already in the notebook).
+- **Budget**: every successfully parsed question that can state case facts costs 1, denials included.
+  Parse failures (the NPC asks for clarification), exact repeats of an earlier query (the answer is
+  already in the notebook), and small talk, opinions and out-of-scope questions cost 0 (D-029).
+- **In play, "where" is answered as "where, and with whom"** (D-029): the game turns a `where` query
+  into `with_whom`, so that answer shows the usual contradiction and asking both costs 1. The answer
+  table keeps both kinds, and the solver and metrics still see them.
+- **Follow-ups** (D-029): a question that needs a time and names none takes the slot of the last
+  question that named one, with anyone, unless it has a relative word ("后来呢") or asks about the
+  whole evening. The answer states the slot, so a wrong reading is visible.
 - Evidence and the notebook are free to consult.
 
 ## 8. Notebook and contradiction hints
@@ -208,7 +215,8 @@ after the P2 playtest.
 2. **Evidence**: full case file at the start. Deferred: searchable rooms where each search costs a
    question.
 3. **Question costs**: opinion and small talk cost 1 like factual questions; parse failures and exact
-   repeats are free. Deferred: free small talk with a cap.
+   repeats are free. Deferred: free small talk with a cap. **Reversed by D-029**: answers with no case
+   facts are free, with no cap.
 4. **Contradiction hints**: on by default; off in hard mode.
 5. **Accusation proof**: exposing any lie of the culprit is enough; it need not concern the window.
 6. **Accusations**: one per case. Deferred: two attempts.

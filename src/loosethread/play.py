@@ -30,14 +30,18 @@ _UI: dict[str, tuple[str, str]] = {
     # The opening screen shows the short help, /help the full one (CP-6: less at once).
     "help_short": (
         "怎么玩\n"
+        "  目标：找出犯人，并拿出两条不能同时成立的记录，揭穿犯人的谎。\n"
+        "  同一时段多问几个人，说法对不上时会亮 ⚠。\n"
         "  提问：林小雨：你 21:15 在哪？（或用 @林小雨 开头；接着问同一个人直接输入）\n"
-        "  一次问一个人、一个时段。每问花 1 次，没听懂的和问过的不花。\n"
-        "  指认：/指认 嫌疑人 编号 编号，两个编号是不能同时成立的两条（⚠ 会提示）。\n"
+        "  一次问一个人、一个时段。每问花 1 次；没听懂的、问过的、闲聊不花。\n"
+        "  指认：/指认 嫌疑人 编号 编号\n"
         "  其他命令：/笔记  /规则  /案情（人物、动机、全部规则）  /帮助  /退出",
         "How to play\n"
+        "  Goal: name the culprit, with two items that cannot both be true, to expose their lie.\n"
+        "  Ask several people about the same time; ⚠ shows when their stories clash.\n"
         "  Ask:  Lin Xiaoyu: where were you at 21:15?  (or @Lin; then just type)\n"
-        "  One person, one time each. Costs 1; unclear questions and repeats are free.\n"
-        "  Accuse: /accuse SUSPECT ID ID: two items that cannot both be true (⚠ hints).\n"
+        "  One person, one time each. Costs 1; unclear questions, repeats, small talk: free.\n"
+        "  Accuse: /accuse SUSPECT ID ID\n"
         "  Other commands: /notes  /rules  /case (the full sheet)  /help  /quit",
     ),
     "help": (
@@ -45,7 +49,7 @@ _UI: dict[str, tuple[str, str]] = {
         "  向某人提问：林小雨：你 21:15 在哪？（也可以用 @林小雨 开头）\n"
         "  接着问同一个人：直接输入问题。\n"
         "  能问的：某个时段在哪、和谁在一起、见没见过某人、什么时候去过某处、见没见过失物。\n"
-        "  一次问一个人、一个时段。每个问题花 1 次；没听懂的和问过的不花。\n"
+        "  一次问一个人、一个时段。每个问题花 1 次；没听懂的、问过的、闲聊和案情外的话不花。\n"
         "  指认：/指认 嫌疑人 编号 编号。两个编号取自笔记（S）或证物（E），是不能同时成立的两条，"
         "其中一条是犯人的谎话。只能指认一次。\n"
         "  命令：/笔记  /规则  /案情  /指认  /帮助  /退出",
@@ -54,8 +58,8 @@ _UI: dict[str, tuple[str, str]] = {
         "  Ask the same person again: just type the question.\n"
         "  You can ask: where they were at a time, who was with them, whether they saw someone,"
         " when they were somewhere, whether they saw the stolen item.\n"
-        "  One person and one time per question. Each costs 1; questions not understood and"
-        " repeats are free.\n"
+        "  One person and one time per question. Each costs 1; questions not understood, repeats,"
+        " small talk and anything outside the case are free.\n"
         "  Accuse: /accuse SUSPECT ID ID. The ids come from your notebook (S) or the evidence (E):"
         " two items that cannot both be true, one of them the culprit's lie. One accusation only.\n"
         "  Commands: /notes  /rules  /case  /accuse  /help  /quit",
@@ -73,6 +77,7 @@ _UI: dict[str, tuple[str, str]] = {
         "(could not reach the model; free, please ask again)",
     ),
     "free_repeat": ("（按“{q}”算问过了，不计次数）", "(read as “{q}”, asked before; free)"),
+    "free_no_facts": ("（按“{q}”算，不计次数）", "(read as “{q}”; free)"),
     "noted": ("→ 按“{q}”记入笔记：{ids}", "→ read as “{q}”; noted: {ids}"),
     "nothing_new": ("→ 按“{q}”回答，没有新说法", "→ read as “{q}”; nothing new"),
     "answered": ("→ 按“{q}”回答", "→ read as “{q}”"),
@@ -140,16 +145,12 @@ _UI: dict[str, tuple[str, str]] = {
         "You used {used}/{budget} questions; this case can be solved in {min}.",
     ),
     "stars_rule": (
-        "（本案：★★★ 不超过 {three} 问，★★ 不超过 {two} 问，★ 其余。"
-        "标准来自 20 名挨个盘问的模拟玩家：★★★ 相当于其中最快的四分之一，★★ 相当于中位数。）",
-        "(This case: ★★★ within {three} questions, ★★ within {two}, ★ otherwise. Set by 20"
-        " simulated players who question everyone in turn: ★★★ matches their fastest quarter,"
-        " ★★ their median.)",
+        "（本案：★★★ 不超过 {three} 问，★★ 不超过 {two} 问，★ 其余。）",
+        "(This case: ★★★ within {three} questions, ★★ within {two}, ★ otherwise.)",
     ),
     "stars_rule_all": (
-        "（本案：在 {budget} 问内破案即得 ★★★；挨个盘问的模拟玩家多数要超过 {budget} 问。）",
-        "(This case: any solve within {budget} questions earns ★★★; most simulated players who"
-        " question everyone in turn need more.)",
+        "（本案：在 {budget} 问内破案即得 ★★★。）",
+        "(This case: any solve within {budget} questions earns ★★★.)",
     ),
     "quit_confirm": ("确定退出吗？不会揭晓真相。(y/n) ", "Quit without seeing the truth? (y/n) "),
     "bye": ("再见。", "Goodbye."),
@@ -162,7 +163,7 @@ _UI: dict[str, tuple[str, str]] = {
 _READ_AS: dict[QueryKind, tuple[str, str]] = {
     QueryKind.WHERE: ("{who} {t} 在哪", "where {who} was at {t}"),
     QueryKind.WHEN: ("{who}什么时候在{loc}", "when {who} was in the {loc}"),
-    QueryKind.WITH_WHOM: ("{t} 谁和{who}在一起", "who was with {who} at {t}"),
+    QueryKind.WITH_WHOM: ("{who} {t} 在哪、和谁在一起", "where {who} was at {t}, and with whom"),
     QueryKind.SAW_PERSON: ("{who}今晚见没见过{p}", "whether {who} saw {p} tonight"),
     QueryKind.ABOUT_ITEM: ("{who}见没见过{item}", "whether {who} saw the {item}"),
     QueryKind.OPINION: ("{who}怎么看{p}", "what {who} thinks of {p}"),
@@ -182,11 +183,23 @@ _COMMANDS: dict[str, str] = {
 }  # fmt: skip
 
 _SEPARATORS = ":,;"  # after a name; NFKC turns full-width ：，； into these
+_ASKING = frozenset(
+    {"where", "who", "whom", "what", "when", "were", "did", "do", "have", "are", "tell"}
+)
 
 
 def _t(key: str, lang: Lang, **fields: object) -> str:
     zh, en = _UI[key]
     return (zh if lang is Lang.ZH else en).format(**fields)
+
+
+def _asks_after_name(rest: str) -> bool:
+    """A name, a space and a question address that person. An English word must be a question word:
+    "Lin was with you at 9?" asks the current person about Lin."""
+    words = rest.split(maxsplit=1)
+    if not rest.startswith(" ") or not words:
+        return False
+    return not (words[0].isascii() and words[0].isalpha()) or words[0] in _ASKING
 
 
 def read_as(query: Query, world: World, lang: Lang) -> str:
@@ -259,7 +272,7 @@ class Session:
         body = norm[1:].lstrip() if at else norm
         for alias, pid in self.game.lexicon.people_by_alias():
             rest = body[len(alias) :]
-            if body.startswith(alias) and (at or rest[:1] in _SEPARATORS):
+            if body.startswith(alias) and (at or rest[:1] in _SEPARATORS or _asks_after_name(rest)):
                 return PersonId(pid), rest.lstrip(_SEPARATORS + " ")
         return None, text
 
@@ -288,6 +301,8 @@ class Session:
         q = read_as(turn.query, self.game.case.view.world, self.lang)
         if turn.repeat:
             self.say("free_repeat", q=q)
+        elif not turn.cost:
+            self.say("free_no_facts", q=q)
         elif turn.new_notes:
             sep = "、" if self.lang is Lang.ZH else ", "
             self.say("noted", q=q, ids=sep.join(turn.new_notes))

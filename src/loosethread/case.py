@@ -48,7 +48,10 @@ _UI: dict[str, tuple[str, str]] = {
     "f_seen": ("最后确认还在", "Last seen"),
     "f_found": ("发现失窃", "Found missing"),
     "f_window": ("作案时间窗", "Theft window"),
-    "f_window_v": ("{start}–{end}，共 {n} 个时段", "{start}–{end}, {n} slots"),
+    "f_window_v": (
+        "{start}–{end}，共 {n} 个时段（每段 {m} 分钟）",
+        "{start}–{end}, {n} slots of {m} minutes",
+    ),
     "people": ("在场的人", "Who was there"),
     "suspect_head": ("◆ {name} · {role}", "◆ {name} · {role}"),
     "client_head": (
@@ -345,12 +348,14 @@ def render_sheet(view: PlayerView, lang: Lang, full: bool = True) -> list[str]:
 
     out.append(rule(_t("facts", lang)))
     end = nm.slot[window[-1]].label.split("–")[1]
+    length = world.slots[0].end_minute - world.slots[0].start_minute
+    span = _t("f_window_v", lang, start=nm.time(window[0]), end=end, n=len(window), m=length)
     facts = [
         ("f_item", _t("f_item_v", lang, item=item.name.get(lang), owner=nm.person[client.id])),
         ("f_scene", nm.loc[crime.location]),
         ("f_seen", nm.slot[crime.last_seen].label),
         ("f_found", nm.slot[crime.discovered].label),
-        ("f_window", _t("f_window_v", lang, start=nm.time(window[0]), end=end, n=len(window))),
+        ("f_window", span),
     ]
     label_w = max(display_width(_t(key, lang)) for key, _ in facts) + 2
     out += [f"  {_fit(_t(key, lang), label_w)}{value}" for key, value in facts]
@@ -423,7 +428,8 @@ def _testimony_block(view: PlayerView, nm: _Names, unknown: str = "?") -> list[s
         at = {
             int(s.claim.slot): nm.loc[s.claim.location]
             for s in stmts
-            if isinstance(s.claim, PersonAt) and s.claim.person == person.id
+            if (isinstance(s.claim, PersonAt) and s.claim.person == person.id)
+            or isinstance(s.claim, Occupants)  # "in the kitchen with Lin" says where, too
         }
         company = {
             int(s.claim.slot): s.claim.people - {person.id}
