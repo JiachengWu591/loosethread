@@ -623,5 +623,22 @@ directly.
 - **Checks**: `visited_place` matches 0/199 frozen items and no recorded reply says "unavailable", so
   the parser accuracies of D-022 and D-025 are unaffected. The tests cover behaviour only: nothing
   here shows that the game is more fun, that 12 suits a human player, or that the hints are understood.
-- **Open**: the English game (a P2 exit criterion), the gate, and the plan for step 4b.
+- **Step 4b plan, approved by the owner** (chat: "批准方案", 2026-11-01); work starts after playtest 3:
+  - Deduction: four lie shapes, one drawn per case: an occupied room (today's); a room the culprit's
+    own story cannot reach (`AlibiStyle.UNREACHABLE`, off since D-012); evidence that places the
+    culprit where the claimed room cannot be reached (new, and it removes the evidence shortcut
+    above); a named companion who denies it (new).
+  - **This reverses part of D-012 and CP-3**: most unreachable cases have an oracle minimum of 2, which
+    the daily preset excluded. Measured on 100 seeds: unreachable only, all 100 have minimum 2 at the
+    generator's defaults; with the option pool merged, 70% of cases draw it, so shapes will be drawn
+    per case, about a quarter each. The simulated player's median is 10 questions against 12, but it
+    asks in random order and cannot show targeted play, so people may well solve these faster.
+  - Setting: two new content packs (provisionally a night ferry and a theatre backstage, fictional)
+    with their own maps, people, items, evidence and openings in zh and en, and scenes with more
+    than one door, rotated with Mistpine.
+  - Checks: the independent solver accepts every case; difficulty and simulated-player figures for
+    each shape; existing seeds unchanged, so the frozen set and the P1 numbers stay valid. Parser
+    accuracy on the new names is not covered by the frozen set: a small live check, reported as such.
+  - Expected spend CNY 1–2, about CNY 3–4 in total of the cap of 20.
+- **Open**: the English game (a P2 exit criterion) and the gate.
   Known 苏曼 refusal (D-026) unchanged.

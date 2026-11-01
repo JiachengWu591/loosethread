@@ -150,8 +150,8 @@ Commands below use the package name `loosethread` (originally `alibi`; renamed b
     - 4a, done in code: budget 12 (provisional), a shorter opening (zh 73 → 52 lines), accusation
       hints, a separate message for an unreachable model, a message when input ends, and "did you
       go to X between A and B?" read as "when were you at X" (0/199 frozen items affected).
-    - 4b, planned: more variety in both the setting and the deduction (the owner's answer,
-      D-027); the writer's lines stay as they are.
+    - 4b, plan approved (D-027), starts after playtest 3: four lie shapes drawn per case, two new
+      content packs with different maps; the writer's lines stay as they are.
   - Next: the owner's playtest 3 (zh and en, budget 12), then 4b, then a further playtest; P3 only
     after the gate passes.
 
