@@ -27,7 +27,7 @@ starting points; P1 metrics and the P2 playtest will tune them.
 | Time slots | 6–10 | 8 slots × 15 min, 20:00–22:00 |
 | Theft window | 2–4 slots | 3 |
 | Evidence items | 4–8 | 6 |
-| Question budget | 12–30 | 20 |
+| Question budget | 12–30 | 12 (CP-6, provisional; 20 before) |
 
 Default map (the terrace is the optional 8th location):
 
@@ -149,6 +149,9 @@ Disjunctive evidence ("someone came in from the terrace") is a later extension.
 - One accusation per case. The player names a suspect **and attaches one contradiction**: a pair of
   notebook items that cannot both be true, one of which is a statement by the accused.
 - The player must accuse when the budget runs out (or may accuse earlier).
+- In normal mode the accusation names the notebook's conflicts that involve the cited items: when
+  only one id is given, and when the pair does not conflict (CP-6). Hard mode names none. A conflict
+  says only that one of two people lies, not which.
 
 | Outcome | Condition | Mark |
 |---|---|---|
@@ -191,8 +194,9 @@ Disjunctive evidence ("someone came in from the terrace") is a later extension.
   (plus evidence) make the solution unique — exact up to 2, an upper bound above that (CP-1); inference
   steps (irreducible statement sets that rule out each innocent).
 - **Daily target** (CP-3, provisional): minimum questions 3–6 (preset `generator.DAILY`), question
-  budget 20. Both are set for real after the P2 playtest; the oracle minimum understates human effort
-  because players do not know whom to ask about which slot.
+  budget 12 since CP-6 (20 before), below the 15-question sweep of suspects × window. Both stay
+  provisional until the playability gate passes; the oracle minimum understates human effort because
+  players do not know whom to ask about which slot.
 
 ## 11. Review outcomes (2026-10-30)
 

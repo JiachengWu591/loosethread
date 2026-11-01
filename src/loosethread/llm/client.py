@@ -10,12 +10,15 @@ import time
 from dataclasses import dataclass
 from typing import Protocol
 
-from openai import OpenAI
+from openai import APIConnectionError, InternalServerError, OpenAI, RateLimitError
 from openai.types.chat import ChatCompletionMessageParam
 from openai.types.shared_params import ResponseFormatJSONObject, ResponseFormatText
 
 from loosethread.llm.config import Backend, load_backends
-from loosethread.npc import Usage
+from loosethread.npc import BackendUnavailable, Usage
+
+# Failures to reach the model, after the client's own retries (timeouts are connection errors).
+_UNREACHABLE = (APIConnectionError, RateLimitError, InternalServerError)
 
 
 @dataclass(frozen=True)
@@ -27,7 +30,8 @@ class Completion:
 
 class ChatModel(Protocol):
     def complete(self, system: str, user: str, *, json_mode: bool, max_tokens: int) -> Completion:
-        """One chat turn. Raises on transport or provider errors."""
+        """One chat turn. Raises `BackendUnavailable` if the model cannot be reached, and other
+        exceptions on other provider errors."""
         ...
 
 
@@ -69,14 +73,17 @@ class OpenAIChat:
         fmt = {"type": "json_object"} if json_mode else {"type": "text"}
         thinking = self.backend.thinking
         start = time.perf_counter()
-        response = self._client.chat.completions.create(
-            model=self.backend.model,
-            messages=messages,
-            temperature=self.temperature,  # DeepSeek ignores it while thinking
-            max_tokens=max_tokens + self.backend.reasoning_tokens,
-            response_format=fmt,
-            extra_body={"thinking": {"type": thinking}} if thinking else None,
-        )
+        try:
+            response = self._client.chat.completions.create(
+                model=self.backend.model,
+                messages=messages,
+                temperature=self.temperature,  # DeepSeek ignores it while thinking
+                max_tokens=max_tokens + self.backend.reasoning_tokens,
+                response_format=fmt,
+                extra_body={"thinking": {"type": thinking}} if thinking else None,
+            )
+        except _UNREACHABLE as exc:
+            raise BackendUnavailable(type(exc).__name__) from None
         seconds = time.perf_counter() - start
         choice = response.choices[0]
         used = response.usage

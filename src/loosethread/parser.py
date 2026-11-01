@@ -8,6 +8,8 @@ Times are read strictly: every clock time in the question must fall in one slot 
 names one slot; "20:15–21:00" spans three), and a time next to a relative word ("之后",
 "after") is an anchor, not the time asked about. Both cases ask the player to rephrase, because a
 first-time guess charges the player for an answer to a question they did not ask (P2 playtest).
+One range is read instead: "did you go to <place> between 21:00 and 21:45?" asks "when were you
+at <place>", whose answer covers the whole range (`visited_place`, D-027).
 """
 
 import re
@@ -67,6 +69,11 @@ _RELATIVE = _keywords(
     "after", "afterwards", "before", "later", "earlier", "previous", "prior", "next slot",
     "next quarter",
 )  # fmt: skip
+_VISIT = _keywords(
+    "去过", "到过", "进过", "来过", "进入", "有没有去", "去没去", "进没进",
+    "been to", "been in", "go to", "went to", "go into", "went into", "enter", "entered", "visit",
+    "visited", "set foot in",
+)  # fmt: skip
 _SMALL_TALK = _keywords(
     "你好", "您好", "晚上好", "雨", "天气", "吃了", "累", "谢谢", "辛苦", "冷",
     "hello", "hi", "hey", "good evening", "weather", "rain", "how are you", "thank", "thanks",
@@ -108,6 +115,25 @@ def time_reading(question: str, lex: Lexicon) -> SlotIndex | ClarifyReason | Non
 def asks_company(question: str, lex: Lexicon) -> bool:
     """Whether the question asks who was with the addressee (company words outside names)."""
     return _COMPANY.search(lex.without_names(question)) is not None
+
+
+def visited_place(question: str, addressee: str, lex: Lexicon) -> LocationId | None:
+    """The place in "did you go to <place> between 21:00 and 21:45?", else None.
+
+    Only for a question whose times span several slots, with a visit word, exactly one place, no
+    other person, no item and no company words: "did you see anyone go into the study between
+    ...?" still asks to rephrase.
+    """
+    if time_reading(question, lex) is not ClarifyReason.ONE_SLOT:
+        return None
+    named = {(m.kind, m.id) for m in lex.mentions(question) if m.id != addressee}
+    if len(named) != 1:
+        return None
+    ((kind, place),) = named
+    rest = lex.without_names(question)
+    if kind is not EntityKind.LOCATION or not _VISIT.search(rest) or _COMPANY.search(rest):
+        return None
+    return LocationId(place)
 
 
 _CANONICAL: dict[QueryKind, tuple[str, str]] = {
@@ -182,7 +208,8 @@ class RuleParser:
         if person is not None and reading is None and _OPINION.search(rest):
             return ok(QueryKind.OPINION, person=person)
         if isinstance(reading, ClarifyReason):
-            return clarify(reading)
+            place = visited_place(text, me, lex)
+            return clarify(reading) if place is None else ok(QueryKind.WHEN, location=place)
         if _COMPANY.search(rest):
             if slot is None:
                 return clarify(ClarifyReason.NEED_TIME)

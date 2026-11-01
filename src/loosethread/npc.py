@@ -44,12 +44,24 @@ class BackendError(RuntimeError):
         self.detail, self.usage = detail, usage
 
 
+class BackendUnavailable(RuntimeError):
+    """The model could not be reached: network, timeout, rate limit or server error.
+
+    `cause` is the exception type only, because provider messages may echo part of the key.
+    """
+
+    def __init__(self, cause: str) -> None:
+        super().__init__(cause)
+        self.cause = cause
+
+
 class ClarifyReason(Enum):
     UNCLEAR = "unclear"  # no question shape recognised
     NEED_TIME = "need_time"  # the question needs a time and has none, or only a relative one
     BAD_TIME = "bad_time"  # the time is outside the evening
     ONE_SLOT = "one_slot"  # the times span more than one slot
     TWO_PEOPLE = "two_people"  # more than one other person named
+    UNAVAILABLE = "unavailable"  # the parser model could not be reached; never a reading
 
 
 @dataclass(frozen=True)

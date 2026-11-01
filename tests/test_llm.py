@@ -24,7 +24,7 @@ from loosethread.llm.parser import (
 from loosethread.llm.writer import LLMWriter, line_prompt
 from loosethread.lookup import AnswerBook
 from loosethread.model import Lang, LocationId, PersonId, Query, QueryKind, SlotIndex
-from loosethread.npc import ClarifyReason, LineRequest, ParseRequest, Usage
+from loosethread.npc import BackendUnavailable, ClarifyReason, LineRequest, ParseRequest, Usage
 from loosethread.parser import RuleParser
 from loosethread.parser_eval import SET, load_items
 
@@ -120,6 +120,7 @@ def test_read_reply_accepts_valid_replies(reply: str, expected: Query | ClarifyR
         ("Lin was in the lobby.", "not_json"),
         ("[1, 2]", "not_object"),
         ('{"clarify": "maybe"}', "bad_reason"),
+        ('{"clarify": "unavailable"}', "bad_reason"),  # the game's own reason, not a reading
         ('{"kind": "who_did_it"}', "bad_kind"),
         ('{"kind": "where", "time": "9pm"}', "bad_time_format"),
         ('{"kind": "where", "time": 21}', "bad_time_format"),
@@ -230,6 +231,40 @@ def test_a_cut_off_parse_is_refused_even_if_it_reads() -> None:
     assert (turn.cost, turn.problems, turn.parse_usage) == (0, ("parser_invalid:too_long",), USED)
 
 
+def test_a_range_visit_to_one_place_is_read_in_code_without_a_call() -> None:
+    fake = _Fake([])
+    got = LLMParser(fake).parse(_request("21:00–21:45之间你有没有去过书房?"))
+    assert got.query == Query(QueryKind.WHEN, LIN, location=LocationId("study"))
+    assert (got.usage, fake.prompts) == (Usage(), [])
+
+
+@dataclass
+class _Down:
+    """A model that cannot be reached."""
+
+    calls: int = 0
+
+    def complete(self, system: str, user: str, *, json_mode: bool, max_tokens: int) -> Completion:
+        self.calls += 1
+        raise BackendUnavailable("APIConnectionError")
+
+
+def test_an_unreachable_model_costs_nothing_and_skips_the_writer() -> None:
+    down = _Down()
+    game = Game(CASE, LLMParser(down), LLMWriter(down), Lang.ZH)
+    turn = game.ask(LIN, "你 21:15 在哪？")
+    assert (turn.cost, turn.reason) == (0, ClarifyReason.UNAVAILABLE)
+    assert turn.problems == ("parser_unavailable:APIConnectionError",)
+    assert (down.calls, turn.line) == (1, "抱歉，刚才没听清，你再问一遍？")
+
+
+def test_an_unreachable_writer_falls_back_to_the_template() -> None:
+    game = Game(CASE, RuleParser(), LLMWriter(_Down()), Lang.ZH)
+    turn = game.ask(LIN, "这雨下得真大")
+    assert turn.problems == ("writer_unavailable:APIConnectionError",)
+    assert turn.line == "是啊，这雨下得人心里发慌。"
+
+
 # --- Writer --------------------------------------------------------------------------------------
 
 
@@ -334,6 +369,15 @@ def test_config_rejects_an_unknown_thinking_mode(tmp_path: Path) -> None:
     )
     with pytest.raises(ValueError, match="bad thinking setting"):
         load_backends(bad)
+
+
+def test_a_server_that_cannot_be_reached_raises_backend_unavailable() -> None:
+    # Port 9 (discard) is closed on ordinary machines: refused or timed out, unreachable either way.
+    model = OpenAIChat(_backend(base_url="http://127.0.0.1:9/v1", timeout=0.5, max_retries=0))
+    with pytest.raises(BackendUnavailable) as raised:
+        model.complete("s", "u", json_mode=True, max_tokens=8)
+    assert raised.value.cause in {"APIConnectionError", "APITimeoutError"}
+    assert raised.value.__cause__ is None  # the provider's message is not carried along
 
 
 def test_an_unserved_model_is_refused(monkeypatch: pytest.MonkeyPatch) -> None:

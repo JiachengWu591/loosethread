@@ -28,8 +28,8 @@ from loosethread.content import load_pack
 from loosethread.generator import DAILY, generate
 from loosethread.lexicon import Lexicon
 from loosethread.model import ItemId, LocationId, PersonId, Query, QueryKind, SlotIndex
-from loosethread.npc import ClarifyReason, ParseRequest, Usage
-from loosethread.parser import RuleParser
+from loosethread.npc import BackendUnavailable, ClarifyReason, ParseRequest, Usage
+from loosethread.parser import RuleParser, visited_place
 from loosethread.stats import mcnemar_exact, wilson
 
 if TYPE_CHECKING:
@@ -247,11 +247,17 @@ def model_parse(backend: str) -> tuple[Parse, "Backend"]:
     model = open_model(backend)
 
     def parse(request: ParseRequest) -> tuple[Outcome, Outcome, str | None, Usage]:
+        if (
+            place := visited_place(request.question, request.addressee, request.lexicon)
+        ) is not None:
+            read = Query(QueryKind.WHEN, request.addressee, location=place)  # as `LLMParser`
+            return read, read, None, Usage()
         system, user = parse_prompt(request)
         try:
             reply = model.complete(system, user, json_mode=True, max_tokens=120)
         except Exception as exc:  # record the type only: messages may echo the key
-            failed = Invalid(f"call_error:{type(exc).__name__}")
+            cause = exc.cause if isinstance(exc, BackendUnavailable) else type(exc).__name__
+            failed = Invalid(f"call_error:{cause}")
             return failed, failed, None, Usage(calls=1)
         if reply.finish_reason == "length":
             cut = Invalid("too_long")

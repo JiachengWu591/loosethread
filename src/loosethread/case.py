@@ -57,8 +57,15 @@ _UI: dict[str, tuple[str, str]] = {
     ),
     "persona": ("印象：{text}", "Impression: {text}"),
     "motive": ("动机：{text}", "Motive: {text}"),
+    "suspects_short": ("嫌疑人：{people}", "Suspects: {people}"),
+    "person_short": ("{name}（{role}）", "{name} ({role})"),
+    "client_short": (
+        "失主：{name}（{role}），不是嫌疑人。",
+        "Owner: {name} ({role}), not a suspect.",
+    ),
     "map": ("山庄地图", "Map"),
     "rules": ("推理规则", "Rules"),
+    "key_rules": ("推理要点", "Key rules"),
     "evidence": (
         "证物（一定为真；[ ] 内是它所属的时段）",
         "Evidence (always true; [ ] = the slot it belongs to)",
@@ -135,6 +142,22 @@ _RULES: tuple[tuple[str, str], ...] = (
     (
         "“听说”如实转述原话，可信度等同于说原话的人。",
         "Hearsay repeats exactly what the source said, and is as reliable as the source.",
+    ),
+)
+# The opening screen's short form of the rules above (CP-6: the full sheet was too much at once).
+_KEY_RULES: tuple[tuple[str, str], ...] = (
+    (
+        "犯人在作案时间窗内，至少有一个时段独自待在现场。",
+        "During the theft window the culprit was alone at the scene for at least one slot.",
+    ),
+    (
+        "无辜者在作案时间窗内从不说谎；证物一定为真。",
+        "Innocent people never lie about the theft window; evidence is always true.",
+    ),
+    (
+        "同一时段同处一室的人一定互相看见；相邻时段之间只能原地不动或沿地图连线走一步。",
+        "People in the same room in the same slot see each other; between slots a person stays"
+        " put or moves one step along a map line.",
     ),
 )
 
@@ -286,8 +309,19 @@ def render_case(case: Case, lang: Lang = Lang.ZH, show_truth: bool = True) -> st
     return "\n".join(out)
 
 
-def render_sheet(view: PlayerView, lang: Lang) -> list[str]:
-    """Banner, story, case facts, people, map, rules and evidence; ends with a blank line."""
+def render_rules(lang: Lang) -> list[str]:
+    out = [rule(_t("rules", lang))]
+    for i, (zh, en) in enumerate(_RULES, 1):
+        out += hang(f"  {i}. ", zh if lang is Lang.ZH else en)
+    return out
+
+
+def render_sheet(view: PlayerView, lang: Lang, full: bool = True) -> list[str]:
+    """Banner, story, case facts, people, map, rules and evidence; ends with a blank line.
+
+    `full=False` is the opening screen: people without impressions and motives, and the key
+    rules instead of all of them.
+    """
     world = view.world
     nm = _Names(world, lang)
     pack = load_pack()
@@ -323,13 +357,25 @@ def render_sheet(view: PlayerView, lang: Lang) -> list[str]:
     out.append("")
 
     out.append(rule(_t("people", lang)))
-    motives = {m.person: m.reason.get(lang) for m in view.motives}
-    for p in [*(p for p in world.people if p.id in view.suspects), client]:
-        head = "suspect_head" if p.id in view.suspects else "client_head"
-        out.append("  " + _t(head, lang, name=nm.person[p.id], role=p.role.get(lang)))
-        out += hang("    ", _t("persona", lang, text=p.persona.get(lang)))
-        if p.id in motives:
-            out += hang("    ", _t("motive", lang, text=motives[p.id]))
+    suspects = [p for p in world.people if p.id in view.suspects]
+    if full:
+        motives = {m.person: m.reason.get(lang) for m in view.motives}
+        for p in [*suspects, client]:
+            head = "suspect_head" if p.id in view.suspects else "client_head"
+            out.append("  " + _t(head, lang, name=nm.person[p.id], role=p.role.get(lang)))
+            out += hang("    ", _t("persona", lang, text=p.persona.get(lang)))
+            if p.id in motives:
+                out += hang("    ", _t("motive", lang, text=motives[p.id]))
+    else:
+        short = [
+            _t("person_short", lang, name=nm.person[p.id], role=p.role.get(lang)) for p in suspects
+        ]
+        out += hang(
+            "  ", _t("suspects_short", lang, people=("、" if lang is Lang.ZH else ", ").join(short))
+        )
+        out += hang(
+            "  ", _t("client_short", lang, name=nm.person[client.id], role=client.role.get(lang))
+        )
     out.append("")
 
     out.append(rule(_t("map", lang)))
@@ -337,9 +383,12 @@ def render_sheet(view: PlayerView, lang: Lang) -> list[str]:
     out += ["  " + line for line in pack.map_picture(lang, present).split("\n")]
     out.append("")
 
-    out.append(rule(_t("rules", lang)))
-    for i, (zh, en) in enumerate(_RULES, 1):
-        out += hang(f"  {i}. ", zh if lang is Lang.ZH else en)
+    if full:
+        out += render_rules(lang)
+    else:
+        out.append(rule(_t("key_rules", lang)))
+        for zh, en in _KEY_RULES:
+            out += hang("  · ", zh if lang is Lang.ZH else en)
     out.append("")
 
     out.append(rule(_t("evidence", lang)))

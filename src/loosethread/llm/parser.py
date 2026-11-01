@@ -13,7 +13,8 @@ time the question does not name, is not trusted with the player's question budge
 Two more decisions are made in code, not by the model (D-026, from the owner's playtest phrasing):
 a range that is exactly one slot ("20:15-20:30") reaches the model as its start time, and a
 "where" reading of a question that also asks who was there becomes "with whom", whose answer
-names the place too.
+names the place too. A third (D-027): "did you go to <place> between 21:00 and 21:45?" is read as
+"when were you at <place>" before any call (`parser.visited_place`), as the rule parser reads it.
 """
 
 import json
@@ -32,7 +33,7 @@ from loosethread.model import (
     query_fields,
 )
 from loosethread.npc import BackendError, ClarifyReason, ParseRequest, ParseResult
-from loosethread.parser import asks_company, time_reading
+from loosethread.parser import asks_company, time_reading, visited_place
 
 SYSTEM = """\
 You turn a detective's question to one character in a mystery game into one JSON object. Never \
@@ -184,9 +185,12 @@ def read_reply(text: str, request: ParseRequest) -> Query | ClarifyReason:
         reply = {"kind": reply["clarify"]}  # a kind given as a reason means that kind
     if "clarify" in reply:
         try:
-            return ClarifyReason(reply["clarify"])
+            reason = ClarifyReason(reply["clarify"])
         except ValueError:
             raise ValueError("bad_reason") from None
+        if reason is ClarifyReason.UNAVAILABLE:  # the game's own reason, not a reading
+            raise ValueError("bad_reason")
+        return reason
     try:
         kind = QueryKind(reply.get("kind"))
     except ValueError:
@@ -243,6 +247,10 @@ class LLMParser:
     max_tokens: int = 120
 
     def parse(self, request: ParseRequest) -> ParseResult:
+        if (
+            place := visited_place(request.question, request.addressee, request.lexicon)
+        ) is not None:
+            return ParseResult(Query(QueryKind.WHEN, request.addressee, location=place))
         system, user = parse_prompt(request)
         reply = self.model.complete(system, user, json_mode=True, max_tokens=self.max_tokens)
         if reply.finish_reason == "length":

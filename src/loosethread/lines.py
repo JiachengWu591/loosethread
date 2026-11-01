@@ -66,6 +66,7 @@ _LINES: dict[str, tuple[str, str]] = {
         "一次问一个人吧，你说的是哪一位？",
         "One person at a time, please. Whom do you mean?",
     ),
+    "unavailable": ("抱歉，刚才没听清，你再问一遍？", "Sorry, I didn't catch that. Ask me again?"),
     "repeat": ("刚才说过了：", "As I said: "),
 }  # fmt: skip
 

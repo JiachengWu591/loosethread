@@ -14,7 +14,7 @@ CASE = generate(213, DAILY).case  # Lin, Zhou, Chen, Su, Zhao and the client She
 VIEW = CASE.view
 LEX = Lexicon.build(VIEW.world, VIEW.crime, load_pack())
 LIN, ZHOU, CHEN, SHEN = PersonId("lin"), PersonId("zhou"), PersonId("chen"), PersonId("shen")
-KITCHEN = LocationId("kitchen")
+KITCHEN, STUDY = LocationId("kitchen"), LocationId("study")
 
 
 def _parse(text: str, to: PersonId = LIN) -> Query | ClarifyReason:
@@ -93,7 +93,8 @@ def test_question_shapes(text: str, expected: Query | ClarifyReason) -> None:
             "20:34 你在厨房留字条时，身边有没有其他人？",
             Query(QueryKind.WITH_WHOM, LIN, slot=SlotIndex(2)),
         ),
-        ("20:15–21:00 之间，你有没有单独去过书房？", ClarifyReason.ONE_SLOT),
+        # Read as "when were you in the study" since the second playtest (D-027).
+        ("20:15–21:00 之间，你有没有单独去过书房？", Query(QueryKind.WHEN, LIN, location=STUDY)),
         ("20:15–21:00，你有没有看到谁独自进入书房？", ClarifyReason.ONE_SLOT),
         ("20:15–20:30、20:30–20:45、20:45–21:00 这三段你分别在哪？", ClarifyReason.ONE_SLOT),
         # A range that names exactly one slot is one slot.
@@ -107,6 +108,33 @@ def test_question_shapes(text: str, expected: Query | ClarifyReason) -> None:
     ],
 )
 def test_times_must_name_one_slot(text: str, expected: Query | ClarifyReason) -> None:
+    assert _parse(text) == expected
+
+
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        ("21:00–21:45之间你有没有去过书房?", Query(QueryKind.WHEN, LIN, location=STUDY)),
+        (
+            "Did you go to the study between 21:00 and 21:45?",
+            Query(QueryKind.WHEN, LIN, location=STUDY),
+        ),
+        ("八点半到九点你进过厨房吗", Query(QueryKind.WHEN, LIN, location=KITCHEN)),
+        ("林小雨，21:00 到 21:45 你去没去过书房？", Query(QueryKind.WHEN, LIN, location=STUDY)),
+        # Not a visit by the addressee alone: still one slot at a time.
+        ("21:00 到 21:45 你都在书房吗？", ClarifyReason.ONE_SLOT),
+        ("21:00–21:45 你有没有看见周大川去书房？", ClarifyReason.ONE_SLOT),
+        ("21:00–21:45 有谁和你一起去过书房？", ClarifyReason.ONE_SLOT),
+        ("21:00–21:45 你去过书房和厨房吗？", ClarifyReason.ONE_SLOT),
+        ("Where were you between 21:00 and 21:45?", ClarifyReason.ONE_SLOT),
+        # One slot, or a relative time: not this rule.
+        ("21:00 你去过书房吗？", Query(QueryKind.WHERE, LIN, slot=SlotIndex(4))),
+        ("21:00 之后你去过书房吗？", ClarifyReason.NEED_TIME),
+    ],
+)
+def test_a_range_visit_to_one_place_reads_as_when(
+    text: str, expected: Query | ClarifyReason
+) -> None:
     assert _parse(text) == expected
 
 

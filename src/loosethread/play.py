@@ -16,24 +16,39 @@ from datetime import date
 from pathlib import Path
 from typing import Any
 
-from loosethread.case import hang, render_notebook, render_sheet, render_truth, rule
-from loosethread.game import AccusationError, Game, Outcome, Turn
+from loosethread.case import hang, render_notebook, render_rules, render_sheet, render_truth, rule
+from loosethread.game import DEFAULT_BUDGET, AccusationError, Game, Outcome, Turn
 from loosethread.generator import DAILY, generate
 from loosethread.lexicon import normalize
 from loosethread.lines import TemplateWriter
 from loosethread.model import Lang, PersonId, Query, QueryKind, Stance, World
 from loosethread.notebook import describe
-from loosethread.npc import LineWriter, QueryParser, Usage
+from loosethread.npc import ClarifyReason, LineWriter, QueryParser, Usage
 from loosethread.parser import RuleParser
 
 _UI: dict[str, tuple[str, str]] = {
+    # The opening screen shows the short help, /help the full one (CP-6: less at once).
+    "help_short": (
+        "怎么玩\n"
+        "  提问：林小雨：你 21:15 在哪？（或用 @林小雨 开头；接着问同一个人直接输入）\n"
+        "  一次问一个人、一个时段。每问花 1 次，没听懂的和问过的不花。\n"
+        "  指认：/指认 嫌疑人 编号 编号，两个编号是不能同时成立的两条（⚠ 会提示）。\n"
+        "  其他命令：/笔记  /规则  /案情（人物、动机、全部规则）  /帮助  /退出",
+        "How to play\n"
+        "  Ask:  Lin Xiaoyu: where were you at 21:15?  (or @Lin; then just type)\n"
+        "  One person, one time each. Costs 1; unclear questions and repeats are free.\n"
+        "  Accuse: /accuse SUSPECT ID ID: two items that cannot both be true (⚠ hints).\n"
+        "  Other commands: /notes  /rules  /case (the full sheet)  /help  /quit",
+    ),
     "help": (
         "怎么玩\n"
         "  向某人提问：林小雨：你 21:15 在哪？（也可以用 @林小雨 开头）\n"
         "  接着问同一个人：直接输入问题。\n"
         "  能问的：某个时段在哪、和谁在一起、见没见过某人、什么时候去过某处、见没见过失物。\n"
         "  一次问一个人、一个时段。每个问题花 1 次；没听懂的和问过的不花。\n"
-        "  命令：/笔记  /案情  /指认 嫌疑人 编号 编号（例：/指认 陈墨 S3 E2）  /帮助  /退出",
+        "  指认：/指认 嫌疑人 编号 编号。两个编号取自笔记（S）或证物（E），是不能同时成立的两条，"
+        "其中一条是犯人的谎话。只能指认一次。\n"
+        "  命令：/笔记  /规则  /案情  /指认  /帮助  /退出",
         "How to play\n"
         "  Ask someone:  Lin Xiaoyu: where were you at 21:15?  (or start with @Lin)\n"
         "  Ask the same person again: just type the question.\n"
@@ -41,7 +56,9 @@ _UI: dict[str, tuple[str, str]] = {
         " when they were somewhere, whether they saw the stolen item.\n"
         "  One person and one time per question. Each costs 1; questions not understood and"
         " repeats are free.\n"
-        "  Commands: /notes  /case  /accuse SUSPECT ID ID (e.g. /accuse Chen S3 E2)  /help  /quit",
+        "  Accuse: /accuse SUSPECT ID ID. The ids come from your notebook (S) or the evidence (E):"
+        " two items that cannot both be true, one of them the culprit's lie. One accusation only.\n"
+        "  Commands: /notes  /rules  /case  /accuse  /help  /quit",
     ),
     "prompt": ("[还剩 {left} 问]{who}> ", "[{left} left]{who}> "),
     "no_addressee": (
@@ -51,6 +68,10 @@ _UI: dict[str, tuple[str, str]] = {
     "to": ("现在问的是：{name}", "Now asking: {name}"),
     "unknown_person": ("没有这个人：{name}", "No such person: {name}"),
     "free_clarify": ("（没听懂，不计次数）", "(not understood; free)"),
+    "free_unavailable": (
+        "（连不上模型，不计次数，请再问一次）",
+        "(could not reach the model; free, please ask again)",
+    ),
     "free_repeat": ("（按“{q}”算问过了，不计次数）", "(read as “{q}”, asked before; free)"),
     "noted": ("→ 按“{q}”记入笔记：{ids}", "→ read as “{q}”; noted: {ids}"),
     "nothing_new": ("→ 按“{q}”回答，没有新说法", "→ read as “{q}”; nothing new"),
@@ -68,8 +89,24 @@ _UI: dict[str, tuple[str, str]] = {
         "No questions left. Make your accusation: /accuse SUSPECT ID ID",
     ),
     "accuse_usage": (
-        "用法：/指认 嫌疑人 编号 编号，例如 /指认 陈墨 S3 E2",
-        "Usage: /accuse SUSPECT ID ID, e.g. /accuse Chen S3 E2",
+        "用法：/指认 嫌疑人 编号 编号，两个编号是不能同时成立的两条",
+        "Usage: /accuse SUSPECT ID ID, two items that cannot both be true",
+    ),
+    "accuse_one": (
+        "还差一个编号：指认要给出两条不能同时成立的记录。",
+        "One more id: an accusation names two items that cannot both be true.",
+    ),
+    "conflicts_with": (
+        "笔记里和 {x} 矛盾的：{ids}。",
+        "In your notebook, {x} conflicts with {ids}.",
+    ),
+    "conflicts_none": (
+        "笔记里还没有和 {x} 矛盾的记录。",
+        "Nothing in your notebook conflicts with {x} yet.",
+    ),
+    "conflicts_related": (
+        "笔记里和它们有关的矛盾：{pairs}。",
+        "Contradictions in your notebook that involve them: {pairs}.",
     ),
     "not_suspect": ("{x} 不是嫌疑人。", "{x} is not a suspect."),
     "unknown_item": ("笔记和证物里都没有 {x}。", "There is no {x} in the notebook or evidence."),
@@ -116,6 +153,8 @@ _UI: dict[str, tuple[str, str]] = {
     ),
     "quit_confirm": ("确定退出吗？不会揭晓真相。(y/n) ", "Quit without seeing the truth? (y/n) "),
     "bye": ("再见。", "Goodbye."),
+    "input_ended": ("（输入结束，游戏退出。）", "(Input ended; leaving the game.)"),
+    "interrupted": ("（已中断。）", "(Interrupted.)"),
     "unknown_cmd": ("不认识的命令：{cmd}。见 /帮助。", "Unknown command: {cmd}; see /help."),
 }  # fmt: skip
 
@@ -136,6 +175,7 @@ _COMMANDS: dict[str, str] = {
     "/help": "help", "/h": "help", "/?": "help", "/帮助": "help",
     "/notes": "notes", "/n": "notes", "/笔记": "notes",
     "/case": "case", "/c": "case", "/案情": "case",
+    "/rules": "rules", "/r": "rules", "/规则": "rules",
     "/accuse": "accuse", "/a": "accuse", "/指认": "accuse",
     "/to": "to", "/问": "to",
     "/quit": "quit", "/q": "quit", "/退出": "quit",
@@ -182,21 +222,22 @@ class Session:
     def say(self, key: str, **fields: object) -> None:
         self.write(_t(key, self.lang, **fields))
 
-    def help(self) -> None:
+    def help(self, key: str = "help") -> None:
         lines: list[str] = []
-        for line in _t("help", self.lang).split("\n"):
+        for line in _t(key, self.lang).split("\n"):
             body = line.lstrip()
             lines += hang(line[: len(line) - len(body)], body)
         self.write("\n".join(lines))
 
     def run(self) -> None:
-        self.write("\n".join(render_sheet(self.game.case.view, self.lang)))
-        self.help()
+        self.write("\n".join(render_sheet(self.game.case.view, self.lang, full=False)))
+        self.help("help_short")
         while self.game.verdict is None:
             who = f" {self.names[self.current]}" if self.current else ""
             try:
                 raw = self.read(_t("prompt", self.lang, left=self.game.left, who=who))
-            except EOFError:
+            except EOFError:  # say so: a game that just stops looks like a crash
+                self.say("input_ended")
                 return
             text = raw.lstrip("﻿").strip()  # piped input may start with a byte-order mark
             if not text:
@@ -241,7 +282,8 @@ class Session:
         colon = "：" if self.lang is Lang.ZH else ": "
         self.write("\n".join(hang(f"  {self.names[turn.addressee]}{colon}", turn.line)))
         if turn.query is None:
-            self.say("free_clarify")
+            unavailable = turn.reason is ClarifyReason.UNAVAILABLE
+            self.say("free_unavailable" if unavailable else "free_clarify")
             return
         q = read_as(turn.query, self.game.case.view.world, self.lang)
         if turn.repeat:
@@ -269,6 +311,8 @@ class Session:
                 self.notes()
             case "case":
                 self.write("\n".join(render_sheet(self.game.case.view, self.lang)))
+            case "rules":
+                self.write("\n".join(render_rules(self.lang)))
             case "to":
                 self.switch(" ".join(args))
             case "accuse":
@@ -319,7 +363,33 @@ class Session:
             return False
         return normalize(answer) in {"y", "yes", "是", "确定", "确认", "好"}
 
+    def _conflicts_text(self, pairs: Sequence[tuple[str, str]]) -> str:
+        if self.lang is Lang.ZH:
+            return "、".join(f"{x} 与 {y}" for x, y in pairs)
+        return ", ".join(f"{x}/{y}" for x, y in pairs)
+
+    def _one_id(self, args: list[str]) -> bool:
+        """`/accuse NAME ID`: say a second id is needed and, in normal mode, which items conflict
+        with the first. Both playtests named the right person with a pair that did not conflict."""
+        nb = self.game.notebook
+        note = args[-1].strip().upper() if args else ""
+        if len(args) < 2 or nb.lookup(note) is None:
+            return False
+        if self.game.lexicon.person_named(" ".join(args[:-1])) is None:
+            return False
+        self.say("accuse_one")
+        if self.hints:
+            partners = [y if x == note else x for x, y in nb.conflicts() if note in (x, y)]
+            sep = "、" if self.lang is Lang.ZH else ", "
+            if partners:
+                self.say("conflicts_with", x=note, ids=sep.join(partners))
+            else:
+                self.say("conflicts_none", x=note)
+        return True
+
     def accuse(self, args: list[str]) -> None:
+        if self._one_id(args):
+            return
         if len(args) < 3:
             self.say("accuse_usage")
             return
@@ -336,6 +406,8 @@ class Session:
             return
         # In normal mode, warn using the same contradiction hints the player already sees.
         warn = self.hints and not self.game.notebook.in_conflict(a, b)
+        if warn and (related := [p for p in self.game.notebook.conflicts() if a in p or b in p]):
+            self.say("conflicts_related", pairs=self._conflicts_text(related))
         key = "confirm_no_conflict" if warn else "confirm"
         if not self.confirm(_t(key, self.lang, name=self.names[suspect], a=a, b=b)):
             self.say("cancel")
@@ -457,7 +529,7 @@ def main(
     parser.add_argument("--seed", type=int, help="case number (default: today's date)")
     parser.add_argument("--lang", choices=[lang.value for lang in Lang], default="zh")
     parser.add_argument("--hard", action="store_true", help="no contradiction hints")
-    parser.add_argument("--budget", type=int, default=20)
+    parser.add_argument("--budget", type=int, default=DEFAULT_BUDGET)
     parser.add_argument("--log", type=Path, help="write a JSONL session log here")
     parser.add_argument(
         "--backend",
@@ -486,7 +558,8 @@ def main(
     code = 0
     try:
         Session(game, read, write, hints=not args.hard).run()
-    except KeyboardInterrupt:  # Ctrl-C ends the session quietly
+    except KeyboardInterrupt:  # Ctrl-C ends the session
+        write(_t("interrupted", game.lang))
         code = 130
     finally:  # a cut-short or crashed playtest still keeps its turns
         if args.log:

@@ -143,3 +143,34 @@ alibi style). Full outputs: `docs/review/p1/batch-naive.txt`, `docs/review/p1/ba
 - **Recommendation**: B now, since it is cheap and makes the stars reachable by skill rather than
   by knowing the oracle plan; decide on C with the step 3 playtest, which can compare budget 20
   and budget 12 on the same cases.
+
+## CP-6 — Playability gate not passed: iterate before P3 · `approved`
+
+- **Decision** (owner, 2026-10-31, "批准 B"): option B, including budget 12 for the next playtest.
+  See D-027.
+
+- **Trigger**: the owner's second playtest (case 20261101, zh, DeepSeek) and answers to the gate
+  questions: "有点繁琐，东西太多了", "这几个案子都太像了", budget "松"; latency "挺快的"; no misread
+  questions. Both playtests so far ended with the right culprit and a pair that did not conflict
+  (☆). Measured on 200 daily cases: the scene is the study in 200/200 [98.1%, 100%], with the same
+  map and owner; the culprit's lie has the same shape in 200/200 by design (D-012); 99.2% need
+  exactly one contradiction (CP-4). The opening screen is 73 lines. The sweep of 15 questions fits
+  the budget of 20 in every daily case (CP-5).
+- **Impact**: inserts P2 step 4 before P3, so P3 starts later. Budget changes affect CP-3 and the
+  CP-5 star thresholds, which are capped at the budget. Generator changes (4b only) go behind new
+  parameters, so existing seeds, the frozen parser set and the P1 numbers stay valid. The exit
+  criterion "one case in English" is not lowered: the English game moves to the next playtest.
+- **Options**
+  - A. Change everything at once, then one playtest: budget, opening, accusation hints, small fixes,
+    new contradiction shapes, other scenes. Cost: the most work, and the playtest cannot tell which
+    change helped.
+  - B. Two steps, one playtest each, both before P3. 4a: budget, opening, accusation hints, small
+    fixes, then the owner plays zh and en. 4b: once the owner has said what "太像" refers to, new
+    contradiction shapes and/or new settings, then another playtest. Cost: one more playtest round.
+  - C. Do 4a only and move "too similar" to P4. Cost: this loosens the gate and needs a written
+    reason and approval. Not recommended.
+- **Recommendation**: B. Each step is small and can be checked on its own; what to build for
+  "too similar" depends on what the owner meant; and the roadmap's "iterate before P3" still holds.
+  Budget 12 to try first: the median systematic run solves within 12 in 116/200 = 58.0%
+  [51.1%, 64.6%] of cases (166/200 within 20), and the oracle minimum is 3–6. There is no human data
+  yet on whether 12 suits a player who picks questions; the next playtest is the first.

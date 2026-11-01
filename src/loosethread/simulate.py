@@ -36,6 +36,7 @@ from loosethread.stats import percentile, wilson
 
 ROWS = Path("results/rows/simulated-player.jsonl")
 STAR_RUNS = 20  # simulated players behind each case's star thresholds (CP-5)
+CP5_BUDGET = 20  # the budget CP-5 was measured with; the summary's default, to reproduce it
 OLD_TWO_STARS_SHARE = 0.7  # the oracle-based rule before CP-5, kept to reproduce its evidence
 
 
@@ -118,7 +119,7 @@ def simulate(seeds: Sequence[int], orders: int) -> list[Run]:
     return runs
 
 
-def summary(runs: Sequence[Run], budget: int = DEFAULT_BUDGET) -> list[str]:
+def summary(runs: Sequence[Run], budget: int = CP5_BUDGET) -> list[str]:
     """Case-level rates with Wilson intervals: the orders of one case are not independent, so the
     case is the unit. Each case is represented by its median run (and, once, by its best run)."""
     by_case: dict[int, list[Run]] = {}
@@ -188,15 +189,18 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--orders", type=int, default=20, help="random orders per case")
     parser.add_argument("--out", type=Path, default=ROWS)
     parser.add_argument("--score", type=Path, help="only recompute the summary from rows")
+    parser.add_argument(
+        "--budget", type=int, default=CP5_BUDGET, help=f"for the summary (game: {DEFAULT_BUDGET})"
+    )
     args = parser.parse_args(argv)
     if args.score:
-        print("\n".join(summary(load_runs(args.score))))
+        print("\n".join(summary(load_runs(args.score), args.budget)))
         return 0
     runs = simulate(range(args.seeds), args.orders)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     text = "".join(json.dumps(asdict(r)) + "\n" for r in runs)
     args.out.write_text(text, encoding="utf-8", newline="\n")
-    print("\n".join(summary(runs)))
+    print("\n".join(summary(runs, args.budget)))
     return 0
 
 

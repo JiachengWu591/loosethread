@@ -559,3 +559,58 @@ directly.
   so r1 and r2 asked them in a different order.
 - **Spend**: about CNY 1.7 in total (upper bound) of the CNY 20 cap, including under CNY 0.1 of
   unrecorded single-call probes.
+
+## D-027 — Playability gate not passed; CP-6 approved; step 4a
+
+- **Date**: 2026-11-01 · **Type**: strategic for the plan and the budget, approved by the owner
+  (CP-6, chat: "批准 B", 2026-10-31); the listed code changes are tactical
+- **Playtest 2** (`docs/review/p2/playtest-20261101-zh.jsonl`; case 20261101, zh, DeepSeek):
+  right culprit, pair S3/E2 does not conflict (☆), 15/20 questions used, minimum 3. The pair S2/S3
+  had been flagged at question 4. The English game was not played.
+  - Of 20 turns: 15 charged questions, all read correctly (the D-026 phrasing, 15/15); 2 refused as
+    "one time at a time", free ("21:00–21:45之间你有没有去过书房?"); 3 lost to `APIConnectionError`.
+    The rule parser reads all 17 reached turns the same way, and also the 3 lost ones.
+  - Writer: 17/17 model lines reached the player. Median 2.7 s per turn, longest 5.6 s, 3 of 17 over
+    4 s. CNY 0.091 (upper bound), about CNY 1.8 in total of the cap of 20.
+  - The connection errors hit both calls of 3 turns, after the client's one retry. None occurred in
+    about 400 earlier calls. Whether the cause was the local network or the provider is not known.
+    The game charged nothing but showed them as the character "not following" the question.
+  - Twice the game left at its first prompt before the owner typed anything; retyping the command
+    worked. Cause not established (the input stream ended, or a Ctrl-C); it may be how a command
+    started from a chat Run button connects its input. The game now says when this happens.
+- **Owner's answers to the gate questions**, verbatim: 1 fun, stuck: "有点繁琐，东西太多了"; 2 formulaic:
+  "这几个案子都太像了"; 3 lines: "台词太像人说的"; 4 latency: "挺快的"; 5 budget: "松"; 6 misread: "没有".
+  Answer 3 can be read as praise or as the opposite, and answer 2 could mean the setting or the
+  deduction. Both were asked back and are **not yet answered**. One player, two cases.
+- **Sameness, measured** (`generate(seed, DAILY)`, seeds 0–199, one-off script): scene the study in
+  200/200 [98.1%, 100%], same map and owner (one content pack), 4 stolen items. The culprit's lie is
+  the occupied-room style in 200/200 by design (D-012): one other person really in the claimed
+  room in 92/200 = 46.0% [39.2%, 52.9%], two in the rest. Claimed room: lobby 81, kitchen 57, guest
+  wing 44, corridor 18. This measures structure; it does not show which sameness the owner noticed.
+- **Decision**: CP-6 option B. Step 4a now, playtest 3 (zh and en), then step 4b, then a further
+  playtest, all before P3.
+- **Step 4a**
+  - Budget 12 (`game.DEFAULT_BUDGET`, provisional). `simulate` keeps its summary at the budget CP-5
+    was measured with (`CP5_BUDGET`, or `--budget`), and `--score` reproduces every CP-5 figure.
+    At 12 the median systematic run solves in 116/200 = 58.0% [51.1%, 64.6%] of cases.
+  - **Side effect on stars, not changed**: thresholds still come from those players and are capped at
+    the budget, so at 12 any solve earns ★★★ in 43/200 = 21.5% [16.4%, 27.7%] of cases, and ★★★
+    equals ★★ in 44/200 = 22.0% [16.8%, 28.2%]. To be looked at if budget 12 stays.
+  - Shorter opening: suspects on one line, key rules, short help (zh 73 → 52 lines, en 85 → 57,
+    on case 20261101). `/规则` shows all rules; `/案情` still shows the full sheet.
+  - Accusation hints in normal mode: one id given → says a second is needed and lists what conflicts
+    with it; a pair that does not conflict → lists the conflicts involving either item. Hard mode
+    lists nothing. The usage line no longer shows "S3 E2", which the owner's accusation matched.
+  - `BackendUnavailable` (`npc.py`): the client turns connection, timeout, rate-limit and server
+    errors into it, carrying the exception type only. The game then charges nothing, skips the
+    writer and prints "连不上模型". `ClarifyReason.UNAVAILABLE` is refused if a model returns it.
+  - The game says when input ends or on Ctrl-C.
+  - `parser.visited_place`: a multi-slot range with a visit word, one place, no other person, no
+    item and no company word reads as "when were you at X", in both parsers, before any model call.
+    This changes D-020's refusal of "20:15–21:00 之间，你有没有单独去过书房？"; the answer does not address
+    "alone". Questions about others stay refused ("看到谁独自进入书房").
+- **Checks**: `visited_place` matches 0/199 frozen items and no recorded reply says "unavailable", so
+  the parser accuracies of D-022 and D-025 are unaffected. The tests cover behaviour only: nothing
+  here shows that the game is more fun, that 12 suits a human player, or that the hints are understood.
+- **Open**: the English game (a P2 exit criterion), the gate, and the two questions back to the owner.
+  Known 苏曼 refusal (D-026) unchanged.

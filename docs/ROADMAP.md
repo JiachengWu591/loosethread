@@ -142,7 +142,17 @@ Commands below use the package name `loosethread` (originally `alibi`; renamed b
     that one-slot ranges and "where … and with whom?" were misread (the frozen set has neither);
     fixed in code without touching the measured prompt. The writer produced 37/37 usable lines.
     Known issue: DeepSeek refuses that phrasing for one character (free rephrase).
-  - Next: the owner's playtest (zh and en, DeepSeek backend) and the playability gate.
+  - Owner's playtest 2 (zh, DeepSeek, D-027): right culprit, pair did not conflict (☆), 15/20
+    questions; the same outcome as playtest 1. Gate answers: tedious, too much at once, cases too
+    similar, budget loose; latency fine, no misreadings. **The playability gate is not passed.**
+    The English game has not been played, so that exit criterion stays open.
+  - **Step 4 added by CP-6 (approved, D-027)**:
+    - 4a, done in code: budget 12 (provisional), a shorter opening (zh 73 → 52 lines), accusation
+      hints, a separate message for an unreachable model, a message when input ends, and "did you
+      go to X between A and B?" read as "when were you at X" (0/199 frozen items affected).
+    - 4b, planned: more variety, once the owner has said what "too similar" refers to.
+  - Next: the owner's playtest 3 (zh and en, budget 12), then 4b, then a further playtest; P3 only
+    after the gate passes.
 
 ## P3 — Evaluation study · `planned`
 

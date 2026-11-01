@@ -5,8 +5,9 @@ lookup and scores the accusation; the parser and the line writer receive `ParseR
 `LineRequest` only (see `loosethread.npc`).
 
 Fail closed: a parser that raises, or returns a query for someone else or with unknown names,
-yields "please rephrase" at no cost. A writer that raises, returns nothing, or names anything its
-facts do not authorise is replaced by the template line; the turn records why.
+yields "please rephrase" at no cost. A parser model that cannot be reached yields a free "ask
+again" that says so, without calling the writer. A writer that raises, returns nothing, or names
+anything its facts do not authorise is replaced by the template line; the turn records why.
 """
 
 from dataclasses import dataclass, field, replace
@@ -33,6 +34,7 @@ from loosethread.model import (
 from loosethread.notebook import Notebook, effective_speaker
 from loosethread.npc import (
     BackendError,
+    BackendUnavailable,
     ClarifyReason,
     LineRequest,
     LineWriter,
@@ -44,7 +46,9 @@ from loosethread.npc import (
 )
 from loosethread.solver import Solver
 
-DEFAULT_BUDGET = 20  # CP-3, provisional until the P2 playtest
+# CP-6 (D-027): below the 15-question sweep of every daily case; provisional until the next
+# playtest. CP-3 had 20.
+DEFAULT_BUDGET = 12
 
 
 class GameOver(RuntimeError):
@@ -154,7 +158,10 @@ class Game:
         request = LineRequest(
             self.lang, self._people[addressee], facts, self.case.view.world, parsed.reason, repeat
         )
-        line, line_usage = self._write(request, problems)
+        if parsed.reason is ClarifyReason.UNAVAILABLE:  # the writer is most likely unreachable too
+            line, line_usage = template_line(request), Usage()
+        else:
+            line, line_usage = self._write(request, problems)
 
         cost = 1 if query is not None and not repeat else 0
         before = set(self.notebook.conflicts())
@@ -190,6 +197,9 @@ class Game:
         unclear = ParseResult(None, ClarifyReason.UNCLEAR)
         try:
             parsed = self.parser.parse(ParseRequest(question, addressee, self.lexicon))
+        except BackendUnavailable as exc:
+            problems.append(f"parser_unavailable:{exc.cause}")
+            parsed = ParseResult(None, ClarifyReason.UNAVAILABLE)
         except BackendError as exc:
             problems.append(f"parser_invalid:{exc.detail}")
             parsed = replace(unclear, usage=exc.usage)
@@ -214,6 +224,9 @@ class Game:
     def _write(self, request: LineRequest, problems: list[str]) -> tuple[str, Usage]:
         try:
             result = self.writer.write(request)
+        except BackendUnavailable as exc:
+            problems.append(f"writer_unavailable:{exc.cause}")
+            return template_line(request), Usage()
         except BackendError as exc:
             problems.append(f"writer_invalid:{exc.detail}")
             return template_line(request), exc.usage
