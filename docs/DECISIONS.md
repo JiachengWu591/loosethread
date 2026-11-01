@@ -876,3 +876,34 @@ directly.
   four live phrasings. The parser's reported accuracies are unaffected, since this is the game loop.
 - **Spending**: about CNY 2.6 in total of the cap of 20.
 - **Open**: the owner's answers to the gate's questions. Friends' games (ideally 2–3) have not happened.
+
+## D-033 — Playability gate passed; P2 done
+
+- **Date**: 2026-11-01 · **Type**: strategic, the owner's decision. Verdict in chat: "好玩，过关".
+- **Decision**: the playability gate has passed and P2 is done. All exit criteria are met: the owner
+  played one case through in Chinese and one in English (D-032); offline tests pass; DeepSeek parser
+  accuracy 93.2% [88.0%, 96.3%] against the provisional ≥ 85% (D-025).
+- **Consequences**
+  - Question budget 12 (CP-6) and the daily targets, which were to stay provisional until this gate
+    passed, are now simply the current values. Like every number, they change only through the process
+    in `CLAUDE.md`.
+  - P3 does not start by itself. Before it: re-read ROADMAP and DECISIONS, restate the plan in at most
+    ten lines, flag deviations, wait for the owner's OK. `docs/STUDY_PLAN.md` also needs approval.
+- **What this verdict rests on and does not settle**. The verdict was given by choosing an offered
+  answer, and the five detailed questions asked with it were not answered, so none of these is
+  recorded as resolved:
+  - One player, who knows the project well. The gate asks for "the owner and ideally 2–3 friends"; no
+    friend has played. "Ideally" did not make this binding, but nothing here shows a stranger enjoys it
+    or can follow it. It should happen before release (P5) at the latest.
+  - **Does it feel like filling in a form?** The owner's two games were one sentence asked of everyone.
+    This is the play CP-6 cut the budget to discourage, and it still solves cases.
+  - **Do cases feel formulaic?** CP-4's question was not answered directly. All 300 measured cases
+    need exactly one contradiction (D-031).
+  - Why the owner kept asking for eight questions after the ⚠ that settled the en game, and whether
+    the stars read as fair. "This case can be solved in 1" after a clean solve is unchanged.
+  - The owner's view of the en lines; both AI players and the en player called the lines report-like.
+  - Whether the evidence shape is too easy (oracle minimum 1).
+- **Known limits carried forward**: Mistpine's study still has one door; the follow-up and lead-in rules
+  were never measured against a labelled set; the settings check covers plain questions only; parser
+  accuracy was measured on Mistpine names, and `Game` now adds rules on top of the measured parser.
+  P3's design has to say which of these it depends on.

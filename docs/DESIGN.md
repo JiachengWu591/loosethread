@@ -32,7 +32,7 @@ starting points; P1 metrics and the P2 playtest will tune them.
 | Time slots | 6–10 | 8 slots × 15 min, 20:00–22:00 |
 | Theft window | 2–4 slots | 3 |
 | Evidence items | 4–8 | 6 |
-| Question budget | 12–30 | 12 (CP-6, provisional; 20 before) |
+| Question budget | 12–30 | 12 (CP-6; 20 before) |
 
 Default map (the terrace is the optional 8th location):
 
@@ -212,10 +212,10 @@ Disjunctive evidence ("someone came in from the terrace") is a later extension.
 - **Difficulty metrics** (D-013): contradictions required; minimum number of questions whose answers
   (plus evidence) make the solution unique — exact up to 2, an upper bound above that (CP-1); inference
   steps (irreducible statement sets that rule out each innocent).
-- **Daily target** (CP-3, provisional): minimum questions 3–6 (preset `generator.DAILY`), question
-  budget 12 since CP-6 (20 before), below the 15-question sweep of suspects × window. Both stay
-  provisional until the playability gate passes; the oracle minimum understates human effort because
-  players do not know whom to ask about which slot. Since D-031 the lower bound depends on the lie's
+- **Daily target** (CP-3; the gate passed, D-033): minimum questions 3–6 (preset `generator.DAILY`),
+  question budget 12 since CP-6 (20 before), below the 15-question sweep of suspects × window. The
+  oracle minimum understates human effort because players do not know whom to ask about which slot.
+  Since D-031 the lower bound depends on the lie's
   shape: 3 for occupied room and false companion, 2 for unreachable room, 1 for ruled out by evidence
   (`generator.SHAPE_PARAMS`).
 

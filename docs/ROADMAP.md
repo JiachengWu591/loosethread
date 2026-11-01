@@ -8,7 +8,7 @@ All numeric thresholds are provisional and may only change through the process i
 |---|---|---|
 | P0 | Skeleton and design | done |
 | P1 | Case generator and solver | done |
-| P2 | NPC pipeline and CLI playable | in progress |
+| P2 | NPC pipeline and CLI playable | done |
 | P3 | Evaluation study | planned |
 | P4 | Web version, daily case, sharing | planned |
 | P5 | Release v0.1.0 | planned |
@@ -77,7 +77,7 @@ Commands below use the package name `loosethread` (originally `alibi`; renamed b
   pairs under CP-4 (`docs/review/p1/REVIEW.md`, which also reports case variety over 1,000 seeds).
   All exit criteria met, the review criterion as changed by CP-4.
 
-## P2 — NPC pipeline and CLI playable · `in progress`
+## P2 — NPC pipeline and CLI playable · `done`
 
 - **Goal**: play one full case in the terminal in Chinese and one in English.
 - **Work**
@@ -165,7 +165,9 @@ Commands below use the package name `loosethread` (originally `alibi`; renamed b
   - **Owner's zh and en games (D-032): both solved with a valid pair, ★, 10/12.** The exit criterion
     "plays one case through in Chinese and one in English" is met. Both were the same sentence asked
     of everyone, slot by slot. The en game found a parser refusal, now fixed.
-  - Next: the owner's verdict on the gate. P3 only after the gate passes.
+  - **Gate passed by the owner's verdict ("好玩，过关", D-033).** All exit criteria met: the owner played
+    zh and en through; offline tests pass; parser 93.2% [88.0%, 96.3%] against ≥ 85%. No friends have
+    played, and "ideally 2–3 friends" stays undone; D-033 lists what this verdict does not settle.
 
 ## P3 — Evaluation study · `planned`
 

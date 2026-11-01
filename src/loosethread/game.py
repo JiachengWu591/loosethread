@@ -53,8 +53,7 @@ from loosethread.npc import (
 from loosethread.parser import clearly_one_slot, follows_up, only_a_time
 from loosethread.solver import Solver
 
-# CP-6 (D-027): below the 15-question sweep of every daily case; provisional until the next
-# playtest. CP-3 had 20.
+# CP-6 (D-027): below the 15-question sweep of every daily case. CP-3 had 20.
 DEFAULT_BUDGET = 12
 # Answers that state no case facts cost nothing (D-029; DESIGN §11 item 3 charged them).
 _NO_FACTS = frozenset({QueryKind.OPINION, QueryKind.SMALL_TALK, QueryKind.OUT_OF_SCOPE})

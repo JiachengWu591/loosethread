@@ -116,8 +116,8 @@ class GenerationError(RuntimeError):
     pass
 
 
-# Daily-case preset (CP-3, provisional until the P2 playtest): exclude two-question cases and keep
-# the oracle question count at most 6. Values above 2 are upper bounds (CP-1).
+# Daily-case preset (CP-3): exclude two-question cases and keep the oracle question count at most 6.
+# Values above 2 are upper bounds (CP-1).
 DAILY = GenParams(min_questions=(3, 6))
 
 # What the game plays since CP-6 step 4b (D-030): each seed picks a setting and a lie shape. `DAILY`
