@@ -642,3 +642,49 @@ directly.
   - Expected spend CNY 1–2, about CNY 3–4 in total of the cap of 20.
 - **Open**: the English game (a P2 exit criterion) and the gate.
   Known 苏曼 refusal (D-026) unchanged.
+
+## D-028 — Two AI role-play playtests of step 4a; what they found
+
+- **Date**: 2026-11-01 · **Type**: tactical (method, findings). Asked for by the owner in chat ("帮我开两个
+  子agent去玩这两局，尽量模拟真人的思维"). The changes proposed from it are not decided yet.
+- **Method**: two fresh subagents with no context from this conversation, playing as first-time
+  players, zh on case 20261103 and en on case 20261102, DeepSeek, budget 12. A driver outside the repo
+  ran the same game code one input at a time, serving recorded replies on replay, so a move paid
+  only for its own calls. Logs and transcripts with the players' stated thoughts:
+  `docs/review/p2/agent-playtest-*` (spoilers). CNY 0.18, about CNY 2.0 in total of the cap of 20.
+- **What this cannot show**: these are role-plays by an AI, two games. They do not meet the P2 exit
+  criterion ("the owner plays") and do not count for the playability gate. Their "fun" and "annoyed"
+  are inferences. Both reported reasoning beyond a casual player, so outcomes may flatter the game.
+  They were told to ask some questions the game may not support, so the misread count may run high.
+  "Do not read the project" was an instruction, not enforced; both reported keeping to it, and the en
+  player noted that the commit messages it was shown hinted at the budget and accusation hints.
+- **Results, checked against the logs**:
+
+  | game | outcome | questions | ⚠ shown | free rephrases | charged, no case facts |
+  |---|---|---|---|---|---|
+  | zh 20261103 | wrong person | 12/12 | 0 | 4 | 1 |
+  | en 20261102 | right person, no pair (☆) | 12/12 | 0 | 4 | 1 |
+
+- **Findings**
+  1. **Asking "where" can never show the usual contradiction.** Plain `where` was 12 of the 24 charged
+     questions, and the help's example teaches it, but only "with whom" says who else was in the room.
+     No hint appeared in either game. In the zh game the last two questions asked the culprit and
+     the witness who could expose them about the same slot; both answered with the same room, nothing
+     flagged, and the player guessed. Both players also paid twice for one slot (where, then with
+     whom), since the "with whom" answer names the place too.
+  2. **A misread question costs a question.** "where were you when the book went missing?" and "你有没有
+     看到谁进书房了" were read as out of scope, charged, and gave nothing. That follows DESIGN §11 item 3,
+     a design decision, and it costs more at budget 12.
+  3. **Follow-ups forget the time.** 6 of the 8 free rephrases were `need_time`, right after a question
+     that named it ("那你那会儿跟谁在一起", "and were you by yourself there?"). "and after that, around
+     9:20?" names the time and is still refused, as the relative word makes it read as an anchor.
+  4. **The goal is not clear in play.** Neither player looked for a pair until the accusation, with no
+     questions left, when the hints can no longer help.
+  5. Smaller: a name with no colon does not switch person ("周大川 八点半你在厨房吗" went to the current
+     person). The evidence was skipped in both games as looking irrelevant. "Simulated players" in
+     the result text reads oddly to both.
+  6. **A bug**: the notebook grid's "at" row ignores "with whom" answers (`case._testimony_block` reads
+     only `PersonAt`), so those notes show the company but not the place. The owner's two sweeps hit it.
+- **Disagreement, no change**: both players called the lines report-like, and the owner said of the zh
+  lines "挺好的，就这样". The owner's judgement stands. The owner has not seen the en lines yet.
+- **Open**: nothing here is changed. The owner's en game (exit criterion) and the gate stay open.

@@ -1,0 +1,308 @@
+════════════════════════════════════════════════════════════════════════════════
+                 Loose Thread · Mistpine Lodge · case #20261102
+════════════════════════════════════════════════════════════════════════════════
+
+  A night of driving rain. At eight o'clock a landslide warning closed the only
+  road up to Mistpine Lodge: nobody gets in, nobody gets out.
+
+  At 21:30, Shen Huaishan returned to the study and found the first-edition
+  thread-bound book gone. It was last confirmed on the shelf during 20:30–20:45.
+
+  You are a retired detective who turned in early. A knock at the door wakes
+  you. Everyone is waiting in the lobby.
+
+─── The case ───────────────────────────────────────────────────────────────────
+  Stolen         the first-edition thread-bound book (owner: Shen Huaishan)
+  Scene          study
+  Last seen      20:30–20:45
+  Found missing  21:30–21:45
+  Theft window   20:45–21:30, 3 slots
+
+─── Who was there ──────────────────────────────────────────────────────────────
+  Suspects: Su Man (antiques dealer), He Xiulan (lodge owner), Lin Xiaoyu
+  (receptionist), Chen Mo (novelist), Zhao Yifan (student hiker)
+  Owner: Shen Huaishan (collector), not a suspect.
+
+─── Map ────────────────────────────────────────────────────────────────────────
+  kitchen ── dining room ── lobby ── tea room
+     │                        │
+     └─────── corridor ───────┘
+            ┌─────┴─────┐
+          study    guest wing
+         (scene)
+
+─── Key rules ──────────────────────────────────────────────────────────────────
+  · During the theft window the culprit was alone at the scene for at least one
+    slot.
+  · Innocent people never lie about the theft window; evidence is always true.
+  · People in the same room in the same slot see each other; between slots a
+    person stays put or moves one step along a map line.
+
+─── Evidence (always true; [ ] = the slot it belongs to) ───────────────────────
+  E1 [20:30] A photo on Shen Huaishan's phone shows the first-edition
+             thread-bound book on the study shelf at 20:35.
+  E2 [21:00] The lobby guestbook has a line from Chen Mo, timed 21:06.
+  E3 [20:00] The guest-wing door log shows Lin Xiaoyu's key card at 20:11.
+  E4 [20:15] The guest-wing door log shows Zhao Yifan's key card at 20:29.
+  E5 [20:00] The guest-wing door log shows Su Man's key card at 20:01.
+  E6 [21:00] The guest-wing door log shows Shen Huaishan's key card at 21:01.
+
+How to play
+  Ask:  Lin Xiaoyu: where were you at 21:15?  (or @Lin; then just type)
+  One person, one time each. Costs 1; unclear questions and repeats are free.
+  Accuse: /accuse SUSPECT ID ID: two items that cannot both be true (⚠ hints).
+  Other commands: /notes  /rules  /case (the full sheet)  /help  /quit
+    [player's thought] OK skimmed that, lots of text. Book got nicked sometime between 8:45 and 9:30. Novelist seems like a fun one to poke first since he signed the guestbook, which feels a bit like making an alibi on purpose.
+[12 left]> Chen Mo: so what were you doing around 9?
+  Chen Mo: Between 21:00 and 21:15 I was in the lobby, like a page waiting to be
+           turned.
+→ read as “where Chen Mo was at 21:00–21:15”; noted: S1
+    [player's thought] Bit of a pretentious way to talk, but he is a novelist so fine. Lobby matches the guestbook. Was anyone with him though?
+[11 left] Chen Mo> did you see anyone else in the lobby?
+  Chen Mo: Which time do you mean? Name a time tonight.
+(not understood; free)
+    [player's thought] Slightly silly, we were literally just talking about that time, but fine, I will say it again.
+[11 left] Chen Mo> who else was in the lobby at 9?
+  Chen Mo: Between 21:00 and 21:15 I was alone in the lobby.
+→ read as “who was with Chen Mo at 21:00–21:15”; noted: S2
+    [player's thought] An antiques dealer in a house with a rare book. Come on, that is the obvious one. Let me hear her story.
+[10 left] Chen Mo> Su Man: where were you when the book went missing?
+  Su Man: I can't help you with that. Ask me something specific: when, where,
+          with whom.
+→ read as “a question outside the case”
+    [player's thought] Wait, that cost me a question?! I asked the most obvious question in the world, where were you when it went missing, and it said outside the case and charged me. That is annoying. Fine, give a time.
+[9 left] Su Man> ok where were you at 9pm then
+  Su Man: Between 21:00 and 21:15 I was in the corridor.
+→ read as “where Su Man was at 21:00–21:15”; noted: S3
+    [player's thought] Corridor! That is right outside the study on the map. Suspicious. Was anyone with her?
+[8 left] Su Man> and were you by yourself there?
+  Su Man: Which time do you mean? Name a time tonight.
+(not understood; free)
+    [player's thought] Second time it has done this. It literally just told me 21:00 and I said there. Why does it not remember? OK, typing the time again.
+[8 left] Su Man> were you alone in the corridor at 9?
+  Su Man: Between 21:00 and 21:15 I was in the corridor with He Xiulan and Lin
+          Xiaoyu.
+→ read as “who was with Su Man at 21:00–21:15”; noted: S4
+    [player's thought] OK so three people together in the corridor, they probably cover each other at 9. Chen Mo in the lobby. Only the student left, nobody has mentioned him. Maybe he is the one.
+[7 left] Su Man> Zhao Yifan: where were you at 9 o'clock?
+  Zhao Yifan: Between 21:00 and 21:15 I was in the guest wing.
+→ read as “where Zhao Yifan was at 21:00–21:15”; noted: S5
+    [player's thought] There was something in the evidence about Shen and the guest wing door at 21:01, I think. If the student really was there he should have seen the old man. Nice little test.
+[6 left] Zhao Yifan> did you run into Mr Shen there around 9? his key card was used in the guest wing
+  Zhao Yifan: Yes. Between 21:00 and 21:15 I was in the guest wing with Shen
+              Huaishan.
+→ read as “whether Zhao Yifan saw Shen Huaishan at 21:00–21:15”; noted: S6
+    [player's thought] Student checks out for 9. Hm, so nobody was in the study at 9. Must have been before or after. Going back to the antiques dealer, I still do not trust her, she was right next door.
+[5 left] Zhao Yifan> Su Man: and after that, around 9:20?
+  Su Man: Which time do you mean? Name a time tonight.
+(not understood; free)
+    [player's thought] I literally named a time, 9:20! And it tells me to name a time. Okay, I guess it needs the whole sentence every time. Getting a bit like talking to a phone menu.
+[5 left] Su Man> Su Man: where were you at 9:20?
+  Su Man: Between 21:15 and 21:30 I was in the corridor.
+→ read as “where Su Man was at 21:15–21:30”; noted: S7
+    [player's thought] Four questions left and I have lost track a bit. Let me look at what I have so far.
+[4 left] Su Man> /notes
+─── Notebook (7 statements) ────────────────────────────────────────────────────
+  Two rows per person. at: where they say they were; with: who they say was in
+  the room (surnames), "alone" meaning nobody else. Slot 21:15 means
+  21:15–21:30.
+
+                                   ┌──────── theft window ────────┐
+              20:00  20:15  20:30  │ 20:45  21:00       21:15     │ 21:30  21:45
+  Shen  at    ·      ·      ·      │ ·      ·           ·         │ ·      ·
+        with                       │                              │
+                                   │                              │
+  Su    at    ·      ·      ·      │ ·      corridor    corridor  │ ·      ·
+        with                       │        He,Lin                │
+                                   │                              │
+  He    at    ·      ·      ·      │ ·      ·           ·         │ ·      ·
+        with                       │                              │
+                                   │                              │
+  Lin   at    ·      ·      ·      │ ·      ·           ·         │ ·      ·
+        with                       │                              │
+                                   │                              │
+  Chen  at    ·      ·      ·      │ ·      lobby       ·         │ ·      ·
+        with                       │        alone                 │
+                                   │                              │
+  Zhao  at    ·      ·      ·      │ ·      guest wing  ·         │ ·      ·
+        with                       │        Shen                  │
+
+  Statements (slot starts):
+  S1  Chen Mo: in the lobby at 21:00
+  S2  Chen Mo: alone in the lobby at 21:00
+  S3  Su Man: in the corridor at 21:00
+  S4  Su Man: in the corridor at 21:00 with He Xiulan, Lin Xiaoyu
+  S5  Zhao Yifan: in the guest wing at 21:00
+  S6  Zhao Yifan: in the guest wing at 21:00 with Shen Huaishan
+  S7  Su Man: in the corridor at 21:15
+
+  Contradiction hints:
+  No contradictions found yet.
+  Evidence ids are on /case.
+    [player's thought] The notes page is actually really neat. Lots of gaps though. Three people hanging about in a corridor is a weird thing to do, so let me ask the owner what was going on. Also tells me if Su Man was telling the truth.
+[4 left] Su Man> He Xiulan: what were you and Su Man doing in the corridor at 9?
+  He Xiulan: Yes, I saw her. Between 21:00 and 21:15 I was in the corridor with
+             Su Man and Lin Xiaoyu.
+→ read as “whether He Xiulan saw Su Man at 21:00–21:15”; noted: S8
+    [player's thought] OK that matches, so nobody is lying about 9. It is a bit of a dead end. It has to be before or after that, so let me see where the three of them split up.
+[3 left] He Xiulan> where did you go after that? say 9:20
+  He Xiulan: Which time do you mean? Name a time tonight.
+(not understood; free)
+    [player's thought] Come on. I said 9:20 again. Seems like anything with after in it breaks it? Whatever. Boring exact wording it is.
+[3 left] He Xiulan> where were you at 9:20?
+  He Xiulan: Between 21:15 and 21:30 I was in the guest wing.
+→ read as “where He Xiulan was at 21:15–21:30”; noted: S9
+    [player's thought] I have not spoken to the receptionist at all and only two questions left. She was in the corridor at 9 too, right next to the study. Three walked out of that corridor scene, the owner went to the guest wing, Su stayed. So where did she go?
+[2 left] He Xiulan> Lin Xiaoyu: where were you at 9:20?
+  Lin Xiaoyu: Between 21:15 and 21:30 I was in the corridor.
+→ read as “where Lin Xiaoyu was at 21:15–21:30”; noted: S10
+    [player's thought] Hm. Her and Su Man both say corridor at 9:20. If they were both really there they would have seen each other, so if she says no somebody is lying. Last question, feels like the right one to spend it on.
+[1 left] Lin Xiaoyu> was Su Man with you in the corridor at 9:20?
+  Lin Xiaoyu: Yes. Between 21:15 and 21:30 I was in the corridor with Shen
+              Huaishan and Su Man.
+→ read as “whether Lin Xiaoyu saw Su Man at 21:15–21:30”; noted: S11
+No questions left. Make your accusation: /accuse SUSPECT ID ID
+    [player's thought] Out of questions and I do not have a smoking gun. Everybody backs each other up. Let me see if the notes flag anything, it said there would be hints.
+[0 left] Lin Xiaoyu> /notes
+─── Notebook (11 statements) ───────────────────────────────────────────────────
+  Two rows per person. at: where they say they were; with: who they say was in
+  the room (surnames), "alone" meaning nobody else. Slot 21:15 means
+  21:15–21:30.
+
+                                   ┌───────── theft window ─────────┐
+              20:00  20:15  20:30  │ 20:45  21:00       21:15       │ 21:30  21:45
+  Shen  at    ·      ·      ·      │ ·      ·           ·           │ ·      ·
+        with                       │                                │
+                                   │                                │
+  Su    at    ·      ·      ·      │ ·      corridor    corridor    │ ·      ·
+        with                       │        He,Lin                  │
+                                   │                                │
+  He    at    ·      ·      ·      │ ·      ·           guest wing  │ ·      ·
+        with                       │        Su,Lin                  │
+                                   │                                │
+  Lin   at    ·      ·      ·      │ ·      ·           corridor    │ ·      ·
+        with                       │                    Shen,Su     │
+                                   │                                │
+  Chen  at    ·      ·      ·      │ ·      lobby       ·           │ ·      ·
+        with                       │        alone                   │
+                                   │                                │
+  Zhao  at    ·      ·      ·      │ ·      guest wing  ·           │ ·      ·
+        with                       │        Shen                    │
+
+  Statements (slot starts):
+  S1  Chen Mo: in the lobby at 21:00
+  S2  Chen Mo: alone in the lobby at 21:00
+  S3  Su Man: in the corridor at 21:00
+  S4  Su Man: in the corridor at 21:00 with He Xiulan, Lin Xiaoyu
+  S5  Zhao Yifan: in the guest wing at 21:00
+  S6  Zhao Yifan: in the guest wing at 21:00 with Shen Huaishan
+  S7  Su Man: in the corridor at 21:15
+  S8  He Xiulan: in the corridor at 21:00 with Su Man, Lin Xiaoyu
+  S9  He Xiulan: in the guest wing at 21:15
+  S10 Lin Xiaoyu: in the corridor at 21:15
+  S11 Lin Xiaoyu: in the corridor at 21:15 with Shen Huaishan, Su Man
+
+  Contradiction hints:
+  No contradictions found yet.
+  Evidence ids are on /case.
+    [player's thought] No contradictions found. Great. So I have to name two items that clash and the game itself says nothing clashes. Let me re-read the evidence in case I missed something.
+[0 left] Lin Xiaoyu> /case
+════════════════════════════════════════════════════════════════════════════════
+                 Loose Thread · Mistpine Lodge · case #20261102
+════════════════════════════════════════════════════════════════════════════════
+
+  A night of driving rain. At eight o'clock a landslide warning closed the only
+  road up to Mistpine Lodge: nobody gets in, nobody gets out.
+
+  At 21:30, Shen Huaishan returned to the study and found the first-edition
+  thread-bound book gone. It was last confirmed on the shelf during 20:30–20:45.
+
+  You are a retired detective who turned in early. A knock at the door wakes
+  you. Everyone is waiting in the lobby.
+
+─── The case ───────────────────────────────────────────────────────────────────
+  Stolen         the first-edition thread-bound book (owner: Shen Huaishan)
+  Scene          study
+  Last seen      20:30–20:45
+  Found missing  21:30–21:45
+  Theft window   20:45–21:30, 3 slots
+
+─── Who was there ──────────────────────────────────────────────────────────────
+  ◆ Su Man · antiques dealer
+    Impression: Shrewd and polite, chooses every word.
+    Motive: Suspects the piece was once a family heirloom.
+  ◆ He Xiulan · lodge owner
+    Impression: Warm and fussy, talks fast.
+    Motive: Business is slow and the renovation loan is overdue.
+  ◆ Lin Xiaoyu · receptionist
+    Impression: Young, laughs when nervous, sharp memory.
+    Motive: Saving hard to study abroad.
+  ◆ Chen Mo · novelist
+    Impression: Unhurried, fond of metaphors, easily distracted.
+    Motive: Writing a novel about a stolen heirloom and short of "material".
+  ◆ Zhao Yifan · student hiker
+    Impression: Lively and curious, asks more than answers.
+    Motive: Lost all the hiking gear and is short of money.
+  ◇ Shen Huaishan · collector (the owner, not a suspect)
+    Impression: Refined and particular, anxious about the collection, quotes old
+    sayings.
+
+─── Map ────────────────────────────────────────────────────────────────────────
+  kitchen ── dining room ── lobby ── tea room
+     │                        │
+     └─────── corridor ───────┘
+            ┌─────┴─────┐
+          study    guest wing
+         (scene)
+
+─── Rules ──────────────────────────────────────────────────────────────────────
+  1. Everyone is in exactly one place per slot; people in the same room in the
+     same slot see each other.
+  2. From one slot to the next, a person stays put or moves one step along a map
+     line.
+  3. During the theft window the culprit was alone at the scene for at least one
+     slot.
+  4. Evidence is always true.
+  5. Innocent people (the owner included) never lie about the theft window; any
+     lie they tell about other times is exposed by evidence.
+  6. The culprit lies to protect their alibi.
+  7. Hearsay repeats exactly what the source said, and is as reliable as the
+     source.
+
+─── Evidence (always true; [ ] = the slot it belongs to) ───────────────────────
+  E1 [20:30] A photo on Shen Huaishan's phone shows the first-edition
+             thread-bound book on the study shelf at 20:35.
+  E2 [21:00] The lobby guestbook has a line from Chen Mo, timed 21:06.
+  E3 [20:00] The guest-wing door log shows Lin Xiaoyu's key card at 20:11.
+  E4 [20:15] The guest-wing door log shows Zhao Yifan's key card at 20:29.
+  E5 [20:00] The guest-wing door log shows Su Man's key card at 20:01.
+  E6 [21:00] The guest-wing door log shows Shen Huaishan's key card at 21:01.
+
+    [player's thought] I have got nothing solid. Never asked about 8:45, which was dumb. The owner has the overdue loan and she is the one who wandered off from the corridor on her own at 9:15, and nobody backs up her guest wing story. Those two ids do not really clash, I know, but it is my best guess.
+[0 left] Lin Xiaoyu> /accuse He Xiulan S9 S11
+    [player's thought] Nice that it warns me. But I have no other pair to give and no questions left, so yes, gut call on the owner.
+Note: S9 and S11 do not contradict each other. You get one accusation; accuse He Xiulan anyway? (y/n) y
+
+Right person, but S9 and S11 do not expose a lie by He Xiulan. ☆
+Your notebook had no pair yet that exposes He Xiulan's lie.
+You used 12/12 questions; this case can be solved in 3.
+(This case: any solve within 12 questions earns ★★★; most simulated players who question everyone in turn need more.)
+
+─── Truth (spoilers) ───────────────────────────────────────────────────────────
+  Culprit: He Xiulan, alone in the study at 21:15–21:30.
+
+  True whereabouts (* the theft; ! they lied about this slot)
+                                             ┌─────────── theft window ────────────┐
+        20:00       20:15        20:30       │ 20:45       21:00       21:15       │ 21:30     21:45
+  Shen  guest wing  corridor     study       │ corridor    guest wing  corridor    │ study     study
+  Su    guest wing  corridor     corridor    │ corridor    corridor    corridor    │ corridor  kitchen
+  He    tea room    lobby        tea room    │ lobby       corridor    study*!     │ corridor  guest wing
+  Lin   guest wing  corridor     corridor    │ kitchen     corridor    corridor    │ corridor  lobby
+  Chen  tea room    lobby        corridor    │ lobby       lobby       tea room    │ tea room  lobby
+  Zhao  guest wing  guest wing!  guest wing  │ guest wing  guest wing  guest wing  │ corridor  kitchen
+
+  Lies:
+  · He Xiulan (alibi) claims the guest wing at 21:15, was really in the study.
+    Exposed by: Zhao Yifan
+  · Zhao Yifan (privacy) claims the corridor at 20:15, was really in the guest
+    wing. Exposed by: Shen Huaishan, Su Man, Lin Xiaoyu, E4
