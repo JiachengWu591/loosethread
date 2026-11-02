@@ -1,8 +1,8 @@
 # Study plan (P3) — pre-registration
 
-**Status: draft, not approved.** No experiment starts before the owner approves this file (ROADMAP P3).
-After approval it changes only through a change proposal, and the report lists every change.
-Decisions: D-034; proposals CP-7 and CP-8. Prior work: `RELATED_WORK.md`.
+**Status: approved by the owner on 2026-11-02 (D-035), with CP-8 option A.** It changes only through a
+change proposal, and the report lists every change. The full run's budget is still to be approved after
+the pilot (§10). Decisions: D-034, D-035; proposals CP-7 and CP-8. Prior work: `RELATED_WORK.md`.
 
 ## 1. What this study asks
 

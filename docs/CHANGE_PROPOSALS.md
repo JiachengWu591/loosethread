@@ -188,8 +188,9 @@ alibi style). Full outputs: `docs/review/p1/batch-naive.txt`, `docs/review/p1/ba
   - B. Approve a total of CNY 60 now. Cost: a number set without measurements.
 - **Recommendation**: A, which is also what the roadmap asks ("report the budget before the full run").
 
-## CP-8 — P3 scope after the literature search: a close study appeared · `open`
+## CP-8 — P3 scope after the literature search: a close study appeared · `approved`
 
+- **Decision** (owner, 2026-11-02, "批准"): option A, with the study plan. See D-035.
 - **Trigger**: the search for the study design (`RELATED_WORK.md`, 2026-11-02) found three things.
   - Rahmati & Zhao (arXiv 2609.23043, 2026-09-19) built a pipeline for an LLM detective game and report
     critical hallucinations 17.80% vs 6.27%, with 33 participants. `CLAUDE.md` requires a proposal when a

@@ -172,8 +172,8 @@ Commands below use the package name `loosethread` (originally `alibi`; renamed b
 ## P3 — Evaluation study · `in progress`
 
 - **Progress (2026-11-02, branch `p3-evaluation`)**: plan approved with deviations and CNY 5 for tuning and
-  the pilot (D-034, CP-7). `docs/STUDY_PLAN.md` drafted, waiting for approval together with CP-8 (open). No
-  experiment has run.
+  the pilot (D-034, CP-7). `docs/STUDY_PLAN.md` and CP-8 approved (D-035). Instruments built and tested
+  offline. Next: tune on dev, pilot, then the full run's budget goes to the owner.
 - **Goal**: answer three research questions with data, as a reproducible report.
 - **Pre-registration first**: `docs/STUDY_PLAN.md` (questions, hypotheses, metrics, sample sizes,
   analysis, stopping rules). Experiments start only after owner approval.

@@ -930,3 +930,22 @@ directly.
 - **Tactical**: the writer's system prompt said "a guesthouse cut off by a storm", false in the two newer
   settings since D-031. Now setting-neutral. It changes the prompt the 37/37 usable-lines check used (D-026)
   and no measured parser prompt, and it is fixed before the prompts are frozen for P3.
+
+## D-035 — Study plan approved; instruments built
+
+- **Date**: 2026-11-02 · **Type**: strategic, approved by the owner in chat ("批准"): `docs/STUDY_PLAN.md`
+  and CP-8 option A. The full run's budget still needs its own approval, after the pilot.
+- **Built, offline only** (`loosethread.study`, tests with fake models, no model called): case selection,
+  arms A and C with shared wording, the 8-turn script, the extractor's reading and the code that checks it,
+  RQ1's prompt and checker, the 240-item attack set written before any measurement, exact matching and the
+  judge, the adaptive attacker, the runners, a spending guard, and scoring that repeats from rows offline.
+- **Tactical choices within the plan**
+  - Arms A and C are also given the character's own account as plain lines, and C the public sheet. Without
+    the account, A would have to read its answers out of a grid. So A and C differ only in the truth.
+  - "Valid answer" is defined per turn in `assertions.answered`: the plan said "states all the claims the
+    query allows", which would penalise a plain "no" to "did you see X?". An arm is not charged for
+    volunteering less than the question asks.
+  - Tuning uses seeds 5000–5019 and the pilot 5020–5039, so the pilot does not reuse what tuning saw.
+  - Scoring reads the extractor's and judge's raw replies from the rows, so `verify` can repeat it offline.
+  - The adaptive arm also uses the judge on every reply, not only on exact matches, so paraphrased leaks
+    count. This adds cost; the pilot measures it.
