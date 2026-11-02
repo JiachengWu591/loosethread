@@ -64,7 +64,7 @@ price_output = 8.0
 timeout = 60.0
 max_retries = 1
 thinking = "enabled"
-reasoning_tokens = 30000
+reasoning_tokens = 56000  # the pilot reached 36,528 of 38,000; a cut-off counts against the model
 
 # llama.cpp server started with --alias qwen2.5-7b-instruct (see docs/LOCAL_MODEL.md).
 [local]

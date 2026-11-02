@@ -52,6 +52,18 @@ def held_out() -> tuple[tuple[int, Lang], ...]:
     return tuple(chosen)
 
 
+def held_out_subset(per_cell: int) -> tuple[tuple[int, Lang], ...]:
+    """The first `per_cell` held-out cases of each cell, for what costs too much to run on all."""
+    counts: Counter[tuple[str, AlibiStyle]] = Counter()
+    chosen: list[tuple[int, Lang]] = []
+    for seed, lang in held_out():
+        pack, shape = daily_setup(seed)
+        if counts[(pack.id, shape)] < per_cell:
+            chosen.append((seed, lang))
+            counts[(pack.id, shape)] += 1
+    return tuple(chosen)
+
+
 def development(seeds: range) -> tuple[tuple[int, Lang], ...]:
     """(seed, language) for tuning or pilot seeds, alternating languages."""
     return tuple((seed, Lang.ZH if seed % 2 == 0 else Lang.EN) for seed in seeds)

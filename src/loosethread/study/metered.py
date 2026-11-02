@@ -17,14 +17,17 @@ from loosethread.npc import Usage
 if TYPE_CHECKING:
     from loosethread.llm.client import ChatModel, Completion
 
-# CP-7: CNY 5 for tuning and the pilot. The full run needs the owner's separate approval, recorded
-# here and in DECISIONS when given.
-CAP_CNY = 5.0
+# CP-9 option A (D-037): the whole study, tuning and pilot included. CP-7 had CNY 5 for those alone.
+CAP_CNY = 80.0
 ROWS = Path("results/rows")
 
 
 class BudgetExceeded(RuntimeError):
     """The next step could pass the approved spending. Rows so far are kept."""
+
+
+class Outage(RuntimeError):
+    """Too many calls are failing: the run pauses and the owner is told (STUDY_PLAN §9)."""
 
 
 @dataclass

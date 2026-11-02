@@ -214,8 +214,9 @@ alibi style). Full outputs: `docs/review/p1/batch-naive.txt`, `docs/review/p1/ba
   are what that study leaves open. Dropping either addition is possible at the budget step if the pilot
   says they cost too much.
 
-## CP-9 — Pilot results: the full run's budget, and two hypotheses in doubt · `open`
+## CP-9 — Pilot results: the full run's budget, and two hypotheses in doubt · `approved`
 
+- **Decision** (owner, 2026-11-02, "A"): option A, cap CNY 80. See D-037.
 - **Trigger** (pilot and tuning on dev seeds, small samples; details in D-036):
   - **RQ1 depends on one setting.** Thinking off: 0/13 accepted [0.0%, 22.8%], all self-contradictory.
     Thinking on: 3/3 accepted [43.9%, 100.0%], at about CNY 0.24 and 3 minutes per case. H1 ("fewer than

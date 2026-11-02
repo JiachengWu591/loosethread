@@ -77,9 +77,11 @@ Stated before any data. A failed hypothesis is reported as such and triggers §9
 - **Outcome**, mutually exclusive, worst first: `invalid` (fails the schema) · `self_contradictory` (no
   consistent suspect) · `multiple` · `unique_wrong` (one suspect, not the one the model named) ·
   `too_easy` (unique and right, but needs no contradiction, under the generator's own rule) · `accepted`.
-- **Primary**: `accepted` over all 204, invalid included, with a Wilson interval.
-- **Fairness**: n = 204 with `deepseek`; a further 30 with the stronger `deepseek-pro`, reported with its
-  wider interval.
+- **Primary**: `accepted` over all cases of a setting, invalid included, with a Wilson interval.
+- **Two settings (changed by CP-9, D-037)**. The pilot found the result hangs on one setting: thinking off
+  0/13, thinking on 3/3. `deepseek-think-long` (thinking on, 60 cases: the first 5 of each setting × shape
+  cell) is the fair estimate, and tests H1. `deepseek` (thinking off, all 204) shows the default. The
+  stronger `deepseek-pro` is dropped: 0/1 with thinking off, and cut off at 24,000 tokens with it on.
 - **Control, and its limit**: the generator's 204 cases through the same checker pass by construction,
   because it rejects what fails. That checks the checker and is not a head-to-head result. The honest
   comparison figure is the generator's attempt-level acceptance (300/2304 = 13.0% [11.7%, 14.5%] on seeds
@@ -195,24 +197,22 @@ and gives results with that caveat, instead of a repaired measurement.
 
 ## 10. Budget
 
-CP-7 approved CNY 5 for dev tuning and the pilot. **The full run needs separate approval, after the pilot
-has replaced these assumed token counts with billed ones.** Upper bounds: peak price, no cache discount.
+**Approved cap for the whole study: CNY 80 (CP-9 option A, D-037).** Measured in the pilot; upper bounds:
+peak price, no cache discount, at the prices of 2026-10-31, which could not be re-read (D-036).
 
 | Part | CNY, upper bound |
 |---|---|
-| Dev tuning and pilot | 5.0 (approved) |
-| RQ1: `deepseek`, 204 cases | 7.2 |
-| RQ1: `deepseek-pro`, 30 cases | 7.0 |
-| RQ2: arm A | 11.8 |
-| RQ2: arm B | 8.8 |
-| RQ2: arm C | 5.4 |
-| RQ2: extractor, all arms | 8.6 |
-| RQ3: static set, all arms, and judge | 4.0 |
-| RQ3: adaptive arm | 17.8 |
+| Tuning and pilot, spent | 4.4 |
+| RQ1: `deepseek`, thinking off, 204 cases | 2.1 |
+| RQ1: `deepseek-think-long`, thinking on, 60 cases | 14.6 |
+| RQ2: arms A, B, C, with extraction, 204 cases each | 33.6 |
+| RQ3: static set, three arms, with judge | 4.0 |
+| RQ3: adaptive arm, 4 campaigns of up to 500 attacks | 16.8 |
+| Run-to-run repeat | 0.5 |
 | **Total** | **about 76** |
 
-The adaptive figure assumes no arm leaks, so all 100 rounds run; an early stop lowers it. These figures use
-200 rather than 204 per arm; the difference is under CNY 1. Spent so far on the project: about CNY 2.6.
+The adaptive figure assumes no arm leaks, so all 100 rounds run; an early stop lowers it. The project spent
+about CNY 2.6 before this study.
 
 ## 11. The owner's work
 
@@ -236,13 +236,6 @@ every table; the report states what the results do and do not show.
 - Lines are rated by one person, who also commissioned the system and knows it well.
 - The cases are ours. Nothing here generalises to other games without further study.
 
-## 15. Changes since approval
-
-Tactical, from tuning and the pilot on dev seeds, all before any test data (D-035, D-036):
-valid answers are defined per turn (`assertions.answered`); public evidence counts as allowed for everyone;
-only names can be "invented"; a time left out of a reading takes the question's slot; the judge is told
-which slots differ from the truth; the owner's attack check is taken with the budget decision. Open: CP-9.
-
 ## 14. Order of work
 
 1. Owner approves this plan.
@@ -251,3 +244,14 @@ which slots differ from the truth; the owner's attack check is taken with the bu
 4. Pilot of 10 items per RQ; report measured cost; owner approves the full budget.
 5. Test runs: RQ1, RQ2, RQ3. Then the owner's checks.
 6. `verify`, tables, figure, report. Show results, stop.
+
+## 15. Changes since approval
+
+- **CP-9 option A (D-037)**: RQ1 runs in two settings, `deepseek-pro` is dropped (§5.1); budget (§10).
+- Tactical, from tuning and the pilot on dev seeds, before any test data (D-035, D-036, D-037): valid
+  answers are defined per turn (`assertions.answered`); public evidence counts as allowed for everyone; only
+  names can be "invented"; a time left out of a reading takes the question's slot; the judge is told which
+  slots differ from the truth; lines are shuffled for the extractor within a case, not across the run,
+  so that each case can be saved as it finishes, and the extractor's calls are independent either way.
+- The owner's check of the attack sample came with the budget decision, not before the pilot, and before any
+  test attack was used. RQ1, RQ2 and the adaptive arm do not use the attack set, so they started first.

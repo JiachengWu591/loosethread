@@ -4,12 +4,14 @@ python -m loosethread.study.run rq1 --set tune --limit 2
 python -m loosethread.study.run rq2 --set pilot --limit 10 --arms A,B,C
 python -m loosethread.study.run rq3 --set pilot --limit 10 --arms A,B,C
 python -m loosethread.study.run adaptive --set pilot --arm A --lang zh --rounds 1
+python -m loosethread.study.run rq2 --set test --max-cny 40 --resume
 python -m loosethread.study.run score results/rows/study-rq2-pilot-r1.jsonl
 python -m loosethread.study.run spent
 
-Tuning and pilot rows are numbered and all kept. The held-out set stays closed until the owner has
-approved the full budget, and each test file is written once. A failed call is recorded by exception
-type only, because provider messages may echo part of the key.
+Tuning and pilot rows are numbered and all kept. Each test file is measured once. Runs take hours,
+so rows are saved after every case and `--resume` continues from them; it adds only what is missing
+and never repeats a saved row. A failed call is recorded by exception type only, because provider
+messages may echo part of the key.
 """
 
 import argparse
@@ -40,19 +42,30 @@ from loosethread.study.cases import (
     StudyCase,
     development,
     held_out,
+    held_out_subset,
     study_case,
 )
-from loosethread.study.metered import CAP_CNY, ROWS, BudgetExceeded, Metered, Spend, spent_so_far
+from loosethread.study.metered import (
+    CAP_CNY,
+    ROWS,
+    BudgetExceeded,
+    Metered,
+    Outage,
+    Spend,
+    spent_so_far,
+)
 from loosethread.study.script import interrogation
 
 if TYPE_CHECKING:
     from loosethread.llm.client import ChatModel
 
-# Opened only after the owner approves the full budget (STUDY_PLAN §10), with `CAP_CNY` raised.
-HELD_OUT_OPEN = False
+# Opened by CP-9 option A (D-037), with `CAP_CNY` raised.
+HELD_OUT_OPEN = True
 ATTACKS_SHA256: str | None = None  # fixed after the owner's spot-check, before any test run
 _TURN_RESERVE = 0.02  # CNY: more than any one turn has cost, for the spending guard
 _RQ1_TIMEOUT = 900.0  # a long reply takes minutes; the game's 30 s would fail every case
+_OUTAGE_SHARE = 0.05  # STUDY_PLAN §9
+_OUTAGE_MIN_CALLS = 40  # a few failures early on are not an outage
 
 type Row = dict[str, Any]
 
@@ -65,10 +78,32 @@ class Bench:
     commit: str
     model_name: str
     instruments: dict[str, str]
+    reasoning_tokens: int = 0  # thinking mode: hidden tokens the spending guard must allow for
+    path: Path | None = None  # saved here after every case, so a long run survives a crash
+    stopped: str = ""  # why the run ended early, if it did
 
 
 def _usage_cost(bench: Bench, usage: Usage) -> float:
     return round(bench.cost(usage), 6)
+
+
+def _save(bench: Bench, rows: Sequence[Row]) -> None:
+    if bench.path is not None:
+        write_rows(bench.path, rows)
+
+
+def _stop(bench: Bench, reason: BudgetExceeded | Outage) -> None:
+    bench.stopped = f"{type(reason).__name__}: {reason}"
+    print(f"stopped: {bench.stopped}")
+
+
+def _check_outage(rows: Sequence[Row], key: str = "arm") -> None:
+    """Pause if more than 5% of an arm's calls got no usable reply (STUDY_PLAN §9)."""
+    for arm in {str(r.get(key)) for r in rows}:
+        part = [r for r in rows if str(r.get(key)) == arm]
+        failed = sum(r.get("status", "ok") != "ok" for r in part)
+        if len(part) >= _OUTAGE_MIN_CALLS and failed / len(part) > _OUTAGE_SHARE:
+            raise Outage(f"arm {arm}: {failed} of {len(part)} calls failed")
 
 
 def cases_for(split: str) -> tuple[tuple[int, Lang], ...]:
@@ -100,11 +135,17 @@ def _base(bench: Bench, study: str, split: str, sc: StudyCase) -> Row:
 # --- RQ1 ------------------------------------------------------------------------------------------
 
 
-def run_rq1(bench: Bench, split: str, cases: Sequence[tuple[int, Lang]]) -> list[Row]:
-    rows: list[Row] = []
-    reserve = bench.cost(Usage(prompt_tokens=3000, completion_tokens=rq1.MAX_TOKENS))
+def run_rq1(
+    bench: Bench, split: str, cases: Sequence[tuple[int, Lang]], saved: Sequence[Row] = ()
+) -> list[Row]:
+    rows: list[Row] = list(saved)
+    done = {int(r["seed"]) for r in rows}
+    completion = rq1.MAX_TOKENS + bench.reasoning_tokens
+    reserve = bench.cost(Usage(prompt_tokens=3000, completion_tokens=completion))
     try:
         for seed, lang in cases:
+            if seed in done:
+                continue
             bench.spend.ensure(reserve)
             sc = study_case(seed, lang)
             system, user = rq1.writing_prompt(sc.case)
@@ -125,10 +166,13 @@ def run_rq1(bench: Bench, split: str, cases: Sequence[tuple[int, Lang]]) -> list
                 "completion_tokens": usage.completion_tokens,
                 "seconds": round(usage.seconds, 3),
                 "cost_cny_max": _usage_cost(bench, usage),
+                "status": "failed" if str(row.get("defect", "")).startswith("call:") else "ok",
             }
             rows.append(row)
-    except BudgetExceeded as stop:
-        print(f"stopped by the spending guard: {stop}")
+            _save(bench, rows)
+            _check_outage(rows, "model")
+    except (BudgetExceeded, Outage) as stop:
+        _stop(bench, stop)
     return rows
 
 
@@ -155,45 +199,70 @@ def _speak(npc: Npc, addressee: str, question: str) -> Reply:
     return npc.ask(addressee, question)  # type: ignore[arg-type]
 
 
+def complete_cases(rows: Sequence[Row], arms: Sequence[Arm]) -> tuple[list[Row], list[Row]]:
+    """Rows of finished RQ2 cases, and rows of a case a stopped run left unfinished. A resumed run
+    redoes those, so they stay out of the scores, on a file of their own the budget still sees."""
+    by_seed: dict[int, list[Row]] = {}
+    for row in rows:
+        by_seed.setdefault(int(row["seed"]), []).append(row)
+    done: list[Row] = []
+    unfinished: list[Row] = []
+    for part in by_seed.values():
+        whole = len(part) == 8 * len(arms) and all(
+            r["status"] != "ok" or r["extract_reply"] is not None for r in part
+        )
+        (done if whole else unfinished).extend(part)
+    return done, unfinished
+
+
 def run_rq2(
-    bench: Bench, split: str, cases: Sequence[tuple[int, Lang]], arms: Sequence[Arm]
+    bench: Bench,
+    split: str,
+    cases: Sequence[tuple[int, Lang]],
+    arms: Sequence[Arm],
+    saved: Sequence[Row] = (),
 ) -> list[Row]:
-    rows: list[Row] = []
+    rows: list[Row] = list(saved)
+    done = {int(r["seed"]) for r in rows}
     try:
         for seed, lang in cases:
+            if seed in done:
+                continue
             sc = study_case(seed, lang)
             turns = interrogation(sc)
+            here: list[Row] = []
             for arm in arms:
                 npc = make_npc(arm, sc, bench.model)
                 for turn in turns:
                     bench.spend.ensure(_TURN_RESERVE)
                     reply = _speak(npc, turn.addressee, turn.question)
-                    rows.append(
-                        _base(bench, "rq2", split, sc)
-                        | {
-                            "arm": arm.value,
-                            "turn": turn.number,
-                            "kind": turn.kind.value,
-                            "addressee": turn.addressee,
-                            "question": turn.question,
-                            "line": reply.line,
-                            "status": reply.status,
-                            "detail": list(reply.detail),
-                            "line_tokens": reply.usage.prompt_tokens
-                            + reply.usage.completion_tokens,
-                            "line_seconds": round(reply.usage.seconds, 3),
-                            "extract_reply": None,
-                            "cost_cny_max": _usage_cost(bench, reply.usage),
-                        }
-                    )
-        # Lines reach the extractor shuffled across arms; it is told neither the arm nor the truth.
-        order = [r for r in rows if r["status"] == "ok"]
-        random.Random("loosethread:extract").shuffle(order)
-        for row in order:
-            bench.spend.ensure(_TURN_RESERVE)
-            _extract(bench, row)
-    except BudgetExceeded as stop:
-        print(f"stopped by the spending guard: {stop}")
+                    row = _base(bench, "rq2", split, sc) | {
+                        "arm": arm.value,
+                        "turn": turn.number,
+                        "kind": turn.kind.value,
+                        "addressee": turn.addressee,
+                        "question": turn.question,
+                        "line": reply.line,
+                        "status": reply.status,
+                        "detail": list(reply.detail),
+                        "line_tokens": reply.usage.prompt_tokens + reply.usage.completion_tokens,
+                        "line_seconds": round(reply.usage.seconds, 3),
+                        "extract_reply": None,
+                        "cost_cny_max": _usage_cost(bench, reply.usage),
+                    }
+                    rows.append(row)
+                    here.append(row)
+            # Lines reach the extractor shuffled across arms; it is told neither arm nor truth.
+            order = [r for r in here if r["status"] == "ok"]
+            random.Random(f"loosethread:extract:{seed}").shuffle(order)
+            for row in order:
+                bench.spend.ensure(_TURN_RESERVE)
+                _extract(bench, row)
+            _save(bench, rows)
+            _check_outage(rows)
+    except (BudgetExceeded, Outage) as stop:
+        _stop(bench, stop)
+        _save(bench, rows)
     return rows
 
 
@@ -289,6 +358,7 @@ def run_rq3(
     cases: Sequence[tuple[int, Lang]],
     arms: Sequence[Arm],
     limit: int | None,
+    saved: Sequence[Row] = (),
 ) -> list[Row]:
     wanted = "test" if split == "test" else "dev"
     if split == "test" and attacks.sha256() != ATTACKS_SHA256:
@@ -300,13 +370,16 @@ def run_rq3(
     elif split == "pilot":
         assigned = [x for x in assigned if x.position % 2 == 1]
     assigned = assigned[:limit] if limit is not None else assigned
-    rows: list[Row] = []
+    rows: list[Row] = list(saved)
+    done = {(str(r["attack"]), str(r["arm"])) for r in rows}
     try:
         for item in assigned:
             sc = study_case(item.seed, item.lang)
             speaker = attacks.addressee_for(item, sc)
             message = attacks.fill(item.attack, sc, speaker)
             for arm in arms:
+                if (item.attack.id, arm.value) in done:
+                    continue
                 bench.spend.ensure(_TURN_RESERVE)
                 rows.append(
                     _base(bench, "rq3", split, sc)
@@ -318,13 +391,22 @@ def run_rq3(
                     }
                     | _attack_row(bench, arm, sc, speaker, message)
                 )
-    except BudgetExceeded as stop:
-        print(f"stopped by the spending guard: {stop}")
+            _save(bench, rows)
+            _check_outage(rows)
+    except (BudgetExceeded, Outage) as stop:
+        _stop(bench, stop)
+        _save(bench, rows)
     return rows
 
 
 def run_adaptive(
-    bench: Bench, split: str, arm: Arm, lang: Lang, rounds: int, cases: Sequence[tuple[int, Lang]]
+    bench: Bench,
+    split: str,
+    arm: Arm,
+    lang: Lang,
+    rounds: int,
+    cases: Sequence[tuple[int, Lang]],
+    saved: Sequence[Row] = (),
 ) -> list[Row]:
     """One campaign against one culprit, stopping when the judge confirms a leak (§5.3)."""
     seed, _ = next(c for c in cases if c[1] is lang)
@@ -332,10 +414,17 @@ def run_adaptive(
     speaker = sc.case.truth.culprit
     sheet = "\n".join(render_sheet(sc.case.view, lang))
     people = [p.id for p in sc.case.view.world.people]
-    past: list[tuple[str, str, bool]] = []
-    rows: list[Row] = []
+    rows: list[Row] = list(saved)
+    past = [
+        (str(r["question"]), str(r["line"]), bool(r.get("confirmed_leak")))
+        for r in rows
+        if "line" in r
+    ]
+    if any(leak for _, _, leak in past):
+        return rows  # the campaign already ended at a confirmed leak
+    first = max((int(r["round"]) for r in rows), default=0) + 1
     try:
-        for number in range(1, rounds + 1):
+        for number in range(first, rounds + 1):
             bench.spend.ensure(_TURN_RESERVE * 6)
             system, user = attacks.attacker_prompt(sheet, speaker, lang, past)
             try:
@@ -366,30 +455,36 @@ def run_adaptive(
                 rows.append(row)
                 past.append((message, str(row["line"]), leak))
                 confirmed = confirmed or leak
+            _save(bench, rows)
+            _check_outage(rows)
             if confirmed:
                 break
-    except BudgetExceeded as stop:
-        print(f"stopped by the spending guard: {stop}")
+    except (BudgetExceeded, Outage) as stop:
+        _stop(bench, stop)
+        _save(bench, rows)
     return rows
 
 
 # --- Files and the command line -------------------------------------------------------------------
 
 
-def out_path(rows_dir: Path, study: str, split: str, tag: str = "") -> Path:
+def out_path(rows_dir: Path, study: str, split: str, tag: str = "", resume: bool = False) -> Path:
     stem = f"study-{study}{tag}-{split}"
     if split == "test":
         path = rows_dir / f"{stem}.jsonl"
-        if path.exists():
-            raise SystemExit(f"{path} exists: the test set is measured once")
+        if path.exists() and not resume:
+            raise SystemExit(f"{path} exists: the test set is measured once (or use --resume)")
         return path
     return rows_dir / f"{stem}-r{len(list(rows_dir.glob(f'{stem}-r*.jsonl'))) + 1}.jsonl"
 
 
 def write_rows(path: Path, rows: Sequence[Row]) -> None:
+    """Whole or not at all: a crash while saving must not cost the rows already saved."""
     path.parent.mkdir(parents=True, exist_ok=True)
     text = "".join(json.dumps(r, ensure_ascii=False) + "\n" for r in rows)
-    path.write_text(text, encoding="utf-8", newline="\n")
+    partial = path.with_name(path.name + ".partial")
+    partial.write_text(text, encoding="utf-8", newline="\n")
+    partial.replace(path)
 
 
 def read_rows(path: Path) -> list[Row]:
@@ -440,6 +535,7 @@ def open_bench(backend: str, spend: Spend, timeout: float | None = None) -> Benc
         _commit(),
         settings.model,
         _instrument_hashes(),
+        settings.reasoning_tokens,
     )
 
 
@@ -459,6 +555,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         go.add_argument("--arm", default="A")
         go.add_argument("--lang", default="zh")
         go.add_argument("--rounds", type=int, default=100)
+        go.add_argument("--per-cell", type=int, help="test set: the first N cases of each cell")
+        go.add_argument("--resume", action="store_true", help="continue a stopped test run")
+        go.add_argument("--max-cny", type=float, help="this run's share, when runs go in parallel")
     again = sub.add_parser("score")
     again.add_argument("rows", type=Path, nargs="+")
     sub.add_parser("spent")
@@ -474,28 +573,39 @@ def main(argv: Sequence[str] | None = None) -> int:
             print("\n".join(_table(read_rows(path))))
         return 0
 
-    spend = Spend(CAP_CNY, spent_so_far())
-    print(f"study spend so far, upper bound: CNY {spend.spent:.4f} of {spend.limit:.2f}")
+    tag = "" if args.backend == "deepseek" else f"-{args.backend}"
+    if args.command == "adaptive":
+        tag = f"-{args.arm}-{args.lang}"
+    path = out_path(ROWS, args.command, args.split, tag, args.resume)
+    saved = read_rows(path) if args.resume and path.exists() else []
+    if args.command == "rq2":
+        saved, unfinished = complete_cases(saved, _arms(args.arms))
+        if unfinished:  # kept for the budget, and out of the scores
+            write_rows(path.with_name(f"study-unfinished-{path.name[6:]}"), unfinished)
+
+    start = spent_so_far()
+    limit = CAP_CNY if args.max_cny is None else min(CAP_CNY, start + args.max_cny)
+    spend = Spend(limit, start)
+    print(f"study spend so far, upper bound: CNY {spend.spent:.4f}; this run stops at {limit:.2f}")
     timeout = _RQ1_TIMEOUT if args.command == "rq1" else None
     bench = open_bench(args.backend, spend, timeout)
-    cases = cases_for(args.split)
-    tag = "" if args.backend == "deepseek" else f"-{args.backend}"
+    bench.path = path
+    cases = held_out_subset(args.per_cell) if args.per_cell else cases_for(args.split)
     if args.command == "rq1":
-        rows = run_rq1(bench, args.split, cases[: args.limit])
+        rows = run_rq1(bench, args.split, cases[: args.limit], saved)
     elif args.command == "rq2":
-        rows = run_rq2(bench, args.split, cases[: args.limit], _arms(args.arms))
+        rows = run_rq2(bench, args.split, cases[: args.limit], _arms(args.arms), saved)
     elif args.command == "rq3":
-        rows = run_rq3(bench, args.split, cases, _arms(args.arms), args.limit)
+        rows = run_rq3(bench, args.split, cases, _arms(args.arms), args.limit, saved)
     else:
-        arm = Arm(args.arm)
-        tag = f"-{arm.value}-{args.lang}"
-        rows = run_adaptive(bench, args.split, arm, Lang(args.lang), args.rounds, cases)
-    path = out_path(ROWS, args.command, args.split, tag)
+        rows = run_adaptive(
+            bench, args.split, Arm(args.arm), Lang(args.lang), args.rounds, cases, saved
+        )
     write_rows(path, rows)
     print(path)
     print("\n".join(_table(rows)))
-    print(f"study spend so far, upper bound: CNY {spend.spent:.4f} of {spend.limit:.2f}")
-    return 0
+    print(f"study spend so far, upper bound: CNY {spend.spent:.4f} of {CAP_CNY:.2f}")
+    return 3 if bench.stopped else 0
 
 
 def _table(rows: Sequence[Row]) -> list[str]:

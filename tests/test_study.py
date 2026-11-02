@@ -23,9 +23,10 @@ from loosethread.study.cases import (
     StudyCase,
     development,
     held_out,
+    held_out_subset,
     study_case,
 )
-from loosethread.study.metered import BudgetExceeded, Metered, Spend, spent_so_far
+from loosethread.study.metered import BudgetExceeded, Metered, Outage, Spend, spent_so_far
 from loosethread.study.script import TurnKind, interrogation, lie_slot
 
 SC = study_case(5000, Lang.ZH)
@@ -567,15 +568,92 @@ def _bench(fake: _Fake, limit: float = 5.0) -> run.Bench:
     )
 
 
-def test_the_held_out_set_is_closed_and_a_test_file_is_written_once(tmp_path: Path) -> None:
+def test_the_held_out_set_can_be_closed_and_a_test_file_is_written_once(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(run, "HELD_OUT_OPEN", False)
     with pytest.raises(SystemExit, match="closed"):
         run.cases_for("test")
+    monkeypatch.setattr(run, "HELD_OUT_OPEN", True)
+    assert len(run.cases_for("test")) == 204
     assert run.out_path(tmp_path, "rq2", "tune").name == "study-rq2-tune-r1.jsonl"
     (tmp_path / "study-rq2-tune-r1.jsonl").write_text("", encoding="utf-8")
     assert run.out_path(tmp_path, "rq2", "tune").name == "study-rq2-tune-r2.jsonl"
     (tmp_path / "study-rq2-test.jsonl").write_text("", encoding="utf-8")
     with pytest.raises(SystemExit, match="measured once"):
         run.out_path(tmp_path, "rq2", "test")
+    assert run.out_path(tmp_path, "rq2", "test", resume=True).name == "study-rq2-test.jsonl"
+
+
+def test_the_thinking_subset_is_balanced_and_inside_the_held_out_set() -> None:
+    chosen = held_out_subset(5)
+    assert len(chosen) == 60
+    cells = Counter((daily_setup(s)[0].id, daily_setup(s)[1]) for s, _ in chosen)
+    assert set(cells.values()) == {5}
+    assert set(chosen) <= set(held_out())
+
+
+def test_rows_are_saved_after_every_case_and_a_resumed_run_repeats_none(tmp_path: Path) -> None:
+    cases = development(TUNE_SEEDS)[:2]
+    path = tmp_path / "rows.jsonl"
+    bench = _bench(_Fake(default="{}"))
+    bench.path = path
+    rows = run.run_rq2(bench, "tune", cases[:1], [Arm.C])
+    assert len(run.read_rows(path)) == len(rows) == 8
+    fake = _Fake(default="{}")
+    again = _bench(fake)
+    again.path = path
+    rows = run.run_rq2(again, "tune", cases, [Arm.C], run.read_rows(path))
+    assert len(rows) == 16
+    assert len(fake.sent) == 16  # only the second case: eight lines, eight readings
+    assert {r["seed"] for r in run.read_rows(path)} == {c[0] for c in cases}
+
+
+def test_an_unfinished_case_is_set_apart_when_resuming() -> None:
+    cases = development(TUNE_SEEDS)[:1]
+    rows = run.run_rq2(_bench(_Fake(default="{}")), "tune", cases, [Arm.C])
+    done, unfinished = run.complete_cases(rows, [Arm.C])
+    assert (len(done), unfinished) == (8, [])
+    done, unfinished = run.complete_cases(rows[:5], [Arm.C])
+    assert (done, len(unfinished)) == ([], 5)
+    rows[0]["extract_reply"] = None
+    done, unfinished = run.complete_cases(rows, [Arm.C])
+    assert (done, len(unfinished)) == ([], 8)
+
+
+def test_rq1_and_rq3_resume_without_repeating(tmp_path: Path) -> None:
+    first = run.run_rq1(_bench(_Fake(default="x")), "tune", [(5000, Lang.ZH)])
+    fake = _Fake(default="x")
+    both = run.run_rq1(_bench(fake), "tune", [(5000, Lang.ZH), (5001, Lang.EN)], first)
+    assert [r["seed"] for r in both] == [5000, 5001]
+    assert len(fake.sent) == 1
+    judge = '{"accuses": []}'
+    first = run.run_rq3(_bench(_Fake(default=judge)), "tune", development(TUNE_SEEDS), [Arm.A], 1)
+    fake = _Fake(default=judge)
+    both = run.run_rq3(_bench(fake), "tune", development(TUNE_SEEDS), [Arm.A], 2, first)
+    assert len(both) == 2
+    assert len(fake.sent) == 2  # one reply and one judgement
+
+
+def test_too_many_failed_calls_pause_the_run() -> None:
+    bench = _bench(_Fake())
+    bench.model = _Down()
+    rows = run.run_rq2(bench, "tune", development(TUNE_SEEDS)[:8], [Arm.C])
+    assert bench.stopped.startswith("Outage")
+    assert 40 <= len(rows) < 64
+    fine = [{"arm": "A", "status": "ok"}] * 39 + [{"arm": "A", "status": "no_reply:x"}] * 3
+    with pytest.raises(Outage):
+        run._check_outage(fine)
+    run._check_outage(fine[:39])  # all fine
+    run._check_outage(fine[-30:])  # too few calls to say
+
+
+def test_the_guard_allows_for_hidden_reasoning_tokens() -> None:
+    bench = _bench(_Fake(default="x"), limit=1.0)
+    bench.cost = lambda u: u.completion_tokens * 8e-6
+    bench.reasoning_tokens = 150_000
+    assert run.run_rq1(bench, "tune", [(5000, Lang.ZH)]) == []
+    assert bench.stopped.startswith("BudgetExceeded")
 
 
 def test_the_attack_test_split_needs_the_frozen_hash() -> None:

@@ -994,3 +994,18 @@ directly.
     pilot, to save a stop. The pilot used dev attacks only, so the test attacks stay unseen.
 - **To do before a test run, if approved**: thinking-on reached 36,528 of 38,000 tokens, so its limit must
   rise or some cases will be cut off and count as invalid. `CAP_CNY`, `HELD_OUT_OPEN`, `ATTACKS_SHA256`.
+
+## D-037 — CP-9 option A: the full run is approved
+
+- **Date**: 2026-11-02 · **Type**: strategic, the owner's decision in chat ("A"). Cap for the whole study: CNY
+  80. RQ1 reports thinking off (204 cases) and thinking on (60), with thinking on as the fair estimate and
+  `deepseek-pro` dropped. H1 and H3 stay as written, and are reported whichever way they go.
+- **RQ3's static run waits for the owner's check of the attack sample**, which has not come back yet. RQ1,
+  RQ2 and the adaptive arm do not use the attack set, so they go first. `ATTACKS_SHA256` stays empty until
+  then, and `run_rq3` refuses the test split without it.
+- **Tactical, for runs that take hours**: rows are saved after every case; `--resume` continues and never
+  repeats a saved row; a case left unfinished by a stop goes to a file of its own that counts for the budget
+  and not for the scores; a crash between saves loses at most one case's rows, up to about CNY 0.2 of spend
+  that the ledger would not see. More than 5% of an arm's calls failing, after at least 40, pauses the
+  run (STUDY_PLAN §9). `--max-cny` gives parallel runs each a share of the budget, since each one only knows
+  its own spending. The thinking limit rises to 64,000 tokens.
