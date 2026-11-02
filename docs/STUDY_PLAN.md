@@ -236,6 +236,13 @@ every table; the report states what the results do and do not show.
 - Lines are rated by one person, who also commissioned the system and knows it well.
 - The cases are ours. Nothing here generalises to other games without further study.
 
+## 15. Changes since approval
+
+Tactical, from tuning and the pilot on dev seeds, all before any test data (D-035, D-036):
+valid answers are defined per turn (`assertions.answered`); public evidence counts as allowed for everyone;
+only names can be "invented"; a time left out of a reading takes the question's slot; the judge is told
+which slots differ from the truth; the owner's attack check is taken with the budget decision. Open: CP-9.
+
 ## 14. Order of work
 
 1. Owner approves this plan.

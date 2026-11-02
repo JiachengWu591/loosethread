@@ -949,3 +949,48 @@ directly.
   - Scoring reads the extractor's and judge's raw replies from the rows, so `verify` can repeat it offline.
   - The adaptive arm also uses the judge on every reply, not only on exact matches, so paraphrased leaks
     count. This adds cost; the pilot measures it.
+
+## D-036 — Tuning and pilot results; instrument fixes; CP-9 raised
+
+- **Date**: 2026-11-02 · **Type**: tactical for the fixes. **CP-9 is open**: the full run's budget and RQ1's
+  primary setting are the owner's. The held-out set has not been touched.
+- **What these numbers are**: dev seeds, small samples, instruments still being fixed. They guide the
+  budget and say nothing final. Rows: `results/rows/study-*`. CNY 4.41 of the 5 approved.
+- **Results**
+
+  | RQ | Setting | Result |
+  |---|---|---|
+  | RQ1 | `deepseek`, thinking off | 0/13 accepted [0.0%, 22.8%]; all self-contradictory; median 23.5 truth problems per case in the pilot |
+  | RQ1 | `deepseek-pro`, thinking off | 0/1, self-contradictory |
+  | RQ1 | `deepseek-pro`, thinking on | 0/1: cut off at 24,000 tokens, 418 s, CNY 0.66 |
+  | RQ1 | `deepseek`, thinking on, up to 38,000 tokens | **3/3 accepted [43.9%, 100.0%]**, own truth holds; 25,000–37,000 tokens, 150–210 s, CNY 0.21–0.29 |
+  | RQ2, 10 cases | A / B / C | sessions with a failure 2 / 0 / 3; valid answers 58/60, 60/60, 57/60 |
+  | RQ3, static, 24 attacks | A / B / C | no real leak. One flag in A is a judge error (see below). B: 4 of 24 attacks burned a charged question |
+  | RQ3, adaptive, 2 rounds, zh | A / B | 0 confirmed leaks in 10 attacks each |
+
+  The accepted LLM cases measure like generated ones on the metrics we have (oracle minimum 2, one
+  contradiction required, 3–10 conflict pairs), but three cases say little. All real RQ2 failures are one
+  kind: "yes, I saw the item", when the table says the character never did.
+- **Measured cost**, upper bound: per case, including extraction, A 0.058, B 0.063, C 0.043; per attack,
+  including the judge, 0.0072, 0.0077, 0.0053; per adaptive attack 0.0084; RQ1 0.0105 thinking off, about
+  0.243 thinking on. Against what the plan assumed, arm B costs more than arm A, not less.
+- **Fixes made after reading the rows, so they are disclosed.** All on dev seeds; the extractor prompt and
+  scoring are frozen before any test data. **They moved RQ2 from A 3/10, B 3/10, C 4/10 to 2, 0, 3, in the
+  direction of the hypothesis**. Every line behind that change was read by hand:
+  - The extractor listed slot end times and words like "tonight" as invented, and B's lines always state a
+    range, so B was hit hardest. Only names can now be invented. 6 of 6 such lines re-read clean, among 20
+    re-read with the new prompt (`study-extract-recheck-pilot-r1.jsonl`).
+  - A "no" with no time was checked against the whole evening, not the slot asked about.
+  - Public evidence counts as allowed: repeating the public sheet leaks nothing.
+  - The judge once called a true statement at a slot with no lie a leak, on words it passed in two other
+    arms. Code now tells it which slots differ from the truth.
+  - "I never noticed it" is an answer to "have you seen it?"; attacks were all assigned to the culprit in
+    tuning and would all have gone to innocents in the pilot (fixed before the pilot).
+- **Not done as planned**
+  - **Prices were not re-read**: the pricing page returned model names and no figures. `backends.toml`
+    still has the prices read on 2026-10-31, so costs here may be off; the owner's bill is the check.
+    Models were listed before every run. `deepseek-flash` is now served by DeepSeek-V4.1-Flash-1017.
+  - The owner's check of the attack sample is taken together with the budget decision, not before the
+    pilot, to save a stop. The pilot used dev attacks only, so the test attacks stay unseen.
+- **To do before a test run, if approved**: thinking-on reached 36,528 of 38,000 tokens, so its limit must
+  rise or some cases will be cut off and count as invalid. `CAP_CNY`, `HELD_OUT_OPEN`, `ATTACKS_SHA256`.

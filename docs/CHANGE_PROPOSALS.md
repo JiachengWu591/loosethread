@@ -213,3 +213,28 @@ alibi style). Full outputs: `docs/review/p1/batch-naive.txt`, `docs/review/p1/ba
 - **Recommendation**: A. Our like-for-like arms, generated and solver-checked cases, attack tests and zh/en
   are what that study leaves open. Dropping either addition is possible at the budget step if the pilot
   says they cost too much.
+
+## CP-9 — Pilot results: the full run's budget, and two hypotheses in doubt · `open`
+
+- **Trigger** (pilot and tuning on dev seeds, small samples; details in D-036):
+  - **RQ1 depends on one setting.** Thinking off: 0/13 accepted [0.0%, 22.8%], all self-contradictory.
+    Thinking on: 3/3 accepted [43.9%, 100.0%], at about CNY 0.24 and 3 minutes per case. H1 ("fewer than
+    half") may fail, and the plan's primary setting (thinking off) would look like a strawman.
+  - **RQ3**: no real leak in any arm in 24 static attacks, or in 2 rounds of adaptive attack. For arm A,
+    0/24 has an upper bound of 13.8%. H3 may not show a difference at n = 200.
+  - **RQ2**: sessions with a failure A 2/10, B 0/10, C 3/10, after scoring fixes. All real failures are one
+    kind: claiming to have seen the item. Direction as predicted; far too few to say.
+  - **Cost**: B uses more tokens than A per session (21,346 vs 18,960) and twice the time (17.7 s vs 9.8 s).
+- **Impact**: RQ1's primary setting; the budget. If the results hold at full size, the report's claim must
+  narrow. No change to phase order or exit criteria.
+- **Options** (costs are upper bounds from measured tokens, at the prices of 2026-10-31)
+  - A. Run as approved, with one change: RQ1 reports thinking off (204 cases, CNY 2.1) and thinking on (60
+    cases, CNY 14.6), with thinking on as the fair estimate; `deepseek-pro` is dropped. About CNY 72 more,
+    cap CNY 80. Cost: the most money.
+  - B. As A, with RQ2 at 102 cases per arm and the adaptive arm in one language: about CNY 47 more. Cost:
+    half-width up to 9.7 points against the roadmap's 7, which lowers a stated target and needs this
+    written reason and approval; fewer chances to see a rare failure.
+  - C. Pause and revise the thesis before spending more. Cost: deciding from 10–24 items each.
+- **Recommendation**: A. The pilot is too small to conclude anything, and a null result measured tightly is
+  a real finding: it would say how far a careful prompt alone goes. B's saving comes from the question
+  where failures are rare, so it weakens the result most where it matters.
