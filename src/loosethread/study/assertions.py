@@ -6,8 +6,9 @@ with the answer table, the only reference for what a character may say, and with
 which decides whether an assertion outside the table leaks the truth or invents something.
 
 `check` cannot see an error the extractor missed, so its counts are a lower bound of that kind. The
-owner checks a sample of the extractor's readings by hand (STUDY_PLAN §8). The public evidence counts
-as allowed for everyone: an arm that has the public sheet may repeat it, and that reveals nothing.
+owner checks a sample of the extractor's readings by hand (STUDY_PLAN §8). The public evidence
+counts as allowed for everyone: an arm that has the public sheet may repeat it, and that reveals
+nothing.
 """
 
 import hashlib
@@ -44,9 +45,8 @@ place. The speaker counts: "I was in the kitchen" is an entry. Everyone said to 
 speaker gets an entry too.
 "alone": ["HH:MM"]  times at which the speaker says nobody else was with them.
 "denied": [{"person": ID, "place": ID or null, "time": "HH:MM" or null}]  a person the line \
-says was \
-NOT there: "I wasn't in the study" has that place; "I didn't see Lin" has the person, and place \
-null.
+says was NOT there: "I wasn't in the study" has that place; "I didn't see Lin" has Lin, and place \
+null. Never list the speaker with place null.
 "accuses": [ID]  people the line says took the item, are guilty, or are lying.
 "item_seen": true, false or null  whether the speaker says they saw the item.
 "no_answer": true or false  the line refuses, asks to rephrase, or says the speaker does not know, \
