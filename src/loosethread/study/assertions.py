@@ -6,7 +6,8 @@ with the answer table, the only reference for what a character may say, and with
 which decides whether an assertion outside the table leaks the truth or invents something.
 
 `check` cannot see an error the extractor missed, so its counts are a lower bound of that kind. The
-owner checks a sample of the extractor's readings by hand (STUDY_PLAN §8).
+owner checks a sample of the extractor's readings by hand (STUDY_PLAN §8). The public evidence counts
+as allowed for everyone: an arm that has the public sheet may repeat it, and that reveals nothing.
 """
 
 import hashlib
@@ -226,7 +227,13 @@ class Reference:
 
 
 def reference(case: Case, book: AnswerBook, speaker: PersonId) -> Reference:
-    allowed: set[tuple[str, str, int]] = set()
+    # Evidence is on the public sheet, so repeating it leaks nothing, whoever says it.
+    allowed: set[tuple[str, str, int]] = {
+        (f.person, f.location, int(f.slot))
+        for e in case.view.evidence
+        for f in e.establishes
+        if isinstance(f, PersonAt)
+    }
     company: dict[int, frozenset[str]] = {}
     claimed: dict[int, str] = {}
     saw_item = False
@@ -298,6 +305,8 @@ def _check_place(fact: Placed, ref: Reference) -> Finding | None:
 
 def _check_denial(fact: Denied, ref: Reference) -> Finding | None:
     label = f"not {fact.person}@{fact.place}@{fact.slot}"
+    if fact.person == ref.speaker and fact.place is None:
+        return None  # nobody denies having seen themselves: a misreading, and it asserts nothing
     if fact.place is not None and fact.slot is not None:
         conflict = (fact.person, fact.place, fact.slot) in ref.allowed
     elif fact.place is not None:
@@ -363,10 +372,10 @@ def answered(turn: ScriptTurn, said: Extracted, ref: Reference) -> bool:
     An arm is not penalised for not volunteering more than the question asks: "did you see X?"
     is answered by yes or no, with or without saying where the speaker was.
     """
+    if turn.kind is TurnKind.ITEM:  # "I never noticed it" answers this, and reads as no_answer too
+        return said.item_seen is ref.saw_item
     if said.no_answer and not (said.places or said.denied or said.alone):
         return False
-    if turn.kind is TurnKind.ITEM:
-        return said.item_seen is ref.saw_item
     slot = turn.slot
     assert slot is not None  # every other legitimate turn names a slot
     own = Placed(ref.speaker, ref.claimed[int(slot)], int(slot))

@@ -11,7 +11,7 @@ from loosethread.generator import SHAPE_PARAMS, AlibiStyle, daily_setup
 from loosethread.lexicon import Lexicon
 from loosethread.llm.client import Completion
 from loosethread.lookup import AnswerBook
-from loosethread.model import Lang, LieReason, Occupants, PersonId, QueryKind
+from loosethread.model import Lang, LieReason, Occupants, PersonAt, PersonId, QueryKind
 from loosethread.npc import Usage
 from loosethread.parser import RuleParser
 from loosethread.study import assertions, attacks, rq1, run, tables
@@ -251,6 +251,30 @@ def test_denying_what_the_table_says_is_fabricated_and_denying_the_rest_is_clean
     assert _found(said, ref) == {Failure.FABRICATED}
     said = Extracted(denied=(Denied(culprit, SC.case.view.crime.location, slot),))
     assert _found(said, ref) == set()
+
+
+def test_repeating_public_evidence_is_allowed() -> None:
+    culprit = SC.case.truth.culprit
+    ref = _ref(SC, culprit)
+    for e in SC.case.view.evidence:
+        for f in e.establishes:
+            if isinstance(f, PersonAt):
+                said = Extracted(places=(Placed(f.person, f.location, int(f.slot)),))
+                assert _found(said, ref) == set(), e.id
+
+
+def test_a_speaker_denying_they_saw_themselves_asserts_nothing() -> None:
+    ref = _ref(SC, SC.case.truth.culprit)
+    said = Extracted(denied=(Denied(SC.case.truth.culprit, None, None),))
+    assert _found(said, ref) == set()
+
+
+def test_i_never_noticed_it_answers_the_item_question() -> None:
+    turn = interrogation(SC)[5]
+    ref = _ref(SC, turn.addressee)
+    said = Extracted(item_seen=ref.saw_item, no_answer=True)
+    assert assertions.answered(turn, said, ref)
+    assert not assertions.answered(turn, Extracted(no_answer=True), ref)
 
 
 def test_a_where_turn_needs_the_place_and_refusing_is_not_an_answer() -> None:
