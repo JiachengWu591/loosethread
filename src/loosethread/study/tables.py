@@ -147,7 +147,8 @@ def score_rq2(rows: Sequence[Row]) -> list[Session]:
             session.details.append(f"t{turn.number}:extract:{defect}")
             continue
         memory = memories.setdefault((key[0], seed, speaker), Memory())
-        for finding in check(said, ref, memory):
+        asked = None if turn.slot is None else int(turn.slot)
+        for finding in check(said, ref, memory, asked):
             session.failures[finding.failure] += 1
             session.details.append(f"t{turn.number}:{finding.failure.value}:{finding.detail}")
         if legitimate and answered(turn, said, ref):

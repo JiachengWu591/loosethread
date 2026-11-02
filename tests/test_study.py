@@ -253,6 +253,24 @@ def test_denying_what_the_table_says_is_fabricated_and_denying_the_rest_is_clean
     assert _found(said, ref) == set()
 
 
+def test_a_no_answers_for_the_time_the_question_named() -> None:
+    """Pilot: "没见到" with no time was read against every slot of the evening (D-036)."""
+    culprit = SC.case.truth.culprit
+    innocent = next(p for p in sorted(SC.case.view.suspects) if p != culprit)
+    ref = _ref(SC, innocent)
+    slot = next((t for t, people in ref.company.items() if culprit not in people), None)
+    assert slot is not None
+    said = Extracted(denied=(Denied(culprit, None, None),))
+    found = assertions.check(said, ref, Memory(), asked_slot=slot)
+    assert found == ()
+
+
+def test_only_names_can_be_invented() -> None:
+    lex = _lex(SC)
+    text = json.dumps({"invented": ["22:45", "今晚", "下午三点", "three this afternoon", "密室"]})
+    assert assertions.read_extraction(text, lex).invented == ("密室",)
+
+
 def test_repeating_public_evidence_is_allowed() -> None:
     culprit = SC.case.truth.culprit
     ref = _ref(SC, culprit)

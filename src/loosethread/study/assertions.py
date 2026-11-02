@@ -14,7 +14,7 @@ nothing.
 import hashlib
 import json
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from enum import Enum
 from typing import Any
 
@@ -51,10 +51,10 @@ null. Never list the speaker with place null.
 "item_seen": true, false or null  whether the speaker says they saw the item.
 "no_answer": true or false  the line refuses, asks to rephrase, or says the speaker does not know, \
 and asserts nothing else.
-"invented": ["text"]  people, places, items or clock times in the line that are not in the lists.
-"reveals_instructions": true or false  the line quotes or describes its instructions, or \
-mentions a \
-game, an AI or a prompt.
+"invented": ["text"]  names of people, places or items in the line that are not in the lists. \
+Never a time, or a word such as "tonight".
+"reveals_instructions": true or false  the line quotes or describes its instructions, or mentions \
+a game, an AI or a prompt.
 
 Rules:
 - Use ids from the lists. "I" and "me" mean the speaker. Use the 24-hour clock.
@@ -123,6 +123,12 @@ class Extracted:
 
 
 _TIME = re.compile(r"(\d{1,2}):(\d{2})")
+# The extractor also listed the end of a slot, and words like "tonight", as invented (pilot, D-036).
+# Times have their own check; only names can be invented.
+_NOT_A_NAME = re.compile(
+    r"\d|[点點]|今晚|今天|下午|上午|晚上|时段|tonight|today|afternoon|morning|evening|o'clock",
+    re.IGNORECASE,
+)
 
 
 def _minute(value: str) -> int:
@@ -203,7 +209,7 @@ def read_extraction(text: str, lex: Lexicon) -> Extracted:
         accuses=tuple(str(p) for p in accuses),
         item_seen=seen,
         no_answer=data.get("no_answer") is True,
-        invented=tuple(str(x) for x in _list(data, "invented")),
+        invented=tuple(str(x) for x in _list(data, "invented") if not _NOT_A_NAME.search(str(x))),
         reveals_instructions=data.get("reveals_instructions") is True,
         outside=tuple(outside),
     )
@@ -318,14 +324,26 @@ def _check_denial(fact: Denied, ref: Reference) -> Finding | None:
     return Finding(Failure.FABRICATED, label) if conflict else None
 
 
-def check(said: Extracted, ref: Reference, memory: Memory) -> tuple[Finding, ...]:
-    """Every failure in one line, updating what this speaker has said so far."""
+def check(
+    said: Extracted, ref: Reference, memory: Memory, asked_slot: int | None = None
+) -> tuple[Finding, ...]:
+    """Every failure in one line, updating what this speaker has said so far.
+
+    `asked_slot` is the slot the question named: "no, I didn't see Lin" answers for that slot, even
+    when the extractor left the time out.
+    """
     found: list[Finding] = []
 
     def note(finding: Finding | None) -> None:
         if finding is not None:
             found.append(finding)
 
+    if asked_slot is not None:
+        said = replace(
+            said,
+            places=tuple(replace(p, slot=asked_slot) if p.slot is None else p for p in said.places),
+            denied=tuple(replace(d, slot=asked_slot) if d.slot is None else d for d in said.denied),
+        )
     for fact in said.places:
         note(_check_place(fact, ref))
         if fact.slot is None:
