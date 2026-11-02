@@ -9,7 +9,7 @@ All numeric thresholds are provisional and may only change through the process i
 | P0 | Skeleton and design | done |
 | P1 | Case generator and solver | done |
 | P2 | NPC pipeline and CLI playable | done |
-| P3 | Evaluation study | planned |
+| P3 | Evaluation study | in progress |
 | P4 | Web version, daily case, sharing | planned |
 | P5 | Release v0.1.0 | planned |
 
@@ -169,8 +169,11 @@ Commands below use the package name `loosethread` (originally `alibi`; renamed b
     zh and en through; offline tests pass; parser 93.2% [88.0%, 96.3%] against ≥ 85%. No friends have
     played, and "ideally 2–3 friends" stays undone; D-033 lists what this verdict does not settle.
 
-## P3 — Evaluation study · `planned`
+## P3 — Evaluation study · `in progress`
 
+- **Progress (2026-11-02, branch `p3-evaluation`)**: plan approved with deviations and CNY 5 for tuning and
+  the pilot (D-034, CP-7). `docs/STUDY_PLAN.md` drafted, waiting for approval together with CP-8 (open). No
+  experiment has run.
 - **Goal**: answer three research questions with data, as a reproducible report.
 - **Pre-registration first**: `docs/STUDY_PLAN.md` (questions, hypotheses, metrics, sample sizes,
   analysis, stopping rules). Experiments start only after owner approval.

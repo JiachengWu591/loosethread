@@ -907,3 +907,26 @@ directly.
   were never measured against a labelled set; the settings check covers plain questions only; parser
   accuracy was measured on Mistpine names, and `Game` now adds rules on top of the measured parser.
   P3's design has to say which of these it depends on.
+
+## D-034 — P3 begins: plan approved, study plan drafted, not yet approved
+
+- **Date**: 2026-11-02 · **Type**: strategic, approved by the owner in chat ("批准"): the restated P3 plan,
+  CP-7 option A, branch `p3-evaluation`, and blind rating of lines by default.
+- **What was approved beyond the roadmap**
+  - The system under test is the shipped game at one commit, not "the layered pipeline" of the time the
+    roadmap was written: three settings, four shapes, and the game-level rules.
+  - RQ1's cases are written directly in the schema, replacing "transcribe". A small batch uses a stronger
+    model, so that the result cannot be put down to a weak one. Local Qwen is left out.
+  - RQ1's control passes by construction, so attempt-level acceptance is reported too.
+  - "200 per condition" means cases or attacks, paired, with exact McNemar; per-turn rates are descriptive.
+  - Line naturalness is measured as a cost, by the owner, blind: one rater, descriptive.
+  - The results figure is SVG from the standard library, so no new dependency.
+- **Budget**: CNY 5 for tuning and the pilot. The full run needs a separate approval with measured costs.
+- **Literature search** (`RELATED_WORK.md`): found a close study (arXiv 2609.23043) and evidence against
+  static attack sets. **CP-8 is open** and is decided with the study plan. It proposes keeping the three
+  RQs and adding an adaptive attacker and a claims-only arm, about CNY 23 more. The positioning does not
+  change; no novelty claim is made anywhere.
+- **`docs/STUDY_PLAN.md` drafted. No experiment has run, and none starts before it is approved.**
+- **Tactical**: the writer's system prompt said "a guesthouse cut off by a storm", false in the two newer
+  settings since D-031. Now setting-neutral. It changes the prompt the 37/37 usable-lines check used (D-026)
+  and no measured parser prompt, and it is fixed before the prompts are frozen for P3.

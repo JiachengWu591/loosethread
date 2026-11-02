@@ -1,8 +1,10 @@
 # Related work
 
-**Not exhaustive.** Owner's check 2026-10-29; extended 2026-10-30 during the name check. Each entry
-says what was verified and how. Until this file is re-searched (planned before P5 release at the
-latest), no file or public copy may claim "first", "novel", "首个" or "唯一" (as a novelty claim).
+**Not exhaustive.** Owner's check 2026-10-29; extended 2026-10-30 during the name check, and on
+2026-11-02 for the study design (research entries only; the games list and Chinese platforms were not
+re-searched). Each entry says what was verified and how. Until this file is fully re-searched (planned
+before P5 release at the latest), no file or public copy may claim "first", "novel", "首个" or "唯一"
+(as a novelty claim).
 
 Verification levels: **page** = the item's own page was opened; **search** = known only from search
 results or third-party listings; **owner** = from the owner's 2026-10-29 notes, not re-located.
@@ -50,8 +52,37 @@ logic-solvable cases, spoiler-free share grid), so those features are **not** di
 
 | Paper | Link | Relevance |
 |---|---|---|
-| Shiomi, Lian, Nakanishi et al., *Tricking LLM-Based NPCs into Spilling Secrets* (2025-08-25) | [arXiv 2508.19288](https://arxiv.org/abs/2508.19288) | Prompt injection makes LLM NPCs reveal hidden background — the threat model for RQ3. |
+| Shiomi, Lian, Nakanishi et al., *Tricking LLM-Based NPCs into Spilling Secrets* (2025-08-25) | [arXiv 2508.19288](https://arxiv.org/abs/2508.19288) | Prompt injection makes LLM NPCs reveal hidden background — the threat model for RQ3. Read 2026-11-02: 30 single-turn prompts in 3 categories, one local model, system-prompt protection only, manual labels; 3/30 leaked; no defence tested. |
 | Sprague, Ye, Bostrom et al., *MuSR: Testing the Limits of Chain-of-thought with Multistep Soft Reasoning* (2023-10-24) | [arXiv 2310.16049](https://arxiv.org/abs/2310.16049) | Neurosymbolic generation of narrative reasoning problems (including murder mysteries); relevant to RQ1 and generator design. |
+
+### Closest to this project: structured control of an LLM detective game
+
+| Paper | Link | What it did, as read 2026-11-02 | Differences from this project |
+|---|---|---|---|
+| Rahmati & Zhao, *Enforcing Narrative Reliability and Epistemic Pacing in LLM-Driven Detective Games via Structured Knowledge Trees* (2026-09-19, preprint) | [arXiv 2609.23043](https://arxiv.org/abs/2609.23043) | A three-agent pipeline (retrieval, dialogue, verification) over a hand-authored knowledge tree, in one game. Within-subjects user study, 33 participants: critical hallucinations 17.80% vs 6.27% of responses, premature confession 10/33 vs 0/33. Reports usability trade-offs, including abrupt forced reveals. Stated limits: baseline not like-for-like (different story details), no ablation, one untuned model. | One authored story, no solver. An LLM reads the tree, including what must not yet be said. No systematic attack test; language not stated. It has a human user study, which this project does not plan. **It covers ground close to RQ2** and must be cited. |
+| Figueiredo & Elumeze, *Symbolically Scaffolded Play* (2025-10-29) | [arXiv 2510.25820](https://arxiv.org/abs/2510.25820) | Voice detective game, GPT-4o. High-constraint vs low-constraint prompts, N = 10: no reliable difference (all p > .30). A JSON+RAG scaffold scored lower than a prompt scaffold on variation and relevance for suspects (LLM judge, 60 interactions, p < .05). | Supports measuring stiffness as a cost. Authors warn that LLM judges favour regularity, and that N = 10 cannot show equivalence. |
+| Oudrup, Krog, Missel et al., *Killer on Board* (Interactive Storytelling, 2026) | [Springer](https://www.springerprofessional.de/en/killer-on-board-addressing-the-narrative-paradox-by-utilizing-ll/51779846) | LLM-driven NPC mystery prototype; player experience scale n = 44, interviews n = 10. | Player experience, no truth isolation described. Abstract only; full text paywalled. |
+
+### Architectural defences and how to evaluate them
+
+| Paper | Link | Relevance | Level |
+|---|---|---|---|
+| Beurer-Kellner et al., *Design Patterns for Securing LLM Agents against Prompt Injections* (2025) | [arXiv 2506.08837](https://arxiv.org/abs/2506.08837) | Patterns that give up generality for resistance by construction; the same trade-off as this project. | page (abstract) |
+| Debenedetti et al., *Defeating Prompt Injections by Design* (CaMeL, 2025) | [arXiv 2503.18813](https://arxiv.org/abs/2503.18813) | Privileged and quarantined LLMs with tracked data flow. Reports utility beside security. | search |
+| Deep, Emmons, Fox et al., *Evaluation of Prompt Injection Defenses in Large Language Models* (2026) | [arXiv 2604.23887](https://arxiv.org/abs/2604.23887) | Secrets in system prompts under an adaptive attacker. Prompt-level defences held for tens to hundreds of rounds, then fell; short runs overestimate them. Recommends keeping secrets out of prompts. Several authors work at a vendor the paper recommends as a validation tool; the paper does not discuss this. **Reason for RQ3's adaptive arm.** | page |
+| Ma, Li, Xiao et al., *AutoDojo* (2026) | [arXiv 2606.15057](https://arxiv.org/abs/2606.15057) | Adaptive attacks raised success against defences that static benchmarks rated strong (e.g. PIGuard 0.0% to 28.0%): "static evaluation therefore overstates". CaMeL was the most effective overall, with the largest utility cost on 4 of 5 models. | page (first 100,000 characters) |
+| Luo, Xu, Lu et al., *Probing the Lack of Stable Internal Beliefs in LLMs* (2026) | [arXiv 2603.25187](https://arxiv.org/abs/2603.25187) | Implicit goals drift across turns in a twenty-questions game unless kept in context. Bears on arm C and on repeat consistency. | page (abstract) |
+
+### Generating or checking logic in text (for RQ1)
+
+No paper found on 2026-11-02 that measures how often an LLM writes a whodunit that a solver accepts in one
+shot. Two searches do not show that none exists.
+
+| Paper | Link | Relevance | Level |
+|---|---|---|---|
+| *SATBench* (2025) | [arXiv 2505.14615](https://arxiv.org/abs/2505.14615) | Puzzles from SAT formulas, checked by a solver. | search |
+| *AutoLogi* (2025) | [arXiv 2502.16906](https://arxiv.org/abs/2502.16906) | Program-verified puzzles; found 23% (zh) and 11% (en) of generated problems unsolvable. | search |
+| *Finding Flawed Fictions* (2025) | [arXiv 2504.11900](https://arxiv.org/abs/2504.11900) | LLM-generated and summarised stories contain more plot holes than the originals. | search |
 
 ## To do in the next re-search
 
@@ -60,4 +91,6 @@ logic-solvable cases, spoiler-free share grid), so those features are **not** di
   solvability checks, truth isolation, or leakage measurements.
 - Search Chinese platforms (TapTap, Bilibili, 小黑盒) for 中文 AI 审问/推理 games.
 - Search literature on LLM NPC consistency, secret keeping, and procedural mystery generation
-  (e.g. ACL/EMNLP/FDG/AIIDE 2023–2026).
+  (e.g. ACL/EMNLP/FDG/AIIDE 2023–2026). Partly done 2026-11-02 through general web search only; venue
+  proceedings were not searched.
+- Read CaMeL, SATBench, AutoLogi and Flawed Fictions directly before citing any number from them.

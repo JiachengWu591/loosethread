@@ -272,6 +272,14 @@ def test_an_unreachable_model_costs_nothing_and_skips_the_writer() -> None:
     assert (down.calls, turn.line) == (1, "抱歉，刚才没听清，你再问一遍？")
 
 
+def test_the_writer_prompt_names_no_setting() -> None:
+    # It serves every content pack; a setting named here would be false in the others.
+    game = Game(CASE, RuleParser(), LLMWriter(_Fake(["好。"])), Lang.ZH)
+    game.ask(LIN, "你 21:15 在哪？")
+    system = game.writer.model.prompts[0][0].lower()  # type: ignore[attr-defined]
+    assert not any(word in system for word in ("guesthouse", "storm", "lodge", "ferry", "theatre"))
+
+
 def test_an_unreachable_writer_falls_back_to_the_template() -> None:
     game = Game(CASE, RuleParser(), LLMWriter(_Down()), Lang.ZH)
     turn = game.ask(LIN, "这雨下得真大")

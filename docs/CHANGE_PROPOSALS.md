@@ -174,3 +174,41 @@ alibi style). Full outputs: `docs/review/p1/batch-naive.txt`, `docs/review/p1/ba
   Budget 12 to try first: the median systematic run solves within 12 in 116/200 = 58.0%
   [51.1%, 64.6%] of cases (166/200 within 20), and the oracle minimum is 3–6. There is no human data
   yet on whether 12 suits a player who picks questions; the next playtest is the first.
+
+## CP-7 — P3 has no budget · `approved`
+
+- **Decision** (owner, 2026-11-02, "批准"): option A. See D-034.
+- **Trigger**: the CNY 20 cap is explicitly P2's (D-018), about CNY 2.6 is spent, and P3 has no budget.
+  A rough full-run estimate at the time was CNY 36–51 upper bound, plus about 5 for tuning; parts of it
+  were assumed token counts, not measured.
+- **Impact**: P3's spending only. No change to phase order or exit criteria.
+- **Options**
+  - A. Approve CNY 5 for tuning and the pilot now; approve the full run later with measured costs. Cost:
+    one more approval.
+  - B. Approve a total of CNY 60 now. Cost: a number set without measurements.
+- **Recommendation**: A, which is also what the roadmap asks ("report the budget before the full run").
+
+## CP-8 — P3 scope after the literature search: a close study appeared · `open`
+
+- **Trigger**: the search for the study design (`RELATED_WORK.md`, 2026-11-02) found three things.
+  - Rahmati & Zhao (arXiv 2609.23043, 2026-09-19) built a pipeline for an LLM detective game and report
+    critical hallucinations 17.80% vs 6.27%, with 33 participants. `CLAUDE.md` requires a proposal when a
+    competitor does the same thing. **It overlaps RQ2 in part, not RQ1 or RQ3**: one authored story, no
+    solver, no attack test, a baseline that its authors say is not like-for-like, no ablation.
+  - Deep et al. (arXiv 2604.23887) and Ma et al. (arXiv 2606.15057) show that static attack sets overstate
+    defences. The roadmap's RQ3 is a static set.
+  - That study's stated limit, not knowing which part of an architecture does the work, also applies to
+    our two-arm design.
+- **Impact**: RQ2 and RQ3 designs; adds about CNY 23 to the upper-bound estimate (arm C 5.4; adaptive arm
+  17.8), for about 76 in all. No change to phase order or exit criteria. The report must cite this work, and
+  the positioning in `BRIEF.md` §4 stays honest: the difference is what was built and measured.
+- **Options**
+  - A. Keep the three RQs; add the adaptive arm and the claims-only arm; compare like-for-like on the
+    same cases. Cost: about CNY 23 and more instruments to build.
+  - B. Keep the roadmap as it stands. Cost: cheapest, but RQ3 would rest on a method recent work shows to be
+    weak, and RQ2 could not say which layer helps.
+  - C. A plus a human user study. Cost: recruiting people and an ethics question we have not looked at; it
+    would duplicate what that study already does, rather than what it leaves open.
+- **Recommendation**: A. Our like-for-like arms, generated and solver-checked cases, attack tests and zh/en
+  are what that study leaves open. Dropping either addition is possible at the budget step if the pilot
+  says they cost too much.

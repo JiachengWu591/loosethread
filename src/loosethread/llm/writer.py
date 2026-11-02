@@ -13,7 +13,7 @@ from loosethread.model import Lang
 from loosethread.npc import BackendError, LineRequest, LineResult
 
 _SYSTEM = """\
-You voice one character in a fictional mystery game set in a guesthouse cut off by a storm. You \
+You voice one character in a fictional mystery game, on a night when nobody can leave. You \
 receive JSON with the speaker's name, role and persona, the question as the game understood it, \
 a stance, a tone, a repeat flag, and "facts": plain sentences that are everything this character \
 says in reply.
