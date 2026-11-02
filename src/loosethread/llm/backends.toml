@@ -43,7 +43,7 @@ timeout = 60.0
 max_retries = 1
 thinking = "disabled"
 
-# RQ1 only (STUDY_PLAN §5.1): the strongest setting, so one-shot writing is not judged on a weak one.
+# RQ1 only (STUDY_PLAN §5.1): stronger settings, so one-shot writing is not judged on a weak one.
 [deepseek-pro-think]
 base_url = "https://api.deepseek.com"
 api_key_env = "DEEPSEEK_API_KEY"
@@ -54,6 +54,17 @@ timeout = 60.0
 max_retries = 1
 thinking = "enabled"
 reasoning_tokens = 16000
+
+[deepseek-think-long]
+base_url = "https://api.deepseek.com"
+api_key_env = "DEEPSEEK_API_KEY"
+model = "deepseek-flash"
+price_input = 2.0
+price_output = 8.0
+timeout = 60.0
+max_retries = 1
+thinking = "enabled"
+reasoning_tokens = 30000
 
 # llama.cpp server started with --alias qwen2.5-7b-instruct (see docs/LOCAL_MODEL.md).
 [local]

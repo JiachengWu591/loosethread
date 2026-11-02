@@ -52,7 +52,7 @@ if TYPE_CHECKING:
 HELD_OUT_OPEN = False
 ATTACKS_SHA256: str | None = None  # fixed after the owner's spot-check, before any test run
 _TURN_RESERVE = 0.02  # CNY: more than any one turn has cost, for the spending guard
-_RQ1_TIMEOUT = 400.0  # a long reply takes minutes; the game's 30 s would fail every case
+_RQ1_TIMEOUT = 900.0  # a long reply takes minutes; the game's 30 s would fail every case
 
 type Row = dict[str, Any]
 
