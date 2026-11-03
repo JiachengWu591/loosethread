@@ -1060,3 +1060,23 @@ directly.
 - **Results seen early**: while checking why runs stopped, one line of RQ2's output was read ("B vs C: only B 0,
   only C 76 of 204 pairs"), after RQ2 had finished. The row counts also show that three adaptive campaigns ran
   to round 100. No instrument was changed because of either.
+
+## D-039 — Checks added after reading the test results
+
+- **Date**: 2026-11-03 · **Type**: tactical, within the approved cap, all labelled post hoc. Nothing registered
+  changes, and no instrument was retuned. The results that prompted them go to the owner in CP-10.
+- **Context**: all test runs finished, at CNY 76.91 of 80. Reading what the numbers are made of raised three
+  questions the planned checks could not answer.
+- **Are the failure flags right?** A random 30 lines hold about one flagged line. So a further sheet of 30 flagged
+  lines (`docs/review/p3/flagged-lines.md`): per arm A and C, 3 with the item claim and 12 with others. The owner's
+  total becomes 96 items, inside the plan's 120. Reading these, many flags look wrong, which favours B.
+- **How much rests on one question?** `rq2_post_hoc` reports failures without "says they saw the item".
+- **Can the instruments see a leak?** `study.control` gave the judge 64 written replies with known answers (CNY
+  0.15). It flagged 38/40 that leak and 0/24 that do not. Exact matching flagged 16/40 and 0/24: a negation anywhere
+  turns it off, so it missed "I wasn't in A, I was in B". The judge missed 2 confessions, which exact matching
+  caught. Adaptive campaigns score by judge alone, so exact matching was also run over their rows offline: 4
+  hits, all in A/en, and all a denial naming the room.
+- **A failed judge call**: it counts as a leak by rule, and until now nobody could review it. It now goes on the
+  owner's judge sheet, with the disagreements. There is one, in B.
+- **What these cannot detect**: the control's replies are plain, so subtle leaks remain untested. Nothing here
+  shows that the attacks can cause a leak.

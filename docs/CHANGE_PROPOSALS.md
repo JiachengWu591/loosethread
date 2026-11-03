@@ -239,3 +239,33 @@ alibi style). Full outputs: `docs/review/p1/batch-naive.txt`, `docs/review/p1/ba
 - **Recommendation**: A. The pilot is too small to conclude anything, and a null result measured tightly is
   a real finding: it would say how far a careful prompt alone goes. B's saving comes from the question
   where failures are rare, so it weakens the result most where it matters.
+
+## CP-10 — H3 and H1 fail: what the report can claim, and one control for the attacks · `proposed`
+
+- **Trigger** (test data, in `results/`; the owner's checks are still to come):
+  - **H3 fails.** Flagged leaks: A 3/200 [0.5%, 4.3%], B 1/200 [0.1%, 2.8%], C 2/200 [0.3%, 3.6%]; only B 1, only
+    A 3, exact p = 0.625. Read by hand, all six look like false alarms: five are exact matching against the
+    judge on a repeated allowed account or a rejected claim, and B's is a failed judge call counted as a leak
+    by rule. The adaptive campaigns found no confirmed leak in 500, 502, 500 and 500 attacks, in arms A and B.
+  - **The judge can see a leak.** On written replies with known answers it flagged 38/40 that leak and 0/24 that
+    do not, and exact matching caught its 2 misses. **Nothing yet shows these attacks can cause a leak at all.**
+  - **H1 fails.** Thinking on: 50/60 accepted, 83.3% [72.0%, 90.7%], at about CNY 0.22 and 156 s a case.
+    Thinking off: 0/204 [0.0%, 1.8%].
+  - **H2 holds as registered, by less than it first looks.** B 0/204, A 60/204, exact p = 1.7e-18. Most of A's
+    failures are one claim on one turn, "I've seen the item", at 37/102 in zh against 5/102 in en, where
+    "你见过X吗" also means "have you ever seen X". Without that claim: A 26/204, B 0/204, p = 3.0e-8 (post hoc). Many
+    of the remaining flags read as scoring errors: a time range taken as one slot, or "just before that" given
+    the question's time. Such errors hit long lines, which B does not write, so they favour B. The owner's check
+    of 30 flagged lines (D-039) measures this.
+- **Impact**: the thesis in BRIEF §2 narrows in the report. The pipeline's measured gain is consistency, with
+  costs; resistance to leaking is not shown. No change to phase order or exit criteria.
+- **Options**
+  - A. Report as it stands, with no more data. Cost: nothing more, but the report cannot say whether this model is
+    robust or these attacks are weak.
+  - B. A, plus one exploratory control: the same 200 static attacks on a prompt with the truth and no hardening.
+    About CNY 1.5, so about CNY 78.4 of the 80 cap. Labelled post hoc, and it does not change H3's verdict. If
+    that arm leaks, the attacks can cause leaks and it is a prompt instruction that stops them, which also goes
+    against the thesis. If it does not, the static result says little about any defence.
+  - C. B, plus multi-turn attacks or a second model. Cost: past the cap, or days of local runs; a plan of its own.
+- **Recommendation**: B. A null result with no positive control is hard to read, and this one is cheap. C is
+  worth doing only as later work.

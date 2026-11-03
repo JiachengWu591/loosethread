@@ -267,3 +267,5 @@ every table; the report states what the results do and do not show.
   are retried once. The other three campaigns were never cut off and finished at 600.
 - Tactical (D-038): the outage guard counts the calls of the current run, so failures already reported do not
   pause a resume. In RQ3 a failed call is retried once on a resume, and the last attempt is the result.
+- Post hoc, after reading test results (D-039): a sheet of 30 flagged lines for the owner, RQ2 without the item
+  claim, a control of the judge on written replies, and a failed judge call going to the owner.
