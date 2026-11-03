@@ -127,13 +127,25 @@ def repeat_tables() -> list[str]:
     return tables.repeat_table(_rows("study-repeat-test.jsonl"), _rows("study-rq2-test.jsonl"))
 
 
+def _pair_answers() -> list[str]:
+    return [str(r["answer"]) for r in sorted(_owner("pair"), key=lambda r: int(r["number"]))]
+
+
 def hypotheses_tables() -> list[str]:
-    return tables.hypotheses_table(
+    rq2 = _rows("study-rq2-test.jsonl")
+    lines = tables.hypotheses_table(
         _rows("study-rq1-deepseek-think-long-test.jsonl"),
-        _rows("study-rq2-test.jsonl"),
+        rq2,
         _rows("study-rq3-test.jsonl"),
         judge_decisions(),
     )
+    answers = _pair_answers()
+    if answers:
+        lines.append(
+            "H5, which line sounds more like a person, one rater, descriptive:"
+            f" {checks.pairs_result(rq2, answers)}"
+        )
+    return lines
 
 
 def owner_tables() -> list[str]:
@@ -163,8 +175,7 @@ def owner_tables() -> list[str]:
     verdicts = [bool(r["real"]) for r in sorted(flagged, key=lambda r: int(r["number"]))]
     lines += checks.flagged_table(rq2, verdicts)
     if pairs:
-        answers = [str(r["answer"]) for r in sorted(pairs, key=lambda r: int(r["number"]))]
-        lines += checks.pairs_table(rq2, answers)
+        lines += checks.pairs_table(rq2, _pair_answers())
     else:
         lines.append("Line pairs: the owner's blind rating is not in yet.")
     return lines

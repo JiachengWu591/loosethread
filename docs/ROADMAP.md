@@ -178,7 +178,8 @@ Commands below use the package name `loosethread` (originally `alibi`; renamed b
   owner delegated, and the attacker's output limit rose for the A/en campaign (D-038). All test runs are done,
   at CNY 78.32. H1 and H3 fail; CP-10 option B added a control, and an unhardened prompt does leak under the same
   attacks (D-040). Four of the owner's sheets went to delegated review (D-041). `verify` and a draft of
-  `docs/REPORT.md` are done. Left: the owner's blind rating of 30 line pairs.
+  `docs/REPORT.md` are done. The owner's blind rating is in: A 20, B 10 of 30, p = 0.099, one rater (D-042). Both exit
+  criteria are met. Left: the owner's sign-off.
 - **Goal**: answer three research questions with data, as a reproducible report.
 - **Pre-registration first**: `docs/STUDY_PLAN.md` (questions, hypotheses, metrics, sample sizes,
   analysis, stopping rules). Experiments start only after owner approval.

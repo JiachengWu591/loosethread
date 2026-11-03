@@ -12,6 +12,7 @@ import json
 import random
 import re
 import sys
+from collections import Counter
 from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
@@ -379,23 +380,49 @@ def pairs_sheet(rows: Sequence[Row]) -> str:
     return "\n".join(lines) + "\n"
 
 
-def pairs_table(rows: Sequence[Row], answers: Sequence[str]) -> list[str]:
-    """`answers` holds "X", "Y" or "=" per pair, in sheet order. One rater, so descriptive."""
+def _pair_choices(rows: Sequence[Row], answers: Sequence[str]) -> list[tuple[Pair, str]]:
+    """Each pair with the arm the rater chose, "=" for a tie. A stray answer is an error."""
     pairs = line_pairs(rows)
     if len(answers) != len(pairs):
         raise ValueError(f"{len(answers)} answers for {len(pairs)} pairs")
-    a = b = ties = 0
+    choices = []
     for pair, answer in zip(pairs, answers, strict=True):
-        if answer == "=":
-            ties += 1
-        elif (answer == "X") == (pair.x_arm == "A"):
-            a += 1
-        else:
-            b += 1
+        if answer not in ("X", "Y", "="):
+            raise ValueError(f"not an answer: {answer!r}")
+        other = "B" if pair.x_arm == "A" else "A"
+        choices.append((pair, {"X": pair.x_arm, "Y": other, "=": "="}[answer]))
+    return choices
+
+
+def pairs_result(rows: Sequence[Row], answers: Sequence[str]) -> str:
+    chosen = Counter(arm for _, arm in _pair_choices(rows, answers))
+    a, b = chosen["A"], chosen["B"]
+    return f"A {a}, B {b}; exact sign test p = {mcnemar_exact(a, b):.3g}"
+
+
+def pairs_table(rows: Sequence[Row], answers: Sequence[str]) -> list[str]:
+    """`answers` holds "X", "Y" or "=" per pair, in sheet order. One rater, so descriptive."""
+    choices = _pair_choices(rows, answers)
+    chosen = Counter(arm for _, arm in choices)
+    by_lang = Counter((pair.lang, arm) for pair, arm in choices)
+    failed = {
+        (session.seed, detail.split(":")[0])
+        for session in tables.score_rq2(rows)
+        if session.arm == "A"
+        for detail in session.details
+        if ":extract:" not in detail
+    }
+    flagged = sum(arm == "A" and (pair.seed, f"t{pair.turn}") in failed for pair, arm in choices)
     return [
-        f"Line pairs, one rater: {len(pairs)} pairs, {ties} ties",
-        f"  B sounds more like a person: {tables.rate(b, a + b)}",
-        f"  A {a}, B {b}; exact sign test p = {mcnemar_exact(a, b):.3g}",
+        f"Line pairs, rated blind by the owner, one rater: {len(choices)} pairs,"
+        f" {chosen['=']} ties",
+        f"  B sounds more like a person: {tables.rate(chosen['B'], chosen['A'] + chosen['B'])}",
+        f"  {pairs_result(rows, answers)}",
+        *[
+            f"  {lang}: A {by_lang[(lang, 'A')]}, B {by_lang[(lang, 'B')]}"
+            for lang in sorted({pair.lang for pair, _ in choices})
+        ],
+        f"  A's line carries a failure flag, post hoc: {flagged} of the {chosen['A']} A won",
     ]
 
 

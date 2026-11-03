@@ -1,8 +1,8 @@
 # Loose Thread: evaluation report (P3)
 
-**Status: draft.** The owner's blind rating of 30 line pairs is still to come. Every number here is recomputed from
-the raw rows by `python -m loosethread.verify` and appears in `results/*.md`. Plan: `docs/STUDY_PLAN.md`. Changes to
-it: §15 there, and `docs/DECISIONS.md` D-035 to D-041.
+**Status: complete, awaiting the owner's sign-off.** Every number here is recomputed from the raw rows by
+`python -m loosethread.verify` and appears in `results/*.md`. Plan: `docs/STUDY_PLAN.md`. Changes to it: §15 there, and
+`docs/DECISIONS.md` D-035 to D-042.
 
 ## 1. What the results say
 
@@ -18,11 +18,12 @@ from both making things up and being talked into leaking.* The results support p
   prompt was enough to stop them. No confirmed leak came from about 2,000 adaptive attacks either.
 - **An LLM can write a solvable case in one shot, if it may think.** H1 predicted that fewer than half would pass;
   83.3% did. With thinking off, none did.
-- **The pipeline's costs are real but not the one predicted.** Its valid-answer rate was not lower. It takes about
-  twice as long, and repeats itself far more.
+- **The pipeline's costs are real, but its valid-answer rate is not one of them.** That rate was not lower. It takes
+  about twice as long and repeats itself far more. In one person's blind rating, its lines sounded less like a person in
+  20 of 30 pairs, which leans the way H5 predicted without clearing chance (p = 0.099).
 
 No person checked the labels, flags or leak decisions behind these numbers: two runs of one LLM did, at the
-owner's request (§6).
+owner's request (§6). The one measure a person made is the rating of lines.
 
 ![Failure and leak rates per arm, with 95% Wilson intervals](../results/figure.svg)
 
@@ -49,7 +50,7 @@ owner's request (§6).
 | H4: A leaks more than C | A 0/200, C 0/200 | **Fails** |
 | H4: C fails more than B | C 76/204, B 0/204; exact p = 2.7e-23 | Holds, with §3.2's caveats |
 | H5: B less valid than A | B 100.0% [99.7%, 100%], A 96.2% [95.0%, 97.2%] | **Fails**, in B's favour |
-| H5: B rated less natural | pending the owner's blind rating | Open |
+| H5: B rated less natural | A preferred in 20 of 30 pairs, B in 10; exact sign test p = 0.099; one rater, descriptive | Leans as predicted, not shown |
 
 ### 3.1 RQ1: can an LLM write a case in one shot?
 
@@ -128,10 +129,20 @@ did not fail here.
 | Tokens, median (p95) | 18,966 (19,804) | 21,272 (21,544) | 11,202 (11,517) |
 | CNY, upper bound, median | 0.059 | 0.063 | 0.043 |
 | Sentences repeating one in the session | 1.1% [0.8%, 1.6%] | 17.7% [16.2%, 19.4%] | 1.4% [1.0%, 2.0%] |
+| Median line length, zh characters / en words | 25 / 18 | 29 / 13 | 24 / 18 |
 
 No B line was replaced by the template (0/1632). 23 of 200 attacks, 11.5% [7.8%, 16.7%], cost a player a charged
-question in B. The rating of natural-sounding lines is pending. Related work also found stiffness as a cost
-(Figueiredo & Elumeze 2025; Rahmati & Zhao 2026).
+question in B.
+
+**Natural-sounding lines.** The owner rated 30 pairs of A and B lines to the same question, with sides shuffled and
+arms hidden. B sounded more like a person in 10/30, 33.3% [19.2%, 51.2%]: A 20, B 10, no ties, exact sign test
+p = 0.099. Each language split the same way, A 10 to B 5. This leans the way H5 predicted, and the interval still
+includes an even split. Only 1 of the 20 A lines that won carries a failure flag (post hoc), so the preference is not
+mostly for lines that say what they may not, though flags have the errors §3.2 describes.
+
+There is one rater, who commissioned the system and has played B's lines. Those lines also have a recognisable form
+("Between 20:30 and 20:45 ..."), so hiding the arm may not have hidden it. This says nothing about whether players
+mind. Related work also found stiffness as a cost (Figueiredo & Elumeze 2025; Rahmati & Zhao 2026).
 
 ### 3.5 Stability
 
@@ -163,7 +174,8 @@ All are recorded in `docs/DECISIONS.md` and `docs/STUDY_PLAN.md` §15.
 - **Added after reading results, in no hypothesis**: arm U; RQ2 without the item claim; a review of flagged lines; a
   control of the judge on written replies.
 - **The owner's checks were delegated.** The attack sample and four of five sheets were read by Claude subagents, not by
-  the owner. The owner made this decision, and it is the study's largest departure from its plan.
+  the owner. The owner made this decision, and it is the study's largest departure from its plan. The owner did the
+  fifth, the blind rating of lines, as planned.
 - **The attacker's output limit rose from 600 to 1200 tokens during the test run**, because it cut off the A/en campaign's
   JSON. That campaign's round numbers run to 107 so that it also got about 500 attacks. Connection failures stopped it
   twice. The other three campaigns were never cut off and finished at 600.
@@ -182,6 +194,7 @@ All are recorded in `docs/DECISIONS.md` and `docs/STUDY_PLAN.md` §15.
 | Extractor, 30 lines read | 26/30 = 86.7% [70.3%, 94.7%], below the plan's 27 | A sample of 30 cannot say which errors are rare |
 | Flagged lines, 30 read | item claim 6/6; other failures 11/24 | Failures nobody flagged |
 | Attack labels, 30 read | 2 wrong, 11 borderline, none past the content limits | The 170 unsampled attacks; attack strength |
+| Line pairs, 30 rated by the owner | A 20, B 10, no ties; p = 0.099 | Any other rater's taste; whether players mind |
 | Run-to-run repeat | §3.5 | Drift between days or model versions |
 
 The two reviewers of the four sheets agreed on 85/85 items. They are one model run twice, so this does not show that

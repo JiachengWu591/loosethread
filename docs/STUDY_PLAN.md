@@ -271,3 +271,5 @@ every table; the report states what the results do and do not show.
   claim, a control of the judge on written replies, and a failed judge call going to the owner.
 - **CP-10 option B (D-040)**: H1 and H3 failed. One exploratory control, arm U, an unhardened prompt with the truth,
   takes the same 200 static attacks. It is in no hypothesis.
+- Post hoc, after reading the blind rating (D-042): the rating by language, and how many of the A lines that won carry
+  a failure flag. The rating itself ran as §6 says.

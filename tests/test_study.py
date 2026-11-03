@@ -726,8 +726,18 @@ def test_the_line_pair_table_counts_each_arm_from_the_hidden_key(
     text = "\n".join(checks.pairs_table([], ["X", "X", "="]))
     assert "1 ties" in text
     assert "A 1, B 1" in text
+    assert "zh: A 1, B 1" in text
+    assert checks.pairs_result([], ["Y", "Y", "Y"]) == "A 1, B 2; exact sign test p = 1"
     with pytest.raises(ValueError, match="answers"):
         checks.pairs_table([], ["X"])
+    with pytest.raises(ValueError, match="not an answer"):
+        checks.pairs_table([], ["X", "X", "x"])
+    flags = ["t1:fabricated:x", "t1:extract:y"]
+    session = tables.Session("A", 1, "zh", "p", "s", details=flags)
+    monkeypatch.setattr(tables, "score_rq2", lambda rows: [session])
+    assert "1 of the 2 A won" in "\n".join(checks.pairs_table([], ["X", "Y", "="]))
+    session.details = ["t1:extract:y", "t2:fabricated:x"]
+    assert "0 of the 2 A won" in "\n".join(checks.pairs_table([], ["X", "Y", "="]))
 
 
 def test_the_judge_sheet_lists_only_disagreements_on_the_last_attempt() -> None:

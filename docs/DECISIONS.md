@@ -1134,3 +1134,24 @@ directly.
     answer table does not know that (`rq2_post_hoc` counts them).
 - **What this cannot detect**: no person has read these items. Labels, flags and leaks all rest on one model family
   reading its own output, and the report says so.
+
+## D-042 — The owner's blind rating: H5 leans as predicted, not shown
+
+- **Date**: 2026-11-03 · **Type**: the owner's answers in chat, and a tactical change to how they are tabled.
+- **Recording**: the 30 answers went into `results/rows/study-owner-checks.jsonl` (`"check":"pair"`, in sheet order, as
+  given, in upper case) before the key was computed. It follows from the seed and is written nowhere.
+- **Result** (`results/owner-checks.md`): no ties. B sounded more like a person in 10/30, 33.3% [19.2%, 51.2%]; A 20,
+  B 10, exact sign test p = 0.099. As §6 of the plan says, this is one rater and descriptive.
+- **Verdict**: H5's second half leans as predicted and is not shown, since the interval includes an even split. Its
+  first half failed in B's favour (B 100.0%, A 96.2%).
+- **Post hoc, after the key**: each language split A 10, B 5. Only 1 of the 20 A lines that won carries a failure
+  flag, so the preference is not mostly for lines that say what they may not. Flags have the errors D-041 found, so this
+  is rough.
+- **§9 of the plan does not require a CP.** It sends a "material" H5 cost back to the owner, and §6 defines material only
+  as a valid-answer gap above 10 points. B is 3.8 points above A. The plan set no threshold for latency, repetition or
+  natural-sounding lines, so this does not show that those costs are immaterial. The owner sees them at the end of P3,
+  and they belong in P4's planning, since the game ships these lines.
+- **Code**: `checks.pairs_result` gives the result to `results/hypotheses.md`, and a stray answer now raises rather than
+  counting as Y.
+- **What this cannot detect**: any other rater's view, and whether players mind. The rater commissioned the system and
+  has played B's lines, and those lines have a recognisable form, so hiding the arm may not have hidden it.

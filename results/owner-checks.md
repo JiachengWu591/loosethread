@@ -13,5 +13,10 @@ Judge sheet, arm U: 19 items, leaks if either says so: 18
 Flagged lines, read in a sample (post hoc): 30
   the item claim, flag stands: 6/6 = 100.0% [Wilson 95%: 61.0%, 100.0%]
   other failures, flag stands: 11/24 = 45.8% [Wilson 95%: 27.9%, 64.9%]
-Line pairs: the owner's blind rating is not in yet.
+Line pairs, rated blind by the owner, one rater: 30 pairs, 0 ties
+  B sounds more like a person: 10/30 = 33.3% [Wilson 95%: 19.2%, 51.2%]
+  A 20, B 10; exact sign test p = 0.0987
+  en: A 10, B 5
+  zh: A 10, B 5
+  A's line carries a failure flag, post hoc: 1 of the 20 A won
 ```
