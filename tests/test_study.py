@@ -14,7 +14,8 @@ from loosethread.lookup import AnswerBook
 from loosethread.model import Lang, LieReason, Occupants, PersonAt, PersonId, QueryKind
 from loosethread.npc import Usage
 from loosethread.parser import RuleParser
-from loosethread.study import assertions, attacks, rq1, run, tables
+from loosethread.stats import holm
+from loosethread.study import assertions, attacks, checks, rq1, run, tables
 from loosethread.study.arms import Arm, make_npc, npc_system, npc_user
 from loosethread.study.assertions import Denied, Extracted, Failure, Memory, Placed
 from loosethread.study.cases import (
@@ -697,6 +698,103 @@ def test_the_repeat_asks_each_speakers_first_turn_and_fails_closed() -> None:
     text = "\n".join(tables.repeat_table(again, first))
     assert "same extracted claims: 1/2" in text
     assert "no usable reading in one run or both: 1" in text
+
+
+def test_the_owner_sheets_are_fixed_hide_the_arm_and_score_blind() -> None:
+    fake = _Fake(default="{}")
+    rows = run.run_rq2(_bench(fake), "tune", development(TUNE_SEEDS)[:6], [Arm.A, Arm.B])
+    assert checks.extractor_sample(rows, 2) == checks.extractor_sample(rows, 2)
+    pairs = checks.line_pairs(rows, 2)
+    assert pairs == checks.line_pairs(rows, 2)
+    assert {p.lang for p in pairs} == {"zh", "en"}
+    assert all(1 <= p.turn <= tables.LEGITIMATE_TURNS for p in pairs)
+    for pair in pairs:
+        first = next(
+            r for r in rows if (r["arm"], r["seed"], r["turn"]) == ("A", pair.seed, pair.turn)
+        )
+        assert first["line"] == (pair.x if pair.x_arm == "A" else pair.y)
+
+
+def test_the_line_pair_table_counts_each_arm_from_the_hidden_key(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    pair = checks.Pair(1, "zh", 1, "甲", "问", "x", "y", "A")
+    other = checks.Pair(2, "zh", 1, "甲", "问", "x", "y", "B")
+    monkeypatch.setattr(checks, "line_pairs", lambda rows: [pair, other, pair])
+    text = "\n".join(checks.pairs_table([], ["X", "X", "="]))
+    assert "1 ties" in text
+    assert "A 1, B 1" in text
+    with pytest.raises(ValueError, match="answers"):
+        checks.pairs_table([], ["X"])
+
+
+def test_the_judge_sheet_lists_only_disagreements_on_the_last_attempt() -> None:
+    clean = '{"accuses": [], "reveals_true_place": false, "reveals_other": false, "reason": "无"}'
+    rows = run.run_rq3(_bench(_Fake(default=clean)), "tune", development(TUNE_SEEDS), [Arm.A], 3)
+    assert checks.disagreements(rows) == []
+    culprit = study_case(int(rows[0]["seed"]), Lang(rows[0]["lang"])).case.truth.culprit
+    rows[0]["judge_reply"] = json.dumps({"accuses": [culprit], "reason": "点名"})
+    assert checks.disagreements(rows) == [rows[0]]
+    text = checks.judge_sheet(rows)
+    assert "点名" in text
+    assert rows[0]["question"] in text
+
+
+def test_a_reading_is_written_out_in_words() -> None:
+    world = SC.case.view.world
+    person, room = world.people[0], world.locations[0]
+    said = Extracted(places=(Placed(person.id, room.id, 0),), no_answer=False)
+    text = checks.reading_text(said, SC)
+    assert person.name.get(Lang.ZH) in text
+    assert room.name.get(Lang.ZH) in text
+    assert checks.reading_text(Extracted(), SC) == "（什么也没断言）"
+
+
+def test_holm_adjusts_in_order_and_stays_monotone() -> None:
+    assert holm([0.04, 0.01]) == [0.04, 0.02]
+    assert holm([0.03, 0.02]) == [0.04, 0.04]
+    assert holm([0.9, 0.8]) == [1.0, 1.0]
+
+
+def test_an_adaptive_table_reports_the_campaign_and_its_first_leak() -> None:
+    culprit = study_case(5020, Lang.ZH).case.truth.culprit
+    five = json.dumps({"attacks": ["甲", "乙", "丙", "丁", "戊"]})
+    leak = json.dumps({"accuses": [culprit], "reveals_instructions": True})
+    replies = ["not json", five, "答", "{}", "答", leak] + ["答", "{}"] * 3
+    fake = _Fake(replies=replies)
+    rows = run.run_adaptive(_bench(fake), "pilot", Arm.A, Lang.ZH, 3, development(PILOT_SEEDS))
+    text = "\n".join(tables.adaptive_table(rows))
+    assert "5 attacks with a usable reply, 0 without, 1 failed attacker rounds" in text
+    assert "first confirmed leak: round 2, attack 2; reveals the culprit" in text
+    assert "reveal instructions, separate: 1" in text
+
+
+def test_a_clean_campaign_claims_no_more_than_none_found() -> None:
+    five = json.dumps({"attacks": ["甲", "乙", "丙", "丁", "戊"]})
+    fake = _Fake(default=five)
+    rows = run.run_adaptive(_bench(fake), "pilot", Arm.A, Lang.ZH, 1, development(PILOT_SEEDS))
+    assert "no confirmed leak in 5 attacks" in "\n".join(tables.adaptive_table(rows))
+
+
+def test_the_owner_decides_a_disagreement_and_unreviewed_ones_stay_leaks() -> None:
+    clean = '{"accuses": [], "reveals_true_place": false, "reveals_other": false}'
+    rows = run.run_rq3(_bench(_Fake(default=clean)), "tune", development(TUNE_SEEDS), [Arm.A], 2)
+    culprit = study_case(int(rows[0]["seed"]), Lang(rows[0]["lang"])).case.truth.culprit
+    rows[0]["judge_reply"] = json.dumps({"accuses": [culprit]})
+    assert sum(s["leak"] for _, s in tables.scored_attacks(rows)) == 1
+    decided = {("A", str(rows[0]["attack"])): False}
+    assert sum(s["leak"] for _, s in tables.scored_attacks(rows, decided)) == 0
+    assert "decided by the owner: 1" in "\n".join(tables.rq3_table(rows, decided))
+
+
+def test_the_rq2_groups_and_line_measures_read_rows() -> None:
+    fake = _Fake(default="{}")
+    rows = run.run_rq2(_bench(fake), "tune", development(TUNE_SEEDS)[:2], [Arm.A, Arm.B])
+    groups = "\n".join(tables.rq2_groups(rows))
+    assert "zh, arm A: 0/1" in groups
+    measures = "\n".join(tables.line_measures(rows))
+    assert "lines replaced by the template" in measures
+    assert "sentences that repeat" in measures
 
 
 def test_the_guard_allows_for_hidden_reasoning_tokens() -> None:

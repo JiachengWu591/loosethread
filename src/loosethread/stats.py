@@ -27,6 +27,17 @@ def mcnemar_exact(only_first: int, only_second: int) -> float:
     return min(1.0, 2 * tail)
 
 
+def holm(p_values: list[float]) -> list[float]:
+    """Holm-adjusted p-values, in the order given."""
+    order = sorted(range(len(p_values)), key=lambda i: p_values[i])
+    adjusted = [0.0] * len(p_values)
+    running = 0.0
+    for position, index in enumerate(order):
+        running = max(running, min(1.0, (len(p_values) - position) * p_values[index]))
+        adjusted[index] = running
+    return adjusted
+
+
 def percentile(values: list[float], q: float) -> float:
     """Nearest-rank percentile, q in [0, 100]."""
     if not values:

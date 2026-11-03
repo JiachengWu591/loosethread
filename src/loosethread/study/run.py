@@ -695,13 +695,7 @@ def _table(rows: Sequence[Row]) -> list[str]:
         return tables.rq3_table(rows)
     if study == "repeat":
         return tables.repeat_table(rows, read_rows(ROWS / "study-rq2-test.jsonl"))
-    played = [r for r in rows if "line" in r]
-    leaks = sum(bool(r.get("confirmed_leak")) for r in played)
-    return [
-        f"adaptive: {len(played)} attacks, {leaks} confirmed leaks,"
-        f" last round {max(int(r['round']) for r in rows)}",
-        tables.spend_line(rows),
-    ]
+    return tables.adaptive_table(rows)
 
 
 if __name__ == "__main__":
