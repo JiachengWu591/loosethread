@@ -4,6 +4,7 @@ import json
 from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
+from xml.etree import ElementTree
 
 import pytest
 
@@ -16,7 +17,7 @@ from loosethread.model import Lang, LieReason, Occupants, PersonAt, PersonId, Qu
 from loosethread.npc import Usage
 from loosethread.parser import RuleParser
 from loosethread.stats import holm
-from loosethread.study import assertions, attacks, checks, control, rq1, run, tables
+from loosethread.study import assertions, attacks, checks, control, figure, rq1, run, tables
 from loosethread.study.arms import Arm, make_npc, npc_system, npc_user
 from loosethread.study.assertions import Denied, Extracted, Failure, Memory, Placed
 from loosethread.study.cases import (
@@ -849,6 +850,21 @@ def test_an_unread_judgement_goes_to_the_owner_and_is_a_leak_until_decided() -> 
     assert sum(s["leak"] for _, s in tables.scored_attacks(rows)) == 1
     decided = {("A", str(rows[0]["attack"])): False}
     assert sum(s["leak"] for _, s in tables.scored_attacks(rows, decided)) == 0
+
+
+def test_the_figure_is_valid_svg_that_marks_what_was_added_later() -> None:
+    panels = (
+        ("first", (figure.Point("A", 60, 204, True), figure.Point("later <one>", 26, 204, False))),
+        ("second", (figure.Point("B", 0, 200, True),)),
+    )
+    text = figure.svg(panels)
+    assert text == figure.svg(panels)
+    root = ElementTree.fromstring(text)
+    circles = [e for e in root.iter() if e.tag.endswith("circle")]
+    assert sorted(str(c.get("class")) for c in circles[2:]) == ["later", "planned", "planned"]
+    assert "60/204 = 29.4% [23.6%, 36.0%]" in text
+    assert "later &lt;one&gt;" in text
+    assert "prefers-color-scheme: dark" in text
 
 
 def test_holm_adjusts_in_order_and_stays_monotone() -> None:

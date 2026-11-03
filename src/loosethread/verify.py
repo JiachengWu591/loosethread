@@ -18,7 +18,7 @@ from typing import Any
 from loosethread import parser_eval, simulate
 from loosethread.game import DEFAULT_BUDGET
 from loosethread.generator import daily_case
-from loosethread.study import checks, control, rq1, tables
+from loosethread.study import checks, control, figure, rq1, tables
 from loosethread.study.cases import held_out, study_case
 from loosethread.study.metered import CAP_CNY
 from loosethread.study.tables import rate
@@ -218,6 +218,17 @@ TABLES: dict[str, tuple[str, Callable[[], Sequence[str]]]] = {
 }
 
 
+def figure_text() -> str:
+    return figure.svg(
+        figure.points(
+            _rows("study-rq2-test.jsonl"),
+            _rows("study-rq3-test.jsonl"),
+            _rows("study-rq3-U-test.jsonl"),
+            judge_decisions(),
+        )
+    )
+
+
 def render(title: str, lines: Sequence[str]) -> str:
     body = "\n".join(lines)
     return (
@@ -233,8 +244,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
     differing: list[str] = []
-    for name, (title, compute) in TABLES.items():
-        text = render(title, compute())
+    files = {name: render(title, compute()) for name, (title, compute) in TABLES.items()}
+    files["figure.svg"] = figure_text()
+    for name, text in files.items():
         path = RESULTS / name
         if args.write:
             path.write_text(text, encoding="utf-8", newline="\n")

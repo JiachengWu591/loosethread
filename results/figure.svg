@@ -1,0 +1,116 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 423" width="760" height="423" role="img" aria-label="Failure and leak rates per arm, with 95% Wilson intervals">
+  <style>
+    svg { --surface: #fcfcfb; --ink: #0b0b0b; --muted: #52514e; --grid: #e4e3df; --mark: #2a78d6;
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif; font-size: 13px; }
+    @media (prefers-color-scheme: dark) {
+      svg { --surface: #1a1a19; --ink: #f0efec; --muted: #c3c2b7; --grid: #3a3a37;
+        --mark: #3987e5; }
+    }
+    .surface { fill: var(--surface); }
+    .ink { fill: var(--ink); }
+    .muted { fill: var(--muted); }
+    .head { fill: var(--ink); font-weight: 600; }
+    .grid { stroke: var(--grid); stroke-width: 1; }
+    .whisker { stroke: var(--mark); stroke-width: 2; stroke-linecap: round; }
+    .planned { fill: var(--mark); stroke: var(--surface); stroke-width: 2; }
+    .later { fill: var(--surface); stroke: var(--mark); stroke-width: 2; }
+  </style>
+  <rect class="surface" width="760" height="423"/>
+  <text class="head" x="16" y="22">Failure and leak rates per arm</text>
+  <circle class="planned" cx="22" cy="42" r="5"/>
+  <text class="muted" x="34" y="46">registered in the plan</text>
+  <circle class="later" cx="202" cy="42" r="5"/>
+  <text class="muted" x="214" y="46">added after reading the results</text>
+  <line class="whisker" x1="434" y1="42" x2="462" y2="42"/>
+  <text class="muted" x="472" y="46">95% Wilson interval</text>
+  <line class="grid" x1="262.0" y1="89" x2="262.0" y2="245"/>
+  <line class="grid" x1="342.0" y1="89" x2="342.0" y2="245"/>
+  <line class="grid" x1="422.0" y1="89" x2="422.0" y2="245"/>
+  <line class="grid" x1="502.0" y1="89" x2="502.0" y2="245"/>
+  <line class="grid" x1="582.0" y1="89" x2="582.0" y2="245"/>
+  <line class="grid" x1="662.0" y1="89" x2="662.0" y2="245"/>
+  <line class="grid" x1="262.0" y1="287" x2="262.0" y2="391"/>
+  <line class="grid" x1="342.0" y1="287" x2="342.0" y2="391"/>
+  <line class="grid" x1="422.0" y1="287" x2="422.0" y2="391"/>
+  <line class="grid" x1="502.0" y1="287" x2="502.0" y2="391"/>
+  <line class="grid" x1="582.0" y1="287" x2="582.0" y2="391"/>
+  <line class="grid" x1="662.0" y1="287" x2="662.0" y2="391"/>
+  <text class="muted" x="262.0" y="409" text-anchor="middle">0%</text>
+  <text class="muted" x="342.0" y="409" text-anchor="middle">10%</text>
+  <text class="muted" x="422.0" y="409" text-anchor="middle">20%</text>
+  <text class="muted" x="502.0" y="409" text-anchor="middle">30%</text>
+  <text class="muted" x="582.0" y="409" text-anchor="middle">40%</text>
+  <text class="muted" x="662.0" y="409" text-anchor="middle">50%</text>
+  <text class="head" x="16" y="74">RQ2: sessions with an integrity failure</text>
+  <g>
+    <title>A, hardened prompt: 60/204 = 29.4% [23.6%, 36.0%]</title>
+    <text class="ink" x="16" y="106">A, hardened prompt</text>
+    <line class="whisker" x1="450.7" y1="102" x2="550.0" y2="102"/>
+    <circle class="planned" cx="497.3" cy="102" r="5"/>
+    <text class="ink" x="744" y="106" text-anchor="end">60/204</text>
+  </g>
+  <g>
+    <title>without the item claim: 26/204 = 12.7% [8.8%, 18.0%]</title>
+    <text class="muted" x="16" y="132">without the item claim</text>
+    <line class="whisker" x1="332.8" y1="128" x2="406.2" y2="128"/>
+    <circle class="later" cx="364.0" cy="128" r="5"/>
+    <text class="muted" x="744" y="132" text-anchor="end">26/204</text>
+  </g>
+  <g>
+    <title>B, layered: 0/204 = 0.0% [0.0%, 1.8%]</title>
+    <text class="ink" x="16" y="158">B, layered</text>
+    <line class="whisker" x1="262.0" y1="154" x2="276.8" y2="154"/>
+    <circle class="planned" cx="262.0" cy="154" r="5"/>
+    <text class="ink" x="744" y="158" text-anchor="end">0/204</text>
+  </g>
+  <g>
+    <title>without the item claim: 0/204 = 0.0% [0.0%, 1.8%]</title>
+    <text class="muted" x="16" y="184">without the item claim</text>
+    <line class="whisker" x1="262.0" y1="180" x2="276.8" y2="180"/>
+    <circle class="later" cx="262.0" cy="180" r="5"/>
+    <text class="muted" x="744" y="184" text-anchor="end">0/204</text>
+  </g>
+  <g>
+    <title>C, claims only: 76/204 = 37.3% [30.9%, 44.1%]</title>
+    <text class="ink" x="16" y="210">C, claims only</text>
+    <line class="whisker" x1="509.3" y1="206" x2="614.5" y2="206"/>
+    <circle class="planned" cx="560.0" cy="206" r="5"/>
+    <text class="ink" x="744" y="210" text-anchor="end">76/204</text>
+  </g>
+  <g>
+    <title>without the item claim: 24/204 = 11.8% [8.0%, 16.9%]</title>
+    <text class="muted" x="16" y="236">without the item claim</text>
+    <line class="whisker" x1="326.3" y1="232" x2="397.3" y2="232"/>
+    <circle class="later" cx="356.1" cy="232" r="5"/>
+    <text class="muted" x="744" y="236" text-anchor="end">24/204</text>
+  </g>
+  <text class="head" x="16" y="272">RQ3: static attacks that leak, after review</text>
+  <g>
+    <title>A, hardened prompt: 0/200 = 0.0% [0.0%, 1.9%]</title>
+    <text class="ink" x="16" y="304">A, hardened prompt</text>
+    <line class="whisker" x1="262.0" y1="300" x2="277.1" y2="300"/>
+    <circle class="planned" cx="262.0" cy="300" r="5"/>
+    <text class="ink" x="744" y="304" text-anchor="end">0/200</text>
+  </g>
+  <g>
+    <title>B, layered: 0/200 = 0.0% [0.0%, 1.9%]</title>
+    <text class="ink" x="16" y="330">B, layered</text>
+    <line class="whisker" x1="262.0" y1="326" x2="277.1" y2="326"/>
+    <circle class="planned" cx="262.0" cy="326" r="5"/>
+    <text class="ink" x="744" y="330" text-anchor="end">0/200</text>
+  </g>
+  <g>
+    <title>C, claims only: 0/200 = 0.0% [0.0%, 1.9%]</title>
+    <text class="ink" x="16" y="356">C, claims only</text>
+    <line class="whisker" x1="262.0" y1="352" x2="277.1" y2="352"/>
+    <circle class="planned" cx="262.0" cy="352" r="5"/>
+    <text class="ink" x="744" y="356" text-anchor="end">0/200</text>
+  </g>
+  <g>
+    <title>U, no hardening: 19/200 = 9.5% [6.2%, 14.4%]</title>
+    <text class="muted" x="16" y="382">U, no hardening</text>
+    <line class="whisker" x1="311.3" y1="378" x2="376.9" y2="378"/>
+    <circle class="later" cx="338.0" cy="378" r="5"/>
+    <text class="muted" x="744" y="382" text-anchor="end">19/200</text>
+  </g>
+</svg>

@@ -28,3 +28,5 @@ jobs:
         run: uv run mypy
       - name: Pytest
         run: uv run pytest
+      - name: Every table comes from its rows
+        run: uv run python -m loosethread.verify
