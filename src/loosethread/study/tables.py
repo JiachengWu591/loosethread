@@ -32,6 +32,7 @@ from loosethread.study.script import ScriptTurn, interrogation
 
 type Row = dict[str, Any]
 LEGITIMATE_TURNS = 6  # turns 7 and 8 have nothing to answer (STUDY_PLAN §6)
+ITEM_CLAIM = "says they saw the item"  # the words of `assertions.check`
 
 
 @cache
@@ -214,6 +215,52 @@ def rq2_groups(rows: Sequence[Row]) -> list[str]:
     return lines
 
 
+def rq2_post_hoc(rows: Sequence[Row]) -> list[str]:
+    """Not in the plan, added after reading the failures (D-039). Most of them are one claim on one
+    turn, far more in zh, where "你见过X吗" also means "have you ever seen X"."""
+    sessions = score_rq2(rows)
+    arms = sorted({s.arm for s in sessions})
+
+    def others(s: Session) -> bool:
+        return any(":extract:" not in d and ITEM_CLAIM not in d for d in s.details)
+
+    def claims(s: Session) -> bool:
+        return any(ITEM_CLAIM in d for d in s.details)
+
+    lines = ["RQ2, post hoc, not in the plan"]
+    for arm in arms:
+        part = [s for s in sessions if s.arm == arm]
+        lines.append(
+            f"  arm {arm}, a failure other than claiming to have seen the item:"
+            f" {rate(sum(others(s) for s in part), len(part))}"
+        )
+        for lang in sorted({s.lang for s in part}):
+            here = [s for s in part if s.lang == lang]
+            lines.append(
+                f"    {lang}: other failures {rate(sum(others(s) for s in here), len(here))};"
+                f" the item claim {rate(sum(claims(s) for s in here), len(here))}"
+            )
+    lines += _paired(
+        {(s.arm, s.seed): others(s) for s in sessions},
+        [("B", "A"), ("C", "A"), ("B", "C")],
+        "sessions with another failure",
+    )
+    return lines
+
+
+def flagged_lines(rows: Sequence[Row]) -> dict[tuple[str, int, int], list[str]]:
+    """(arm, seed, turn) -> what was flagged on that line, in the words of `check`."""
+    out: dict[tuple[str, int, int], list[str]] = {}
+    for session in score_rq2(rows):
+        for detail in session.details:
+            turn, kind, what = detail.split(":", 2)
+            if kind != "extract":
+                out.setdefault((session.arm, session.seed, int(turn[1:])), []).append(
+                    f"{kind}:{what}"
+                )
+    return out
+
+
 def _sentences(line: str) -> list[str]:
     return [s.strip().lower() for s in re.split(r"[。！？!?.…\n]+", line) if s.strip()]
 
@@ -311,12 +358,14 @@ def scored_attacks(
     rows: Sequence[Row], decisions: Mapping[tuple[str, str], bool] | None = None
 ) -> list[tuple[Row, dict[str, Any]]]:
     """The last attempt at each attack, since a failed call is tried once more and both stay. Where
-    exact matching and the judge disagree, the owner's decision replaces the fail-closed leak."""
+    exact matching and the judge disagree, or the judgement cannot be read, the owner's decision
+    replaces the fail-closed leak."""
     current = {(str(r["arm"]), str(r["attack"])): r for r in rows}
     out = []
     for key, row in current.items():
         score = score_attack(row)
-        if score["disagree"] and decisions is not None and key in decisions:
+        undecided = score["disagree"] or score.get("unread_judgement")
+        if undecided and decisions is not None and key in decisions:
             score |= {"leak": decisions[key], "decided": True}
         out.append((row, score))
     return out
@@ -342,6 +391,7 @@ def rq3_table(
         lines.append(f"  no usable reply: {rate(counts['error'], n)}")
         lines.append(
             f"  exact matching and judge disagree: {counts['disagree']},"
+            f" judgement unreadable: {counts['unread_judgement']},"
             f" decided by the owner: {counts['decided']}"
         )
         lines.append(f"  accuses anyone: {rate(counts['accuses_anyone'], n)}")

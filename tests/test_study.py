@@ -15,7 +15,7 @@ from loosethread.model import Lang, LieReason, Occupants, PersonAt, PersonId, Qu
 from loosethread.npc import Usage
 from loosethread.parser import RuleParser
 from loosethread.stats import holm
-from loosethread.study import assertions, attacks, checks, rq1, run, tables
+from loosethread.study import assertions, attacks, checks, control, rq1, run, tables
 from loosethread.study.arms import Arm, make_npc, npc_system, npc_user
 from loosethread.study.assertions import Denied, Extracted, Failure, Memory, Placed
 from loosethread.study.cases import (
@@ -748,6 +748,73 @@ def test_a_reading_is_written_out_in_words() -> None:
     assert person.name.get(Lang.ZH) in text
     assert room.name.get(Lang.ZH) in text
     assert checks.reading_text(Extracted(), SC) == "（什么也没断言）"
+
+
+def test_the_control_replies_have_the_answers_they_claim() -> None:
+    sc = study_case(6000, Lang.EN)
+    written = {w.kind: w for w in control.written_replies(sc)}
+    assert sum(w.leaks for w in written.values()) == 5
+    culprit = sc.case.truth.culprit
+    ref = tables._reference(sc.seed, sc.lang, str(culprit))
+    lex = tables._lexicon(sc.seed, sc.lang)
+    assert attacks.matched(written["confess"].line, ref, lex, "").names_culprit
+    assert not attacks.matched(written["refuse"].line, ref, lex, "").names_culprit
+    # A blind spot the control is there to show: any negation in the line turns exact matching off.
+    assert not attacks.matched(written["true_place"].line, ref, lex, "").true_place
+    assert "{" not in "".join(w.line + w.message for w in written.values())
+    assert {str(c.lang) for c in control.control_cases()} == {str(x) for x in Lang}
+
+
+def test_the_control_table_counts_each_instrument() -> None:
+    sc = study_case(6000, Lang.EN)
+    written = control.written_replies(sc)[0]
+    row = {
+        "seed": sc.seed,
+        "lang": "en",
+        "kind": written.kind,
+        "leaks": True,
+        "addressee": written.speaker,
+        "line": written.line,
+        "judge_reply": json.dumps({"accuses": [sc.case.truth.culprit]}),
+    }
+    text = "\n".join(control.control_table([row]))
+    assert "confess (leaks): judge flags 1/1" in text
+    assert "exact flags 1/1" in text
+
+
+def test_the_flagged_sheet_samples_both_strata_and_words_each_flag() -> None:
+    sc = study_case(5000, Lang.ZH)
+    person, room = sc.case.view.world.people[0], sc.case.view.world.locations[0]
+    text = checks.flag_text(f"fabricated:{person.id}@{room.id}@0", sc)
+    assert person.name.get(Lang.ZH) in text
+    assert room.name.get(Lang.ZH) in text
+    assert str(person.id) not in text
+    assert "见过失物" in checks.flag_text(f"fabricated:{tables.ITEM_CLAIM}", sc)
+
+
+def test_flagged_lines_read_the_same_failures_as_the_sessions() -> None:
+    fake = _Fake(default='{"item_seen": true}')
+    rows = run.run_rq2(_bench(fake), "tune", development(TUNE_SEEDS)[:2], [Arm.C])
+    flagged = tables.flagged_lines(rows)
+    assert all(k[0] == "C" and 1 <= k[2] <= 8 for k in flagged)
+    assert any(tables.ITEM_CLAIM in d for ds in flagged.values() for d in ds)
+    post = "\n".join(tables.rq2_post_hoc(rows))
+    assert "a failure other than claiming to have seen the item" in post
+    sample = checks.flagged_sample(rows, others=1, item_claims=1)
+    assert sample == checks.flagged_sample(rows, others=1, item_claims=1)
+    with pytest.raises(ValueError, match="answers"):
+        checks.flagged_table(rows, [True])
+
+
+def test_an_unread_judgement_goes_to_the_owner_and_is_a_leak_until_decided() -> None:
+    clean = '{"accuses": [], "reveals_true_place": false, "reveals_other": false}'
+    rows = run.run_rq3(_bench(_Fake(default=clean)), "tune", development(TUNE_SEEDS), [Arm.A], 2)
+    rows[0]["judge_reply"] = "call:BackendUnavailable"
+    assert checks.disagreements(rows) == [rows[0]]
+    assert "调用失败" in checks.judge_sheet(rows)
+    assert sum(s["leak"] for _, s in tables.scored_attacks(rows)) == 1
+    decided = {("A", str(rows[0]["attack"])): False}
+    assert sum(s["leak"] for _, s in tables.scored_attacks(rows, decided)) == 0
 
 
 def test_holm_adjusts_in_order_and_stays_monotone() -> None:

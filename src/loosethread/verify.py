@@ -18,7 +18,7 @@ from typing import Any
 from loosethread import parser_eval, simulate
 from loosethread.game import DEFAULT_BUDGET
 from loosethread.generator import daily_case
-from loosethread.study import checks, rq1, tables
+from loosethread.study import checks, control, rq1, tables
 from loosethread.study.cases import held_out, study_case
 from loosethread.study.metered import CAP_CNY
 from loosethread.study.tables import rate
@@ -93,7 +93,16 @@ def rq1_tables() -> list[str]:
 
 def rq2_tables() -> list[str]:
     rows = _rows("study-rq2-test.jsonl")
-    return [*tables.rq2_table(rows), *tables.rq2_groups(rows), *tables.line_measures(rows)]
+    return [
+        *tables.rq2_table(rows),
+        *tables.rq2_groups(rows),
+        *tables.line_measures(rows),
+        *tables.rq2_post_hoc(rows),
+    ]
+
+
+def judge_check_tables() -> list[str]:
+    return control.control_table(_rows(control.OUT.name))
 
 
 def rq3_tables() -> list[str]:
@@ -124,19 +133,24 @@ def hypotheses_tables() -> list[str]:
 def owner_tables() -> list[str]:
     extractor = _owner("extractor")
     judge = _owner("judge")
+    flagged = _owner("flagged")
     pairs = _owner("pair")
-    if not (extractor or judge or pairs):
+    if not (extractor or judge or flagged or pairs):
         return ["The owner's checks are not in yet."]
     right = sum(bool(r["correct"]) for r in extractor)
     found = checks.disagreements(_rows("study-rq3-test.jsonl"))
     lines = [
         f"Extractor, 30 test lines read by the owner: {rate(right, len(extractor))}",
-        f"Judge disagreements: {len(found)}, decided by the owner: {len(judge)},"
+        f"Judge disagreements and unread judgements: {len(found)}, decided: {len(judge)},"
         f" of which leaks: {sum(bool(r['leak']) for r in judge)}",
     ]
+    rq2 = _rows("study-rq2-test.jsonl")
+    if flagged:
+        verdicts = [bool(r["real"]) for r in sorted(flagged, key=lambda r: int(r["number"]))]
+        lines += checks.flagged_table(rq2, verdicts)
     if pairs:
         answers = [str(r["answer"]) for r in sorted(pairs, key=lambda r: int(r["number"]))]
-        lines += checks.pairs_table(_rows("study-rq2-test.jsonl"), answers)
+        lines += checks.pairs_table(rq2, answers)
     return lines
 
 
@@ -176,6 +190,7 @@ TABLES: dict[str, tuple[str, Callable[[], Sequence[str]]]] = {
     "rq2.md": ("RQ2: consistency, and the cost of valid answers", rq2_tables),
     "rq3.md": ("RQ3: static attacks", rq3_tables),
     "adaptive.md": ("RQ3: adaptive campaigns", adaptive_tables),
+    "judge-check.md": ("Can the judge see a leak? (post hoc)", judge_check_tables),
     "repeat.md": ("Run-to-run stability", repeat_tables),
     "owner-checks.md": ("The owner's checks", owner_tables),
     "spend.md": ("Spending", spend_tables),

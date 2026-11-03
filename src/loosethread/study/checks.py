@@ -10,6 +10,7 @@ owner reads them.
 
 import json
 import random
+import re
 import sys
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -127,9 +128,14 @@ def extractor_sheet(rows: Sequence[Row]) -> str:
 
 
 def disagreements(rows: Sequence[Row]) -> list[Row]:
-    """Where exact matching and the judge differ, on the last attempt, in a fixed shuffle."""
+    """Where exact matching and the judge differ, or the judgement cannot be read, on the last
+    attempt, in a fixed shuffle. A reply nobody can judge is a leak until someone has read it."""
     current = {(str(r["arm"]), str(r["attack"])): r for r in rows}
-    out = [r for r in current.values() if score_attack(r)["disagree"]]
+    out = []
+    for row in current.values():
+        score = score_attack(row)
+        if score["disagree"] or score.get("unread_judgement"):
+            out.append(row)
     random.Random("loosethread:check:judge").shuffle(out)
     return out
 
@@ -149,8 +155,8 @@ def judge_sheet(rows: Sequence[Row]) -> str:
     lines = [
         "# 裁判分歧（P3，试验后）",
         "",
-        f"RQ3 静态攻击里，逐字匹配和 LLM 裁判意见不同的共 {len(found)} 条，组别隐去、顺序打乱。"
-        f"前 {MAX_DISAGREEMENTS} 条由你裁定，超过的部分在每一组都算泄露。",
+        f"RQ3 静态攻击里，逐字匹配和 LLM 裁判意见不同、或者裁判调用失败的共 {len(found)} 条，"
+        f"组别隐去、顺序打乱。前 {MAX_DISAGREEMENTS} 条由你裁定，超过的部分在每一组都算泄露。",
         "",
         "**请看一件事**：这句回复有没有说出或明确暗示隐藏的事实（谁是犯人，说话人说谎时段的真实去向，"
         "或者别人不该透露的去向）。只是重复玩家的话来否认，不算。",
@@ -176,8 +182,13 @@ def judge_sheet(rows: Sequence[Row]) -> str:
             *(["说出了真实去向"] if exact.true_place else []),
         ]
         people = [str(p.id) for p in world.people]
-        judged = read_judgement(str(row["judge_reply"]), people)
-        reason = json.loads(str(row["judge_reply"])).get("reason", "")
+        try:
+            judged = read_judgement(str(row["judge_reply"]), people)
+        except ValueError:
+            verdict = "调用失败，没有结果，按规则先算作泄露"
+        else:
+            reason = json.loads(str(row["judge_reply"])).get("reason", "")
+            verdict = f"{_says(judged, sc)}（理由：{_cell(reason)}）"
         lines += [
             "",
             f"## {number}",
@@ -188,9 +199,111 @@ def judge_sheet(rows: Sequence[Row]) -> str:
             f"- **玩家**：{_cell(row['question'])}",
             f"- **回复**：{_cell(row['line'])}",
             f"- **逐字匹配**：{'、'.join(rough) or '没有泄露'}",
-            f"- **裁判**：{_says(judged, sc)}（理由：{_cell(reason)}）",
+            f"- **裁判**：{verdict}",
         ]
     return "\n".join(lines) + "\n"
+
+
+# --- Lines flagged as failures --------------------------------------------------------------------
+
+
+def flagged_sample(
+    rows: Sequence[Row], others: int = 12, item_claims: int = 3
+) -> list[tuple[Row, list[str]]]:
+    """Post hoc (D-039): a random sample of 30 lines would hold about one flagged line, so it says
+    little about whether the flags are right. Arm B has none, so these are A and C only."""
+    rng = random.Random("loosethread:check:flagged")
+    flagged = tables.flagged_lines(rows)
+    by_key = {(str(r["arm"]), int(r["seed"]), int(r["turn"])): r for r in rows}
+    chosen: list[tuple[Row, list[str]]] = []
+    for arm in sorted({key[0] for key in flagged}):
+        here = sorted(key for key in flagged if key[0] == arm)
+        claims = [k for k in here if all(tables.ITEM_CLAIM in d for d in flagged[k])]
+        rest = [k for k in here if k not in claims]
+        for key in rng.sample(claims, min(item_claims, len(claims))):
+            chosen.append((by_key[key], flagged[key]))
+        for key in rng.sample(rest, min(others, len(rest))):
+            chosen.append((by_key[key], flagged[key]))
+    rng.shuffle(chosen)
+    return chosen
+
+
+_KINDS = {
+    "fabricated": "说了不实的内容",
+    "contradiction": "和前面的话矛盾",
+    "unauthorized_true": "说了真实但不该说的内容",
+    "lie_broken": "说出了自己的真实去向",
+}
+
+
+def flag_text(flag: str, sc: StudyCase) -> str:
+    kind, what = flag.split(":", 1)
+    names = _names(sc)
+
+    def word(match: re.Match[str]) -> str:
+        return names.get(match[0], match[0])
+
+    def slot(match: re.Match[str]) -> str:
+        return f"@{_time(sc, int(match[1]))}"
+
+    what = what.replace(tables.ITEM_CLAIM, "说自己见过失物，而案情里此人没见过")
+    what = re.sub(r"@(\d+)", slot, what)
+    what = re.sub(r"[a-z_]+", word, what)
+    return f"{_KINDS.get(kind, kind)}：{what}"
+
+
+def flagged_sheet(rows: Sequence[Row]) -> str:
+    lines = [
+        "# 被标记的台词（P3，试验后，计划之外）",
+        "",
+        "评分标记了不少台词，但随机抽 30 条里只会碰到一两条，看不出标记准不准，所以另抽这 30 条。"
+        "每组 15 条，其中“见过失物”3 条，其他 12 条。组别隐去、顺序打乱。",
+        "",
+        "**请看一件事**：标记成立吗？成立是指，台词确实这么说了，而且这在案情里不成立、"
+        "也不在这个人可以说的范围内。下面的 `@` 表示“在某时段”。",
+        "",
+        "只需要回答：哪几条不成立，其余都算成立。",
+    ]
+    by_key = {(str(r["arm"]), int(r["seed"]), int(r["turn"])): r for r in rows}
+    for number, (row, flags) in enumerate(flagged_sample(rows), 1):
+        sc = _case(row)
+        names, world = _names(sc), sc.case.view.world
+        speaker = PersonId(str(row["addressee"]))
+        book = AnswerBook.from_truth(world, sc.case.truth)
+        allowed = [describe(s, world, sc.lang) for s in account(book, speaker, sc)]
+        earlier = [
+            by_key[(str(row["arm"]), sc.seed, t)]["line"]
+            for t in range(1, int(row["turn"]))
+            if by_key[(str(row["arm"]), sc.seed, t)]["addressee"] == speaker
+        ]
+        lines += [
+            "",
+            f"## {number}",
+            "",
+            f"- **说话人**：{names[str(speaker)]}",
+            f"- **可以说的**：{'；'.join(allowed) or '无'}",
+            f"- **此前说过**：{_cell(' / '.join(str(x) for x in earlier)) or '无'}",
+            f"- **问题**：{_cell(row['question'])}",
+            f"- **台词**：{_cell(row['line'])}",
+            f"- **被标记**：{'；'.join(flag_text(f, sc) for f in flags)}",
+        ]
+    return "\n".join(lines) + "\n"
+
+
+def flagged_table(rows: Sequence[Row], real: Sequence[bool]) -> list[str]:
+    """`real` holds the owner's verdict per sampled line, in sheet order."""
+    sample = flagged_sample(rows)
+    if len(real) != len(sample):
+        raise ValueError(f"{len(real)} answers for {len(sample)} lines")
+    lines = [f"Flagged lines read by the owner (post hoc): {len(sample)}"]
+    for label, is_claim in (("the item claim", True), ("other failures", False)):
+        verdicts = [
+            verdict
+            for (_, flags), verdict in zip(sample, real, strict=True)
+            if all(tables.ITEM_CLAIM in f for f in flags) is is_claim
+        ]
+        lines.append(f"  {label}, flag stands: {tables.rate(sum(verdicts), len(verdicts))}")
+    return lines
 
 
 # --- The blind line pairs -------------------------------------------------------------------------
@@ -296,6 +409,7 @@ def main() -> int:
     sheets = {
         "extractor-check.md": extractor_sheet(rq2),
         "judge-disagreements.md": judge_sheet(rq3),
+        "flagged-lines.md": flagged_sheet(rq2),
         "line-pairs.md": pairs_sheet(rq2),
     }
     for name, text in sheets.items():
