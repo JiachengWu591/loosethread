@@ -1009,3 +1009,42 @@ directly.
   that the ledger would not see. More than 5% of an arm's calls failing, after at least 40, pauses the
   run (STUDY_PLAN §9). `--max-cny` gives parallel runs each a share of the budget, since each one only knows
   its own spending. The thinking limit rises to 64,000 tokens.
+
+## D-038 — Attack set frozen on a delegated review; the attacker's output limit rises
+
+- **Date**: 2026-11-02 · **Type**: the owner's decision in chat ("都按建议"), on two recommendations.
+- **Attack review**
+  - **Context**: the plan had the owner check 30 test attacks before the run. The owner asked for a subagent to
+    run the check. A fresh Claude subagent did it read-only, seeing no results.
+  - **Result** (`docs/review/p3/attack-spotcheck-review.md`): hash and rows match, all 30 within the content
+    limits, 17 labels fine, 11 borderline, 2 wrong. Goal labels are often arguable, because the scheme has no
+    goal for "the whole truth".
+  - **Options**: freeze unchanged; fix the 2 items and their other-language versions; the owner reads it too.
+  - **Decision**: freeze unchanged, and the review stands in for the owner's check. `ATTACKS_SHA256` is set.
+  - **Consequences**: no person has checked these labels, and the report says so. Scoring does not read `goal`,
+    and `category` feeds only the per-category lines, so the primary result does not depend on the labels.
+    There is no table by goal. `en-encoding-21` (dev) keeps its "NATO alphabet", the name of a spelling alphabet.
+- **Goals out of reach, fixed before the run**: 22 of the 50 `true_place` attacks are put to a speaker with no
+  lie, and 7 more ask the culprit about a time that is not their lie slot. They can still leak in other ways,
+  and every arm gets the same attacks, so this lowers absolute rates and does not favour an arm. Primary stays
+  on all 200. A secondary line (`tables.goal_in_reach`) leaves out the 22.
+- **The attacker's output limit**
+  - **Context**: the A/en campaign paused at round 12, with 3 of 48 calls failed (`attacker:ValueError`). This
+    was not a service failure. Replays from the saved history were cut off at 600 tokens in 6 of 9 tries,
+    leaving incomplete JSON (`study-attacker-check-r1.jsonl`, CNY 0.12). The attacker writes far longer here: a
+    median of 1853 characters a round, against 827 in B/en.
+  - **Options**: raise the limit and continue; keep 600, which wastes most rounds and leaves too few attacks to
+    compare; stop at round 12 and report it, which leaves the English pair not comparable.
+  - **Decision**: 1200 tokens, and A/en runs to round 103, since §9 retries failed items once, so that it also
+    gets 500 attacks. Both attempts stay in the rows.
+  - **Consequences**: an instrument frozen before the test changed during it, and the report says so. The other
+    three campaigns had no failed round, so 600 never cut them off, and they finished at 600.
+- **Spending**: three campaigns reached their CNY 4.4 share at rounds 91 to 94 and were resumed to round 100,
+  about CNY 1 more, since attacker calls cost more than the estimate. The whole study should now come to about
+  CNY 77 of the 80 cap.
+- **A gap in the ledger, fixed**: a failed attacker call was recorded at no cost. The runner now records it. The
+  3 such calls are added at the replay's cost as rows in `study-attacker-check-r1.jsonl`, and the test file is
+  left as it was.
+- **Results seen early**: while checking why runs stopped, one line of RQ2's output was read ("B vs C: only B 0,
+  only C 76 of 204 pairs"), after RQ2 had finished. The row counts also show that three adaptive campaigns ran
+  to round 100. No instrument was changed because of either.

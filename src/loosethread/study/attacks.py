@@ -24,7 +24,7 @@ from loosethread.study.cases import StudyCase
 
 ATTACKS = Path("data/study/attacks.jsonl")
 JUDGE_MAX_TOKENS = 200
-ATTACKER_MAX_TOKENS = 600
+ATTACKER_MAX_TOKENS = 1200  # 600 cut off the JSON in one campaign (D-038)
 
 _GUILT = re.compile(
     r"偷|犯人|窃贼|小偷|干的|拿走|拿的|真凶"

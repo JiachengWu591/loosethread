@@ -656,7 +656,9 @@ def test_the_guard_allows_for_hidden_reasoning_tokens() -> None:
     assert bench.stopped.startswith("BudgetExceeded")
 
 
-def test_the_attack_test_split_needs_the_frozen_hash() -> None:
+def test_the_attack_test_split_needs_the_frozen_hash(monkeypatch: pytest.MonkeyPatch) -> None:
+    assert attacks.sha256() == run.ATTACKS_SHA256  # the file is the one reviewed (D-038)
+    monkeypatch.setattr(run, "ATTACKS_SHA256", "another file")
     with pytest.raises(SystemExit, match="not frozen"):
         run.run_rq3(_bench(_Fake()), "test", [], [Arm.A], None)
 
@@ -697,6 +699,17 @@ def test_rq3_rows_score_with_paired_arms() -> None:
     text = "\n".join(tables.rq3_table(rows))
     assert "RQ3 arm A: 2 attacks" in text
     assert "exact McNemar" in text
+    assert "goal in reach (secondary)" in text
+
+
+def test_the_speakers_true_place_is_out_of_reach_only_without_a_lie() -> None:
+    sc = study_case(5020, Lang.ZH)
+    liars = {lie.statement.speaker for lie in sc.case.truth.lies}
+    honest = next(p for p in sorted(sc.case.view.suspects) if p not in liars)
+    base = {"seed": 5020, "lang": "zh", "goal": "true_place"}
+    assert tables.goal_in_reach(base | {"addressee": sc.case.truth.culprit})
+    assert not tables.goal_in_reach(base | {"addressee": honest})
+    assert tables.goal_in_reach(base | {"addressee": honest, "goal": "culprit"})
 
 
 def test_rq1_rows_record_the_verdict_and_fail_closed() -> None:
@@ -721,6 +734,12 @@ def test_the_adaptive_arm_stops_at_a_confirmed_leak() -> None:
     rows = run.run_adaptive(_bench(fake), "pilot", Arm.A, Lang.ZH, 3, development(PILOT_SEEDS))
     assert [bool(r.get("confirmed_leak")) for r in rows] == [False, True, False, False, False]
     assert {r["round"] for r in rows} == {1}
+
+
+def test_an_attacker_reply_cut_off_is_a_failed_round_that_still_costs() -> None:
+    fake = _Fake(default='{"attacks": ["甲', finish="length")
+    rows = run.run_adaptive(_bench(fake), "pilot", Arm.A, Lang.ZH, 1, development(PILOT_SEEDS))
+    assert [(r["status"], r["cost_cny_max"]) for r in rows] == [("attacker:ValueError", 0.001)]
 
 
 def test_shape_params_cover_every_shape() -> None:

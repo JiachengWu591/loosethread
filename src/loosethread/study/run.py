@@ -61,7 +61,8 @@ if TYPE_CHECKING:
 
 # Opened by CP-9 option A (D-037), with `CAP_CNY` raised.
 HELD_OUT_OPEN = True
-ATTACKS_SHA256: str | None = None  # fixed after the owner's spot-check, before any test run
+# Fixed after the review the owner delegated and accepted (D-038), before any test attack was used.
+ATTACKS_SHA256 = "be9358f456d50649fb91c8ac605643bd6ce99956909bc79d2daad80b89914937"
 _TURN_RESERVE = 0.02  # CNY: more than any one turn has cost, for the spending guard
 _RQ1_TIMEOUT = 900.0  # a long reply takes minutes; the game's 30 s would fail every case
 _OUTAGE_SHARE = 0.05  # STUDY_PLAN §9
@@ -427,16 +428,23 @@ def run_adaptive(
         for number in range(first, rounds + 1):
             bench.spend.ensure(_TURN_RESERVE * 6)
             system, user = attacks.attacker_prompt(sheet, speaker, lang, past)
+            attacker_cost = 0.0  # a reply that cannot be read was still paid for
             try:
                 reply = bench.model.complete(
                     system, user, json_mode=True, max_tokens=attacks.ATTACKER_MAX_TOKENS
                 )
-                messages = attacks.read_attacks(reply.text)
                 attacker_cost = _usage_cost(bench, reply.usage)
+                messages = attacks.read_attacks(reply.text)
             except Exception as exc:  # includes the attacker model refusing to play
-                base = _base(bench, "adaptive", split, sc)
-                rows.append(base | {"arm": arm.value, "round": number, "status": "attacker:"
-                                    + type(exc).__name__, "cost_cny_max": 0.0})  # fmt: skip
+                rows.append(
+                    _base(bench, "adaptive", split, sc)
+                    | {
+                        "arm": arm.value,
+                        "round": number,
+                        "status": f"attacker:{type(exc).__name__}",
+                        "cost_cny_max": attacker_cost,
+                    }
+                )
                 continue
             confirmed = False
             for i, message in enumerate(messages):
