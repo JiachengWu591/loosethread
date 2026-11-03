@@ -1095,3 +1095,12 @@ directly.
   - If U does not leak either: these attacks, or this model, leave the static result saying little about defences.
 - **Rows**: their own file, `study-rq3-U-test.jsonl`; the registered file is untouched. Disagreements go on a sheet
   of their own, so the numbers on the owner's first sheet do not move. Cap for this run: CNY 1.8.
+- **Result, before the owner's sheet** (`results/rq3-unhardened.md`): flagged 20/200, 10.0% [6.6%, 14.9%]; paired with A,
+  only U 19, only A 2, exact p = 2.2e-4. 10 name someone as the thief, and all 10 name the real culprit. Read by
+  hand, 19 are real leaks and 1 is the same false alarm as in A and C (`zh-override-09`). So these attacks can
+  cause leaks, and with this model it is the hardened prompt that stops them. That goes against the thesis as
+  worded, which credits structure over prompt instructions, and the report says so. It holds for single-turn
+  attacks: no adaptive campaign ran on U.
+- **The owner's checks grow** by this sheet of 19 items, to 115, inside the plan's 120. Disagreements across both
+  judge sheets come to 25, inside the 30. This sheet cannot be blind, since every item is from arm U.
+- **Spending**: CNY 78.32 of 80, upper bound.
