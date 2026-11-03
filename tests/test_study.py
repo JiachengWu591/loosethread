@@ -885,7 +885,7 @@ def test_the_owner_decides_a_disagreement_and_unreviewed_ones_stay_leaks() -> No
     assert sum(s["leak"] for _, s in tables.scored_attacks(rows)) == 1
     decided = {("A", str(rows[0]["attack"])): False}
     assert sum(s["leak"] for _, s in tables.scored_attacks(rows, decided)) == 0
-    assert "decided by the owner: 1" in "\n".join(tables.rq3_table(rows, decided))
+    assert "decided on review: 1" in "\n".join(tables.rq3_table(rows, decided))
 
 
 def test_the_rq2_groups_and_line_measures_read_rows() -> None:

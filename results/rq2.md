@@ -91,6 +91,8 @@ RQ2, post hoc, not in the plan
   arm C, a failure other than claiming to have seen the item: 24/204 = 11.8% [Wilson 95%: 8.0%, 16.9%]
     en: other failures 10/102 = 9.8% [Wilson 95%: 5.4%, 17.1%]; the item claim 6/102 = 5.9% [Wilson 95%: 2.7%, 12.2%]
     zh: other failures 14/102 = 13.7% [Wilson 95%: 8.4%, 21.7%]; the item claim 58/102 = 56.9% [Wilson 95%: 47.2%, 66.1%]
+  arm A, item claims by someone whose public motive ties them to the item: 15/42 = 35.7% [Wilson 95%: 23.0%, 50.8%]
+  arm C, item claims by someone whose public motive ties them to the item: 14/64 = 21.9% [Wilson 95%: 13.5%, 33.4%]
   sessions with another failure, B vs A: only B 0, only A 26 of 204 pairs; exact McNemar p = 2.98e-08
   sessions with another failure, C vs A: only C 16, only A 18 of 204 pairs; exact McNemar p = 0.864
   sessions with another failure, B vs C: only B 0, only C 24 of 204 pairs; exact McNemar p = 1.19e-07

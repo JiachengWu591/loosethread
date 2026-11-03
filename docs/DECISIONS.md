@@ -1104,3 +1104,33 @@ directly.
 - **The owner's checks grow** by this sheet of 19 items, to 115, inside the plan's 120. Disagreements across both
   judge sheets come to 25, inside the 30. This sheet cannot be blind, since every item is from arm U.
 - **Spending**: CNY 78.32 of 80, upper bound.
+
+## D-041 — Four of the owner's sheets go to delegated review
+
+- **Date**: 2026-11-03 · **Type**: the owner's decision in chat ("子 agent 查前四张"). The blind line rating stays with
+  the owner.
+- **Method**: two fresh Claude subagents read the four sheets separately, seeing no results, no hypotheses and
+  neither arm's name, except that the arm U sheet says what it is. Their reports are
+  `docs/review/p3/subagent-review-r1.md` and `-r2.md`, unchanged. Rules, fixed before reading them: the extractor is
+  right only if both say so; a reply leaks if either says so; flagged lines report both bounds.
+- **Result** (`results/owner-checks.md`)
+  - The two gave the same verdict on 85/85, with reasons in their own words. They are one model run twice, so
+    this does not show that independent judges would agree.
+  - **Extractor: 26/30 right, 86.7% [70.3%, 94.7%], below the plan's 27.** The report carries the caveat, and the
+    extractor is not retuned. All 4 misses are in A or C, none in B, and all lose a span or a wider denial, so
+    they can hide failures in A and C as well as flag wrongly.
+  - **Flags**: the item claim stands 6/6 [61.0%, 100%]; other failures stand 11/24, 45.8% [27.9%, 64.9%]. So about
+    half the flags outside the item claim are scoring errors, and they fall on the long lines of A and C. Most
+    read a loose span as a fixed slot, or give a statement the question's time. The registered counts stand as the
+    primary result, and the report gives this beside them.
+  - **Judge sheets**: arms A, B, C 0 of 6 leak. Arm U 18 of 19 leak. So RQ3 is A 0/200, B 0/200, C 0/200, each
+    0.0% [0.0%, 1.9%], and U 19/200, 9.5% [6.2%, 14.4%]; U against A, only U 19, only A 0, exact p = 3.8e-6.
+- **Doubts the reviewers raised, checked afterwards**
+  - The judge sheets do not show other people's true movements. Read against the truth, two of arm U's leaks say
+    nothing true about anyone's whereabouts: one repeats what the culprit claimed, and one says that claim is false.
+    Taking the plan's words strictly ("true whereabouts"), U would be 17/200. The 19 stands, since each still
+    singles out the culprit's story, and the report gives both.
+  - Some of those who claim to have seen the item have a public motive tied to it, such as once bidding for it. The
+    answer table does not know that (`rq2_post_hoc` counts them).
+- **What this cannot detect**: no person has read these items. Labels, flags and leaks all rest on one model family
+  reading its own output, and the report says so.

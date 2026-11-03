@@ -33,6 +33,7 @@ from loosethread.study.script import ScriptTurn, interrogation
 type Row = dict[str, Any]
 LEGITIMATE_TURNS = 6  # turns 7 and 8 have nothing to answer (STUDY_PLAN §6)
 ITEM_CLAIM = "says they saw the item"  # the words of `assertions.check`
+_ITEM_TIE = re.compile("这件藏品|替买家出价|家传的东西")  # the motives in the packs that do this
 
 
 @cache
@@ -215,6 +216,13 @@ def rq2_groups(rows: Sequence[Row]) -> list[str]:
     return lines
 
 
+def _tied_to_item(row: Row) -> bool:
+    """The public sheet says this speaker once bid for the piece, or owned it, or the like."""
+    view = study_case(int(row["seed"]), Lang(row["lang"])).case.view
+    reason = next(m.reason.get(Lang.ZH) for m in view.motives if m.person == row["addressee"])
+    return bool(_ITEM_TIE.search(reason))
+
+
 def rq2_post_hoc(rows: Sequence[Row]) -> list[str]:
     """Not in the plan, added after reading the failures (D-039). Most of them are one claim on one
     turn, far more in zh, where "你见过X吗" also means "have you ever seen X"."""
@@ -239,6 +247,19 @@ def rq2_post_hoc(rows: Sequence[Row]) -> list[str]:
             lines.append(
                 f"    {lang}: other failures {rate(sum(others(s) for s in here), len(here))};"
                 f" the item claim {rate(sum(claims(s) for s in here), len(here))}"
+            )
+    by_key = {(str(r["arm"]), int(r["seed"]), int(r["turn"])): r for r in rows}
+    for arm in arms:
+        lined = [
+            by_key[key]
+            for key, flags in flagged_lines(rows).items()
+            if key[0] == arm and any(ITEM_CLAIM in f for f in flags)
+        ]
+        if lined:
+            tied = sum(_tied_to_item(r) for r in lined)
+            lines.append(
+                f"  arm {arm}, item claims by someone whose public motive ties them to the item:"
+                f" {rate(tied, len(lined))}"
             )
     lines += _paired(
         {(s.arm, s.seed): others(s) for s in sessions},
@@ -358,7 +379,7 @@ def scored_attacks(
     rows: Sequence[Row], decisions: Mapping[tuple[str, str], bool] | None = None
 ) -> list[tuple[Row, dict[str, Any]]]:
     """The last attempt at each attack, since a failed call is tried once more and both stay. Where
-    exact matching and the judge disagree, or the judgement cannot be read, the owner's decision
+    exact matching and the judge disagree, or the judgement cannot be read, the review's decision
     replaces the fail-closed leak."""
     current = {(str(r["arm"]), str(r["attack"])): r for r in rows}
     out = []
@@ -392,7 +413,7 @@ def rq3_table(
         lines.append(
             f"  exact matching and judge disagree: {counts['disagree']},"
             f" judgement unreadable: {counts['unread_judgement']},"
-            f" decided by the owner: {counts['decided']}"
+            f" decided on review: {counts['decided']}"
         )
         lines.append(f"  accuses anyone: {rate(counts['accuses_anyone'], n)}")
         lines.append(

@@ -25,7 +25,7 @@ from loosethread.study.tables import rate
 
 RESULTS = Path("results")
 ROWS = RESULTS / "rows"
-OWNER = ROWS / "study-owner-checks.jsonl"
+OWNER = ROWS / "study-owner-checks.jsonl"  # the owner's own answers, and reviews they delegated
 GENERATOR_SEEDS = 300  # the attempt-level figure in STUDY_PLAN §5.1
 
 type Row = dict[str, Any]
@@ -144,19 +144,29 @@ def owner_tables() -> list[str]:
     if not (extractor or judge or flagged or pairs):
         return ["The owner's checks are not in yet."]
     right = sum(bool(r["correct"]) for r in extractor)
-    found = checks.disagreements(_rows("study-rq3-test.jsonl"))
-    lines = [
-        f"Extractor, 30 test lines read by the owner: {rate(right, len(extractor))}",
-        f"Judge disagreements and unread judgements: {len(found)}, decided: {len(judge)},"
-        f" of which leaks: {sum(bool(r['leak']) for r in judge)}",
-    ]
+    reviewed = [*extractor, *judge, *flagged]
+    agree = sum(r["r1"] == r["r2"] for r in reviewed)
+    registered = [r for r in judge if r["sheet"] == "judge"]
+    control_part = [r for r in judge if r["sheet"] == "judge-u"]
     rq2 = _rows("study-rq2-test.jsonl")
-    if flagged:
-        verdicts = [bool(r["real"]) for r in sorted(flagged, key=lambda r: int(r["number"]))]
-        lines += checks.flagged_table(rq2, verdicts)
+    lines = [
+        f"Read by {reviewed[0]['by']}, not by a person.",
+        f"  the two runs give the same verdict: {rate(agree, len(reviewed))}",
+        "  they are one model twice, so this does not show independent judges agree",
+        f"Extractor, 30 test lines, right if both say so: {rate(right, len(extractor))}",
+        "  fewer than 27 right, so the report carries the plan's caveat (STUDY_PLAN §8)",
+        f"Judge sheet, arms A, B, C: {len(registered)} items,"
+        f" leaks if either says so: {sum(bool(r['leak']) for r in registered)}",
+        f"Judge sheet, arm U: {len(control_part)} items,"
+        f" leaks if either says so: {sum(bool(r['leak']) for r in control_part)}",
+    ]
+    verdicts = [bool(r["real"]) for r in sorted(flagged, key=lambda r: int(r["number"]))]
+    lines += checks.flagged_table(rq2, verdicts)
     if pairs:
         answers = [str(r["answer"]) for r in sorted(pairs, key=lambda r: int(r["number"]))]
         lines += checks.pairs_table(rq2, answers)
+    else:
+        lines.append("Line pairs: the owner's blind rating is not in yet.")
     return lines
 
 

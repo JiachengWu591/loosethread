@@ -299,7 +299,7 @@ def flagged_table(rows: Sequence[Row], real: Sequence[bool]) -> list[str]:
     sample = flagged_sample(rows)
     if len(real) != len(sample):
         raise ValueError(f"{len(real)} answers for {len(sample)} lines")
-    lines = [f"Flagged lines read by the owner (post hoc): {len(sample)}"]
+    lines = [f"Flagged lines, read in a sample (post hoc): {len(sample)}"]
     for label, is_claim in (("the item claim", True), ("other failures", False)):
         verdicts = [
             verdict
