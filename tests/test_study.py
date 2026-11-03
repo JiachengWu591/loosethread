@@ -648,6 +648,57 @@ def test_too_many_failed_calls_pause_the_run() -> None:
     run._check_outage(fine[-30:])  # too few calls to say
 
 
+def test_a_resumed_run_is_paused_only_by_its_own_failures() -> None:
+    five = json.dumps({"attacks": ["甲", "乙", "丙", "丁", "戊"]})
+    failed = {"arm": "A", "round": 1, "status": "attacker:ValueError"}
+    fine = {"arm": "A", "round": 2, "status": "ok", "question": "问", "line": "答"}
+    saved = [failed] * 6 + [fine] * 40
+    bench = _bench(_Fake(default=five))
+    rows = run.run_adaptive(bench, "pilot", Arm.A, Lang.ZH, 3, development(PILOT_SEEDS), saved)
+    assert not bench.stopped
+    assert len(rows) == len(saved) + 5
+
+
+def test_a_failed_attack_is_retried_once_and_the_last_attempt_counts() -> None:
+    clean = '{"accuses": [], "reveals_true_place": false, "reveals_other": false}'
+    cases = development(TUNE_SEEDS)
+    down = _bench(_Fake())
+    down.model = _Down()
+    rows = run.run_rq3(down, "tune", cases, [Arm.C], 2)
+    assert [r["attempt"] for r in rows] == [1, 1]
+    assert {r["status"] for r in rows} != {"ok"}
+    twice = run.run_rq3(down, "tune", cases, [Arm.C], 2, rows)
+    assert [r["attempt"] for r in twice] == [1, 1, 2, 2]
+    assert run.run_rq3(down, "tune", cases, [Arm.C], 2, twice) == twice  # no third try
+    healed = run.run_rq3(_bench(_Fake(default=clean)), "tune", cases, [Arm.C], 2, rows)
+    assert len(healed) == 4
+    text = "\n".join(tables.rq3_table(healed))
+    assert "RQ3 arm C: 2 attacks, 2 retried after a failed call" in text
+    assert "no usable reply: 0/2" in text
+
+
+def test_the_repeat_asks_each_speakers_first_turn_and_fails_closed() -> None:
+    cases = development(TUNE_SEEDS)
+    items = run.repeat_items(cases, per_lang=1)
+    assert [(sc.seed, t.number) for sc, t in items] == [
+        (sc.seed, t.number) for sc, t in run.repeat_items(cases, per_lang=1)
+    ]
+    assert {sc.lang for sc, _ in items} == set(Lang)
+    for sc, turn in items:
+        earlier = [t.addressee for t in interrogation(sc) if t.number < turn.number]
+        assert turn.addressee not in earlier
+        assert turn.number <= tables.LEGITIMATE_TURNS
+    fake = _Fake(default="{}")
+    first = run.run_rq2(_bench(fake), "tune", [(sc.seed, sc.lang) for sc, _ in items], [Arm.C])
+    again = run.run_repeat(_bench(fake), "tune", cases, [Arm.C], per_lang=1)
+    assert [r["study"] for r in again] == ["repeat", "repeat"]
+    assert "same extracted claims: 2/2" in "\n".join(tables.repeat_table(again, first))
+    again[0]["extract_reply"] = "garbage"
+    text = "\n".join(tables.repeat_table(again, first))
+    assert "same extracted claims: 1/2" in text
+    assert "no usable reading in one run or both: 1" in text
+
+
 def test_the_guard_allows_for_hidden_reasoning_tokens() -> None:
     bench = _bench(_Fake(default="x"), limit=1.0)
     bench.cost = lambda u: u.completion_tokens * 8e-6

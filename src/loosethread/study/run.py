@@ -4,6 +4,7 @@ python -m loosethread.study.run rq1 --set tune --limit 2
 python -m loosethread.study.run rq2 --set pilot --limit 10 --arms A,B,C
 python -m loosethread.study.run rq3 --set pilot --limit 10 --arms A,B,C
 python -m loosethread.study.run adaptive --set pilot --arm A --lang zh --rounds 1
+python -m loosethread.study.run repeat --set test --arms A,B,C
 python -m loosethread.study.run rq2 --set test --max-cny 40 --resume
 python -m loosethread.study.run score results/rows/study-rq2-pilot-r1.jsonl
 python -m loosethread.study.run spent
@@ -22,6 +23,7 @@ import json
 import random
 import subprocess
 import sys
+from collections import Counter
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
@@ -54,7 +56,7 @@ from loosethread.study.metered import (
     Spend,
     spent_so_far,
 )
-from loosethread.study.script import interrogation
+from loosethread.study.script import ScriptTurn, interrogation
 
 if TYPE_CHECKING:
     from loosethread.llm.client import ChatModel
@@ -99,7 +101,8 @@ def _stop(bench: Bench, reason: BudgetExceeded | Outage) -> None:
 
 
 def _check_outage(rows: Sequence[Row], key: str = "arm") -> None:
-    """Pause if more than 5% of an arm's calls got no usable reply (STUDY_PLAN §9)."""
+    """Pause if more than 5% of an arm's calls got no usable reply (STUDY_PLAN §9). Runners pass the
+    rows of this run: the failures before a resume have been reported already (D-038)."""
     for arm in {str(r.get(key)) for r in rows}:
         part = [r for r in rows if str(r.get(key)) == arm]
         failed = sum(r.get("status", "ok") != "ok" for r in part)
@@ -171,7 +174,7 @@ def run_rq1(
             }
             rows.append(row)
             _save(bench, rows)
-            _check_outage(rows, "model")
+            _check_outage(rows[len(saved) :], "model")
     except (BudgetExceeded, Outage) as stop:
         _stop(bench, stop)
     return rows
@@ -237,20 +240,7 @@ def run_rq2(
                 for turn in turns:
                     bench.spend.ensure(_TURN_RESERVE)
                     reply = _speak(npc, turn.addressee, turn.question)
-                    row = _base(bench, "rq2", split, sc) | {
-                        "arm": arm.value,
-                        "turn": turn.number,
-                        "kind": turn.kind.value,
-                        "addressee": turn.addressee,
-                        "question": turn.question,
-                        "line": reply.line,
-                        "status": reply.status,
-                        "detail": list(reply.detail),
-                        "line_tokens": reply.usage.prompt_tokens + reply.usage.completion_tokens,
-                        "line_seconds": round(reply.usage.seconds, 3),
-                        "extract_reply": None,
-                        "cost_cny_max": _usage_cost(bench, reply.usage),
-                    }
+                    row = _turn_row(bench, "rq2", split, sc, arm, turn, reply)
                     rows.append(row)
                     here.append(row)
             # Lines reach the extractor shuffled across arms; it is told neither arm nor truth.
@@ -260,7 +250,76 @@ def run_rq2(
                 bench.spend.ensure(_TURN_RESERVE)
                 _extract(bench, row)
             _save(bench, rows)
-            _check_outage(rows)
+            _check_outage(rows[len(saved) :])
+    except (BudgetExceeded, Outage) as stop:
+        _stop(bench, stop)
+        _save(bench, rows)
+    return rows
+
+
+def _turn_row(
+    bench: Bench, study: str, split: str, sc: StudyCase, arm: Arm, turn: ScriptTurn, reply: Reply
+) -> Row:
+    return _base(bench, study, split, sc) | {
+        "arm": arm.value,
+        "turn": turn.number,
+        "kind": turn.kind.value,
+        "addressee": turn.addressee,
+        "question": turn.question,
+        "line": reply.line,
+        "status": reply.status,
+        "detail": list(reply.detail),
+        "line_tokens": reply.usage.prompt_tokens + reply.usage.completion_tokens,
+        "line_seconds": round(reply.usage.seconds, 3),
+        "extract_reply": None,
+        "cost_cny_max": _usage_cost(bench, reply.usage),
+    }
+
+
+def repeat_items(
+    cases: Sequence[tuple[int, Lang]], per_lang: int = 10
+) -> list[tuple[StudyCase, ScriptTurn]]:
+    """The turns asked again (STUDY_PLAN §7), drawn with a fixed seed and no look at any outcome.
+    Each is the first thing its speaker is asked, so a new character can repeat it."""
+    rng = random.Random("loosethread:repeat")
+    items: list[tuple[StudyCase, ScriptTurn]] = []
+    for lang in Lang:
+        pool = [c for c in cases if c[1] is lang]
+        for seed, _ in rng.sample(pool, per_lang):
+            sc = study_case(seed, lang)
+            seen: set[str] = set()
+            first: list[ScriptTurn] = []
+            for turn in interrogation(sc):
+                if turn.addressee not in seen and turn.number <= tables.LEGITIMATE_TURNS:
+                    first.append(turn)
+                seen.add(turn.addressee)
+            items.append((sc, rng.choice(first)))
+    return items
+
+
+def run_repeat(
+    bench: Bench,
+    split: str,
+    cases: Sequence[tuple[int, Lang]],
+    arms: Sequence[Arm],
+    per_lang: int = 10,
+    saved: Sequence[Row] = (),
+) -> list[Row]:
+    rows: list[Row] = list(saved)
+    done = {(int(r["seed"]), str(r["arm"])) for r in rows}
+    try:
+        for sc, turn in repeat_items(cases, per_lang):
+            for arm in arms:
+                if (sc.seed, arm.value) in done:
+                    continue
+                bench.spend.ensure(_TURN_RESERVE * 2)
+                reply = _speak(make_npc(arm, sc, bench.model), turn.addressee, turn.question)
+                row = _turn_row(bench, "repeat", split, sc, arm, turn, reply)
+                rows.append(row)
+                if row["status"] == "ok":
+                    _extract(bench, row)
+            _save(bench, rows)
+            _check_outage(rows[len(saved) :])
     except (BudgetExceeded, Outage) as stop:
         _stop(bench, stop)
         _save(bench, rows)
@@ -372,14 +431,17 @@ def run_rq3(
         assigned = [x for x in assigned if x.position % 2 == 1]
     assigned = assigned[:limit] if limit is not None else assigned
     rows: list[Row] = list(saved)
-    done = {(str(r["attack"]), str(r["arm"])) for r in rows}
+    # On a resume a failed call is tried once more, and both attempts stay (STUDY_PLAN §9).
+    tried = Counter((str(r["attack"]), str(r["arm"])) for r in rows)
+    replied = {(str(r["attack"]), str(r["arm"])) for r in rows if r["status"] == "ok"}
     try:
         for item in assigned:
             sc = study_case(item.seed, item.lang)
             speaker = attacks.addressee_for(item, sc)
             message = attacks.fill(item.attack, sc, speaker)
             for arm in arms:
-                if (item.attack.id, arm.value) in done:
+                key = (item.attack.id, arm.value)
+                if key in replied or tried[key] > 1:
                     continue
                 bench.spend.ensure(_TURN_RESERVE)
                 rows.append(
@@ -389,11 +451,12 @@ def run_rq3(
                         "category": item.attack.category,
                         "goal": item.attack.goal,
                         "to_culprit": item.to_culprit,
+                        "attempt": tried[key] + 1,
                     }
                     | _attack_row(bench, arm, sc, speaker, message)
                 )
             _save(bench, rows)
-            _check_outage(rows)
+            _check_outage(rows[len(saved) :])
     except (BudgetExceeded, Outage) as stop:
         _stop(bench, stop)
         _save(bench, rows)
@@ -464,7 +527,7 @@ def run_adaptive(
                 past.append((message, str(row["line"]), leak))
                 confirmed = confirmed or leak
             _save(bench, rows)
-            _check_outage(rows)
+            _check_outage(rows[len(saved) :])
             if confirmed:
                 break
     except (BudgetExceeded, Outage) as stop:
@@ -554,7 +617,7 @@ def _arms(text: str) -> tuple[Arm, ...]:
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="python -m loosethread.study.run", description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
-    for name in ("rq1", "rq2", "rq3", "adaptive"):
+    for name in ("rq1", "rq2", "rq3", "adaptive", "repeat"):
         go = sub.add_parser(name)
         go.add_argument("--set", dest="split", choices=["tune", "pilot", "test"], required=True)
         go.add_argument("--limit", type=int)
@@ -581,6 +644,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             print("\n".join(_table(read_rows(path))))
         return 0
 
+    if args.command == "repeat" and args.split != "test":
+        raise SystemExit("the repeat is of test turns")
     tag = "" if args.backend == "deepseek" else f"-{args.backend}"
     if args.command == "adaptive":
         tag = f"-{args.arm}-{args.lang}"
@@ -605,6 +670,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         rows = run_rq2(bench, args.split, cases[: args.limit], _arms(args.arms), saved)
     elif args.command == "rq3":
         rows = run_rq3(bench, args.split, cases, _arms(args.arms), args.limit, saved)
+    elif args.command == "repeat":
+        rows = run_repeat(bench, args.split, cases, _arms(args.arms), saved=saved)
     else:
         rows = run_adaptive(
             bench, args.split, Arm(args.arm), Lang(args.lang), args.rounds, cases, saved
@@ -626,6 +693,8 @@ def _table(rows: Sequence[Row]) -> list[str]:
         return tables.rq2_table(rows)
     if study == "rq3":
         return tables.rq3_table(rows)
+    if study == "repeat":
+        return tables.repeat_table(rows, read_rows(ROWS / "study-rq2-test.jsonl"))
     played = [r for r in rows if "line" in r]
     leaks = sum(bool(r.get("confirmed_leak")) for r in played)
     return [

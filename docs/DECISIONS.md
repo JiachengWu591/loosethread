@@ -1035,10 +1035,22 @@ directly.
     median of 1853 characters a round, against 827 in B/en.
   - **Options**: raise the limit and continue; keep 600, which wastes most rounds and leaves too few attacks to
     compare; stop at round 12 and report it, which leaves the English pair not comparable.
-  - **Decision**: 1200 tokens, and A/en runs to round 103, since §9 retries failed items once, so that it also
-    gets 500 attacks. Both attempts stay in the rows.
+  - **Decision**: 1200 tokens, and A/en runs 3 rounds past 100, since §9 retries failed items once, so that it
+    also gets 500 attacks. Both attempts stay in the rows.
   - **Consequences**: an instrument frozen before the test changed during it, and the report says so. The other
     three campaigns had no failed round, so 600 never cut them off, and they finished at 600.
+- **Connection failures after the change** (tactical): brief `APIConnectionError` bursts then hit both A/en
+  (rounds 14 to 16, `attacker:BackendUnavailable`) and RQ3, whose failures came in runs with clean stretches
+  between them. The cause was the connection, not the limit. To apply §9 as written:
+  - In RQ3 a failed call is retried once on a resume, and both attempts stay. Tables take the last attempt and
+    report how many were retried; spending counts them all.
+  - A/en runs to round 100 plus its failed rounds, so its round numbers pass the 103 first stated.
+  - The outage guard counts the calls of the current run. Counted over the whole file, 6 old failures among few
+    rows would pause every resume until the file passed 120 rows, however clean the new calls were.
+- **Run-to-run repeat** (tactical, for STUDY_PLAN §7): 20 turns, 10 per language, drawn with a fixed seed and no
+  look at outcomes, each the first thing its speaker is asked, so a new character can repeat it. Agreement is
+  reported on the line, extracted claims, failures and answering. A turn with no usable reading does not agree.
+  In arm B the original had earlier questions to other people in the same game, which the repeat lacks.
 - **Spending**: three campaigns reached their CNY 4.4 share at rounds 91 to 94 and were resumed to round 100,
   about CNY 1 more, since attacker calls cost more than the estimate. The whole study should now come to about
   CNY 77 of the 80 cap.

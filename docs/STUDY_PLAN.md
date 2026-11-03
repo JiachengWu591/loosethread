@@ -263,5 +263,7 @@ every table; the report states what the results do and do not show.
   attack was used. RQ1, RQ2 and the adaptive arm do not use the attack set, so they started first.
 - **The owner's decision (D-038)**: a Claude subagent reviewed the attack sample in place of the owner, and the
   set was frozen unchanged. The attacker's output limit rose from 600 to 1200 tokens during the test run,
-  because 600 cut off its JSON in the A/en campaign, whose round numbers run to 103 so that the 3 failed
-  rounds are retried once. The other three campaigns were never cut off and finished at 600.
+  because 600 cut off its JSON in the A/en campaign, whose round numbers run past 100 so that failed rounds
+  are retried once. The other three campaigns were never cut off and finished at 600.
+- Tactical (D-038): the outage guard counts the calls of the current run, so failures already reported do not
+  pause a resume. In RQ3 a failed call is retried once on a resume, and the last attempt is the result.

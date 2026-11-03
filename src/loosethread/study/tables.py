@@ -8,7 +8,7 @@ B's prompts would need the optional `llm` extra.
 import statistics
 from collections import Counter
 from collections.abc import Sequence
-from dataclasses import dataclass, field
+from dataclasses import astuple, dataclass, field
 from functools import cache
 from typing import Any
 
@@ -246,13 +246,16 @@ def goal_in_reach(row: Row) -> bool:
 
 
 def rq3_table(rows: Sequence[Row]) -> list[str]:
-    scored = [(r, score_attack(r)) for r in rows]
+    # A failed call is tried once more and both attempts stay: the last one is the result.
+    current = {(str(r["arm"]), str(r["attack"])): r for r in rows}
+    scored = [(r, score_attack(r)) for r in current.values()]
     lines: list[str] = []
     for arm in sorted({str(r["arm"]) for r in rows}):
         part = [(r, s) for r, s in scored if r["arm"] == arm]
         n = len(part)
         counts = Counter(key for _, s in part for key, value in s.items() if value)
-        lines.append(f"RQ3 arm {arm}: {n} attacks")
+        every = [r for r in rows if r["arm"] == arm]
+        lines.append(f"RQ3 arm {arm}: {n} attacks, {len(every) - n} retried after a failed call")
         lines.append(f"  leak, failing closed: {rate(counts['leak'], n)}")
         in_reach = [s for r, s in part if goal_in_reach(r)]
         hits = sum(bool(s["leak"]) for s in in_reach)
@@ -271,7 +274,7 @@ def rq3_table(rows: Sequence[Row]) -> list[str]:
             hits = sum(bool(s["leak"]) for r, s in part if r["category"] == category)
             total = sum(1 for r, _ in part if r["category"] == category)
             lines.append(f"    {category}: {rate(hits, total)}")
-        lines.append(spend_line([r for r, _ in part]))
+        lines.append(spend_line(every))
     flags = {(str(r["arm"]), str(r["attack"])): bool(s["leak"]) for r, s in scored}
     pairs = [("B", "A"), ("C", "A"), ("B", "C")]
     lines += _paired(flags, pairs, "attacks that leak")
@@ -279,4 +282,46 @@ def rq3_table(rows: Sequence[Row]) -> list[str]:
         (str(r["arm"]), str(r["attack"])): bool(s["leak"]) for r, s in scored if goal_in_reach(r)
     }
     lines += _paired(reachable, pairs, "attacks that leak, goal in reach (secondary)")
+    return lines
+
+
+# --- Run-to-run stability -------------------------------------------------------------------------
+
+
+def _reading(row: Row) -> tuple[tuple[object, ...], frozenset[Failure], bool] | None:
+    """What one turn came to, heard as the speaker's first: its claims, its failures and whether it
+    answers. None when there is no usable reply or the extraction cannot be read."""
+    if row["status"] != "ok":
+        return None
+    seed, lang = int(row["seed"]), Lang(row["lang"])
+    try:
+        said = read_extraction(str(row["extract_reply"]), _lexicon(seed, lang))
+    except ValueError:
+        return None
+    turn = _script(seed, lang)[int(row["turn"]) - 1]
+    ref = _reference(seed, lang, str(row["addressee"]))
+    asked = None if turn.slot is None else int(turn.slot)
+    # In whatever order the extractor listed them.
+    claims = tuple(frozenset(v) if isinstance(v, tuple) else v for v in astuple(said))
+    failures = frozenset(f.failure for f in check(said, ref, Memory(), asked))
+    return claims, failures, answered(turn, said, ref)
+
+
+def repeat_table(rows: Sequence[Row], originals: Sequence[Row]) -> list[str]:
+    """Descriptive (STUDY_PLAN §7). A turn with no usable reading in either run does not agree."""
+    first = {(str(r["arm"]), int(r["seed"]), int(r["turn"])): r for r in originals}
+    lines: list[str] = []
+    for arm in sorted({str(r["arm"]) for r in rows}):
+        part = [r for r in rows if r["arm"] == arm]
+        pairs = [(first[(arm, int(r["seed"]), int(r["turn"]))], r) for r in part]
+        read = [(_reading(old), _reading(new)) for old, new in pairs]
+        both = [(a, b) for a, b in read if a is not None and b is not None]
+        n = len(part)
+        lines.append(f"Repeat arm {arm}: {n} turns asked twice, each the speaker's first")
+        same_line = sum(old["line"] == new["line"] for old, new in pairs)
+        lines.append(f"  same line, word for word: {rate(same_line, n)}")
+        for index, label in enumerate(("extracted claims", "failures", "answer or not")):
+            lines.append(f"  same {label}: {rate(sum(a[index] == b[index] for a, b in both), n)}")
+        lines.append(f"  no usable reading in one run or both: {n - len(both)}")
+        lines.append(spend_line(part))
     return lines
