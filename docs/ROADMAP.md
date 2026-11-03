@@ -176,7 +176,8 @@ Commands below use the package name `loosethread` (originally `alibi`; renamed b
   piloted on dev seeds (D-036). The pilot put H1 and H3 in doubt. CP-9 option A approved: full run, cap CNY
   80 (D-037). RQ1, RQ2 and three adaptive campaigns are measured. The attack set is frozen after a review the
   owner delegated, and the attacker's output limit rose for the A/en campaign (D-038). All test runs are done,
-  at CNY 76.91. H1 and H3 fail, so CP-10 is with the owner, along with the checks (D-039). Next: the report.
+  at CNY 76.91. H1 and H3 fail; CP-10 option B adds one control for the attacks (D-040). The owner's checks are
+  still to come (D-039). Next: the report.
 - **Goal**: answer three research questions with data, as a reproducible report.
 - **Pre-registration first**: `docs/STUDY_PLAN.md` (questions, hypotheses, metrics, sample sizes,
   analysis, stopping rules). Experiments start only after owner approval.

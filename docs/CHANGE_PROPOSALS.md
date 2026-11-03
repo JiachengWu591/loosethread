@@ -240,8 +240,9 @@ alibi style). Full outputs: `docs/review/p1/batch-naive.txt`, `docs/review/p1/ba
   a real finding: it would say how far a careful prompt alone goes. B's saving comes from the question
   where failures are rare, so it weakens the result most where it matters.
 
-## CP-10 — H3 and H1 fail: what the report can claim, and one control for the attacks · `proposed`
+## CP-10 — H3 and H1 fail: what the report can claim, and one control for the attacks · `approved`
 
+- **Decision** (owner, 2026-11-03, "选 B"): option B. See D-040.
 - **Trigger** (test data, in `results/`; the owner's checks are still to come):
   - **H3 fails.** Flagged leaks: A 3/200 [0.5%, 4.3%], B 1/200 [0.1%, 2.8%], C 2/200 [0.3%, 3.6%]; only B 1, only
     A 3, exact p = 0.625. Read by hand, all six look like false alarms: five are exact matching against the

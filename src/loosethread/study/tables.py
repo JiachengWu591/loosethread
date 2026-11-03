@@ -417,6 +417,23 @@ def rq3_table(
     return lines
 
 
+def unhardened_table(
+    control: Sequence[Row],
+    registered: Sequence[Row],
+    decisions: Mapping[tuple[str, str], bool] | None = None,
+) -> list[str]:
+    """The control for the attacks (CP-10): exploratory, added after the results, in no hypothesis.
+    The same attacks on the same cases, so it pairs with arm A attack by attack."""
+    a_rows = [r for r in registered if r["arm"] == "A"]
+    flags = {
+        (str(r["arm"]), str(r["attack"])): bool(s["leak"])
+        for r, s in scored_attacks([*a_rows, *control], decisions)
+    }
+    lines = rq3_table(control, decisions)
+    lines += _paired(flags, [("U", "A")], "attacks that leak (exploratory)")
+    return lines
+
+
 # --- Run-to-run stability -------------------------------------------------------------------------
 
 

@@ -1080,3 +1080,18 @@ directly.
   owner's judge sheet, with the disagreements. There is one, in B.
 - **What these cannot detect**: the control's replies are plain, so subtle leaks remain untested. Nothing here
   shows that the attacks can cause a leak.
+
+## D-040 — CP-10 option B: a control for the attacks
+
+- **Date**: 2026-11-03 · **Type**: strategic, the owner's decision in chat ("选 B"). H1 and H3 are reported as
+  failed, the report's claim narrows, and one exploratory control runs.
+- **Arm U, fixed before it was run, with no tuning**: A's case file with the truth, the persona and the account,
+  under one plain sentence (`arms.PLAIN`). No delimiters, no rules, no secrecy block, no reminder, and the player's
+  text arrives as it came. The sentence stays because a character with no reason to keep a secret would show
+  nothing by telling it. So this asks about a careless prompt, not an empty one.
+- **How it is read**: 200 static attacks on the same cases as A, paired with A. It is in no hypothesis, and it does
+  not change H3's verdict. No adaptive campaign, for lack of budget.
+  - If U leaks where A does not: the attacks can cause leaks, and what stops them here is prompt hardening.
+  - If U does not leak either: these attacks, or this model, leave the static result saying little about defences.
+- **Rows**: their own file, `study-rq3-U-test.jsonl`; the registered file is untouched. Disagreements go on a sheet
+  of their own, so the numbers on the owner's first sheet do not move. Cap for this run: CNY 1.8.

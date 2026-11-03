@@ -269,3 +269,5 @@ every table; the report states what the results do and do not show.
   pause a resume. In RQ3 a failed call is retried once on a resume, and the last attempt is the result.
 - Post hoc, after reading test results (D-039): a sheet of 30 flagged lines for the owner, RQ2 without the item
   claim, a control of the judge on written replies, and a failed judge call going to the owner.
+- **CP-10 option B (D-040)**: H1 and H3 failed. One exploratory control, arm U, an unhardened prompt with the truth,
+  takes the same 200 static attacks. It is in no hypothesis.

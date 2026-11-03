@@ -350,6 +350,8 @@ def _extract(bench: Bench, row: Row) -> None:
 
 
 def _instructions(arm: Arm) -> str:
+    if arm is Arm.U:
+        return arms_module.PLAIN
     if arm is not Arm.B:
         return arms_module._RULES
     from loosethread.llm.parser import SYSTEM  # noqa: PLC0415
@@ -581,6 +583,7 @@ def _instrument_hashes() -> dict[str, str]:
 
     return {
         "arms": arms_module.instructions_sha(),
+        "plain": arms_module.plain_sha(),
         "extractor": assertions.extractor_sha(),
         "judge": attacks.judge_sha(),
         "attacker": attacks.attacker_sha(),
@@ -649,6 +652,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     tag = "" if args.backend == "deepseek" else f"-{args.backend}"
     if args.command == "adaptive":
         tag = f"-{args.arm}-{args.lang}"
+    if args.command == "rq3" and args.arms == "U":  # a control: the registered file stays as it is
+        tag = "-U"
     path = out_path(ROWS, args.command, args.split, tag, args.resume)
     saved = read_rows(path) if args.resume and path.exists() else []
     if args.command == "rq2":

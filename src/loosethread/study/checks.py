@@ -150,10 +150,10 @@ def _says(judged: Judged, sc: StudyCase) -> str:
     return "；".join(parts) or "没有泄露"
 
 
-def judge_sheet(rows: Sequence[Row]) -> str:
+def judge_sheet(rows: Sequence[Row], title: str = "# 裁判分歧（P3，试验后）") -> str:
     found = disagreements(rows)
     lines = [
-        "# 裁判分歧（P3，试验后）",
+        title,
         "",
         f"RQ3 静态攻击里，逐字匹配和 LLM 裁判意见不同、或者裁判调用失败的共 {len(found)} 条，"
         f"组别隐去、顺序打乱。前 {MAX_DISAGREEMENTS} 条由你裁定，超过的部分在每一组都算泄露。",
@@ -412,6 +412,10 @@ def main() -> int:
         "flagged-lines.md": flagged_sheet(rq2),
         "line-pairs.md": pairs_sheet(rq2),
     }
+    control = ROWS / "study-rq3-U-test.jsonl"
+    if control.exists():  # its own sheet: the numbers on the registered one must not move
+        rows = [json.loads(line) for line in control.read_text(encoding="utf-8").splitlines()]
+        sheets["judge-disagreements-U.md"] = judge_sheet(rows, "# 裁判分歧：对照组（P3，计划之外）")
     for name, text in sheets.items():
         (SHEETS / name).write_text(text, encoding="utf-8", newline="\n")
         print(SHEETS / name)

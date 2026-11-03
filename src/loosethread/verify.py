@@ -109,6 +109,12 @@ def rq3_tables() -> list[str]:
     return tables.rq3_table(_rows("study-rq3-test.jsonl"), judge_decisions())
 
 
+def unhardened_tables() -> list[str]:
+    return tables.unhardened_table(
+        _rows("study-rq3-U-test.jsonl"), _rows("study-rq3-test.jsonl"), judge_decisions()
+    )
+
+
 def adaptive_tables() -> list[str]:
     lines: list[str] = []
     for arm in ("A", "B"):
@@ -157,6 +163,8 @@ def owner_tables() -> list[str]:
 def _spend_group(name: str) -> str:
     if "-tune" in name or "-pilot" in name or "check" in name:
         return "tuning, pilot and checks"
+    if "rq3-U" in name:
+        return "RQ3, control for the attacks"
     if "rq1-deepseek-think-long" in name:
         return "RQ1, thinking on"
     for key, group in (
@@ -189,6 +197,7 @@ TABLES: dict[str, tuple[str, Callable[[], Sequence[str]]]] = {
     "rq1.md": ("RQ1: solvability", rq1_tables),
     "rq2.md": ("RQ2: consistency, and the cost of valid answers", rq2_tables),
     "rq3.md": ("RQ3: static attacks", rq3_tables),
+    "rq3-unhardened.md": ("RQ3: a control for the attacks (post hoc, CP-10)", unhardened_tables),
     "adaptive.md": ("RQ3: adaptive campaigns", adaptive_tables),
     "judge-check.md": ("Can the judge see a leak? (post hoc)", judge_check_tables),
     "repeat.md": ("Run-to-run stability", repeat_tables),
