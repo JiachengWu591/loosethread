@@ -10,7 +10,7 @@ All numeric thresholds are provisional and may only change through the process i
 | P1 | Case generator and solver | done |
 | P2 | NPC pipeline and CLI playable | done |
 | P3 | Evaluation study | done |
-| P4 | Web version, daily case, sharing | in progress |
+| P4 | Web version, daily case, sharing | done |
 | P5 | Release v0.1.0 | planned |
 
 Commands below use the package name `loosethread` (originally `alibi`; renamed by D-001).
@@ -202,13 +202,14 @@ Commands below use the package name `loosethread` (originally `alibi`; renamed b
 - **Exit criteria**: `verify` reproduces every table offline; the report states what the results do
   and do not show.
 
-## P4 — Web version, daily case, sharing · `in progress`
+## P4 — Web version, daily case, sharing · `done`
 
-- **Progress (2026-11-04, branch `p4-web`)**: plan, CP-11 option A and CP-12 option B approved, CNY 5 of model
+- **Done (2026-11-04)**: signed off by the owner (D-048). What that does not settle is listed there, and two checks go on
+  to P5: a valid key in a real browser, and a real phone.
+- **History (branch `p4-web`)**: plan, CP-11 option A and CP-12 option B approved, CNY 5 of model
   calls (D-043). The spike passed, and the page, daily case, share card and player's key work (D-044). CP-12 is done and a
   game costs at most CNY 0.08 (D-045). One game played through the page found four faults, now fixed, and one design
-  finding, and CP-13 option B added a hard-mode switch (D-046, D-047). Left: the owner's game with a valid key, and
-  sign-off on the feel.
+  finding, and CP-13 option B added a hard-mode switch (D-046, D-047).
 - **Architecture, decided (CP-11)**: a static site with Pyodide, keyless by default, with an optional key of the
   player's own. No hosted demo in P4.
 - **Features**: date → seed, by the player's local date; notebook UI; zh/en toggle; mobile layout; progress that
@@ -225,6 +226,7 @@ Commands below use the package name `loosethread` (originally `alibi`; renamed b
   LICENSE with code and content licenses explained separately — **vendor the full CC BY 4.0 legal
   code** (added 2026-10-30, see D-003); CHANGELOG and CITATION.cff; privacy note (what is sent to model
   providers); itch.io page copy and screenshots, release notes; re-run the RELATED_WORK search and the
-  name check before release.
+  name check before release. Before release, also play once with a valid key in a real browser and once on a real phone,
+  and try the page from mainland China (D-043, D-048).
 - **Optional**: desktop packaging (PyInstaller, Tauri, …; ADR first).
 - **Exit criteria**: runs from the README in a clean environment; upload checklist handed to the owner.

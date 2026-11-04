@@ -8,8 +8,8 @@ find the culprit through the loose threads in their testimony. Every case is pro
 and checked by a solver to have exactly one solution; NPC lines are voiced by an LLM that is
 structurally unable to see the truth it must not reveal.
 
-> Status: before the first release (P4). Playable on your own machine.
-> 状态：首次发布之前（P4）。可以在自己的电脑上试玩。
+> Status: before the first release. Playable on your own machine.
+> 状态：首次发布之前。可以在自己的电脑上试玩。
 
 ## Play / 试玩
 

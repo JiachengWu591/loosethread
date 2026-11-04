@@ -1303,3 +1303,25 @@ directly.
   and 7 questions, ★★★. Its contradiction was two witnesses against a third, found by reading the notebook, and I found that a
   better moment than the hint in D-046. It is one game, by the person who built it, in a shape (companion) where hints
   never named the culprit anyway. Nothing yet shows whether players want this mode, or whether it is fair to a beginner.
+
+## D-048 — The owner's verdict; P4 done
+
+- **Date**: 2026-11-04 · **Type**: strategic, the owner's decision. Verdict in chat: "好玩，过关".
+- **Decision**: P4 is done. All three exit criteria are met: a whole session plays in a local browser (D-044, D-046, D-047),
+  the cost per session is measured at most CNY 0.08 on scripted games (D-045), and the owner signs off on the feel. The
+  roadmap's two test assertions hold as far as their checks can see: tests hold the card free of answers, and tests plus one
+  run by hand found the key in no log, URL or shared content.
+- **Spending**: CNY 2.18 of the 5 for P4, upper bound.
+- **What this verdict rests on and does not settle**. It was given by choosing an offered answer, to a question that said "after
+  playing with a valid key". The chat does not say how the owner played, so none of these is recorded as resolved:
+  - **A valid key in a real browser.** The adapter reached the real API from Python (D-046), and the page reached a fake model
+    in a browser (D-044), but no record shows the two together. Roadmap P5 now checks this before release.
+  - **A real phone.** Only a 375 px viewport has been recorded. P5 checks this too.
+  - **Strangers.** One player, who knows the project well, as at D-033. No friend has played.
+  - **Whether the lines read better after CP-12, and whether anyone wants hard mode.** The blind rating was not repeated.
+  - **The default hint.** In about half of cases a ⚠ on one person's own answers still names the culprit (D-046). CP-13 chose a
+    switch and left the default as it was.
+- **Not run yet**: the new CI steps (the site's build, the Pyodide comparison, the page test) have run only on this machine, and
+  will first run on the push.
+- **Consequences**: P5 does not start by itself. Before it: re-read ROADMAP and DECISIONS, restate the plan in at most ten lines,
+  flag deviations, and wait for the owner's OK.
