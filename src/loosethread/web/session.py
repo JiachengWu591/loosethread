@@ -90,6 +90,7 @@ class SavedGame:
     completion_tokens: int
     turns: tuple[SavedTurn, ...]
     accusation: SavedAccusation | None
+    hints: bool = True
 
 
 def _save_parse(result: ParseResult) -> SavedParse:
@@ -143,8 +144,9 @@ def read_save(text: str, seed: int) -> SavedGame | None:
                 for t in raw["turns"]
             ),
             SavedAccusation(**accused) if accused is not None else None,
+            bool(raw.get("hints", True)),  # a save from before hard mode had hints
         )
-    except (ValueError, KeyError, TypeError):
+    except (ValueError, KeyError, TypeError, AttributeError):
         return None
     return saved if saved.version == SAVE_VERSION and saved.seed == seed else None
 
@@ -241,6 +243,7 @@ class State:
     seed: int
     lang: str
     mode: str  # "rules", or "model" with the player's own key
+    hints: bool  # false is hard mode, which shows no contradiction until the ending
     current: str
     used: int
     budget: int
@@ -261,7 +264,7 @@ class Check:
     name: str
     first: str
     second: str
-    conflicts: bool
+    conflicts: bool  # always true in hard mode, where a warning would be a hint
     related: tuple[str, ...]
 
 
@@ -281,6 +284,10 @@ _ERRORS: dict[str, tuple[str, str]] = {
     ),
     "game_over": ("问题用完了，现在请指认。", "No questions left. Make your accusation."),
     "already_accused": ("已经指认过了。", "The accusation has been made."),
+    "started": (
+        "开始提问后不能再改困难模式。",
+        "Hard mode cannot change once you have started asking.",
+    ),
 }
 
 
@@ -290,9 +297,12 @@ def _error(code: str, lang: Lang) -> SessionError:
 
 
 class WebSession:
-    def __init__(self, seed: int, lang: Lang, saved: SavedGame | None = None) -> None:
+    def __init__(
+        self, seed: int, lang: Lang, saved: SavedGame | None = None, hints: bool = True
+    ) -> None:
         self.seed = seed
         self.mode = "rules"
+        self.hints = saved.hints if saved is not None else hints
         self.current = ""
         self.prompt_tokens = self.completion_tokens = 0
         self._parser = _Recording(RuleParser())
@@ -341,6 +351,15 @@ class WebSession:
         """Later lines come in `lang` and every view changes; what was said stays as it was said."""
         self.game.lang = lang
 
+    def set_hints(self, on: bool) -> None:
+        """Chosen before the first question: a card that says "hard" should mean the whole game."""
+        if self.game.turns:
+            raise _error("started", self.game.lang)
+        self.hints = on
+
+    def _showing_hints(self) -> bool:
+        return self.hints or self.game.verdict is not None
+
     def ask(self, person: str, text: str) -> None:
         lang = self.game.lang
         addressee, question = addressee_of(self.game.lexicon, text.strip())
@@ -374,12 +393,13 @@ class WebSession:
             raise _error("already_accused", lang) from None
         except AccusationError as err:
             raise SessionError(err.key, problem_text(err, names, lang)) from None
+        name = names[PersonId(suspect)]
+        if not self.hints:
+            return Check(suspect, name, a, b, True, ())
         related = tuple(
             conflict_text(x, y, lang) for x, y in game.notebook.conflicts() if {a, b} & {x, y}
         )
-        return Check(
-            suspect, names[PersonId(suspect)], a, b, game.notebook.in_conflict(a, b), related
-        )
+        return Check(suspect, name, a, b, game.notebook.in_conflict(a, b), related)
 
     def accuse(self, suspect: str, first: str, second: str) -> None:
         checked = self.check(suspect, first, second)
@@ -399,7 +419,9 @@ class WebSession:
             turn.line,
             status_of(turn, world, lang),
             turn.cost,
-            tuple(self._conflict(a, b, lang) for a, b in turn.new_conflicts),
+            tuple(self._conflict(a, b, lang) for a, b in turn.new_conflicts)
+            if self._showing_hints()
+            else (),
             turn.stance is Stance.DENY,
         )
 
@@ -423,7 +445,9 @@ class WebSession:
             grid,
             extras,
             tuple(Note(i, describe(s, world, lang)) for i, s in book.statements),
-            tuple(self._conflict(a, b, lang) for a, b in book.conflicts()),
+            tuple(self._conflict(a, b, lang) for a, b in book.conflicts())
+            if self._showing_hints()
+            else (),
         )
 
     def _ending(self, lang: Lang) -> Ending | None:
@@ -437,7 +461,7 @@ class WebSession:
             names[verdict.accused],
             tuple(ending_lines(game, lang)),
             truth_parts(game.case, lang),
-            share_card(self.seed, verdict, game.turns, lang),
+            share_card(self.seed, verdict, game.turns, lang, hard=not self.hints),
         )
 
     def _example(self, lang: Lang) -> str:
@@ -452,6 +476,7 @@ class WebSession:
             self.seed,
             lang.value,
             self.mode,
+            self.hints,
             self.current,
             game.used,
             game.budget,
@@ -473,6 +498,7 @@ class WebSession:
                 self.completion_tokens,
                 tuple(self._saved),
                 self._accusation,
+                self.hints,
             )
         )
 
@@ -482,14 +508,17 @@ def to_json(value: Any) -> str:
     return json.dumps(asdict(value), ensure_ascii=False)
 
 
-def open_session(seed: int, lang: Lang, saved_text: str) -> tuple[WebSession, bool]:
-    """The session for this case, and whether a save existed that could not be used."""
+def open_session(
+    seed: int, lang: Lang, saved_text: str, hints: bool = True
+) -> tuple[WebSession, bool]:
+    """The session for this case, and whether a save existed that could not be used. `hints` is for
+    a new game; a saved game keeps what it was started with."""
     if not saved_text:
-        return WebSession(seed, lang), False
+        return WebSession(seed, lang, hints=hints), False
     saved = read_save(saved_text, seed)
     if saved is None:
-        return WebSession(seed, lang), True
+        return WebSession(seed, lang, hints=hints), True
     try:
         return WebSession(seed, lang, saved), False
     except (ValueError, IndexError, KeyError, GameOver, AccusationError):
-        return WebSession(seed, lang), True
+        return WebSession(seed, lang, hints=hints), True

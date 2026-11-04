@@ -158,6 +158,100 @@ def test_the_language_changes_the_views_and_later_lines_only() -> None:
     assert session.state().turns[1].line.isascii()
 
 
+# --- Hard mode -------------------------------------------------------------------------------
+
+
+def _hard() -> WebSession:
+    session = _solvable()
+    session.set_hints(False)
+    _everyone(session)
+    return session
+
+
+def test_hard_mode_shows_no_contradiction_until_the_ending() -> None:
+    session = _hard()
+    game = session.game
+    pair = next(p for p in game.notebook.conflicts() if game.exposes_culprit_lie(*p))
+    state = session.state()
+    assert state.hints is False
+    assert state.notes.conflicts == ()
+    assert not [t for t in state.turns if t.conflicts]
+    assert "不能同时成立" not in to_json(state)
+    session.accuse(game.case.truth.culprit, *pair)
+    after = session.state()
+    assert after.notes.conflicts  # now they teach, and give nothing away
+    assert [t for t in after.turns if t.conflicts]
+    assert after.ending is not None
+    assert after.ending.outcome == "solved"
+
+
+def test_hard_mode_gives_no_warning_before_the_accusation() -> None:
+    session = _hard()
+    suspect = sorted(session.game.case.view.suspects)[0]
+    evidence = session.game.case.view.evidence
+    check = session.check(suspect, evidence[0].id, evidence[1].id)  # these never conflict
+    assert check.conflicts
+    assert check.related == ()
+
+
+def test_hard_mode_is_chosen_before_the_first_question() -> None:
+    session = WebSession(SEED, Lang.ZH)
+    session.set_hints(False)
+    session.set_hints(True)
+    session.set_hints(False)
+    person = str(session.game.case.view.world.people[0].id)
+    session.ask(person, "嗯……")  # a free turn has begun the game too
+    with pytest.raises(SessionError, match="started") as err:
+        session.set_hints(True)
+    assert "不能再改" in err.value.text
+    assert session.hints is False
+
+
+def test_a_save_keeps_hard_mode_and_an_older_save_means_hints() -> None:
+    session = _hard()
+    again, failed = open_session(session.seed, Lang.ZH, session.save(), hints=True)
+    assert not failed
+    assert again.hints is False
+    assert asdict(again.state()) == asdict(session.state())
+    raw = json.loads(WebSession(SEED, Lang.ZH).save())
+    del raw["hints"]
+    older, failed = open_session(SEED, Lang.ZH, json.dumps(raw), hints=False)
+    assert not failed
+    assert older.hints is True
+
+
+def test_a_new_game_takes_the_players_choice_and_a_dropped_save_keeps_it() -> None:
+    fresh, _ = open_session(SEED, Lang.ZH, "", hints=False)
+    assert fresh.hints is False
+    dropped, failed = open_session(SEED, Lang.ZH, "{", hints=False)
+    assert failed
+    assert dropped.hints is False
+
+
+@pytest.mark.parametrize(("lang", "tag"), [(Lang.ZH, " 困难"), (Lang.EN, " hard")])
+def test_the_card_says_when_a_game_was_hard(lang: Lang, tag: str) -> None:
+    session = _solvable(lang)
+    session.set_hints(False)
+    _solve(session)
+    ending = session.state().ending
+    assert ending is not None
+    assert ending.share.splitlines()[0].endswith(tag)
+
+
+def test_the_bridge_switches_hard_mode_and_reports_a_late_try() -> None:
+    state = _reply(bridge.start(SEED, "zh", "", False))["state"]
+    assert isinstance(state, dict)
+    assert state["hints"] is False
+    state = _reply(bridge.set_hints(True))["state"]
+    assert isinstance(state, dict)
+    assert state["hints"] is True
+    person = str(daily_case(SEED).case.view.world.people[0].id)
+    bridge.ask(person, "嗯……")
+    late = _reply(bridge.set_hints(False))
+    assert late["error"] == "started"
+    assert late["state"] is None
+
+
 # --- Save ------------------------------------------------------------------------------------
 
 
@@ -254,7 +348,7 @@ def _forbidden(session: WebSession) -> list[str]:
 @pytest.mark.parametrize("lang", list(Lang))
 def test_the_share_card_holds_no_answer_in_any_outcome(lang: Lang) -> None:
     pattern = re.compile(
-        rf"^(破绽 案件|Loose Thread case) #\d+ (★{{1,3}}|☆|✗)\n"
+        rf"^(破绽 案件|Loose Thread case) #\d+ (★{{1,3}}|☆|✗)( 困难| hard)?\n"
         rf"\d+/\d+ (问|questions)\n"
         rf"[{NOTHING_NEW}{NEW_FACT}{CONTRADICTION}]*\n?"
         rf"github\.com/JiachengWu591/loosethread$"

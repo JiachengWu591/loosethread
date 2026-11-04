@@ -161,7 +161,9 @@ Disjunctive evidence ("someone came in from the terrace") is a later extension.
   true (different locations for one person in one slot; an `Occupants` claim that excludes someone
   who claims to be there; an impossible move between consecutive slots; a statement vs evidence). Only items the player has already obtained are
   compared, so the player still has to ask the right questions and decide who is lying.
-- Hard mode turns hints off.
+- Hard mode turns hints off. On the page it is chosen before the first question and holds for the whole game, and the
+  contradictions show after the accusation (D-047). A hint on one person's own two answers names the culprit, since only
+  the culprit lies inside the window (D-046).
 
 ## 9. Accusation, outcomes and scoring
 
@@ -186,8 +188,8 @@ Disjunctive evidence ("someone came in from the terrace") is a later extension.
   which a methodical player never reached.
 - The truth is revealed after any outcome.
 - **Share card** (P4): date/case number, mark, questions used, and one emoji per question (⬜ nothing
-  new, 🟨 new fact, 🟥 contradiction found). No names, places or times — spoiler-free by construction,
-  and tested.
+  new, 🟨 new fact, 🟥 contradiction found), and whether the game was in hard mode. No names, places or
+  times — spoiler-free by construction, and tested.
 
 ## 10. Solver and difficulty (spec for P1)
 

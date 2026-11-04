@@ -314,3 +314,19 @@ alibi style). Full outputs: `docs/review/p1/batch-naive.txt`, `docs/review/p1/ba
   - C. Rewrite the writer. A large change that could undermine P3's conclusions.
 - **Recommendation**: B, after the interface works. It can show the lines did not get worse. Whether they got better is
   for the owner's sign-off on the feel.
+
+## CP-13 — A hint on one person's own two answers names the culprit · `approved`
+
+- **Decision** (owner, 2026-11-04, "选 B，加开关"): option B. See D-047.
+- **Trigger**: a game played through the page (D-046) ended on such a hint. Only the culprit lies inside the window, so it
+  leaves nothing to infer. Over 200 daily cases, one-off count: such a pair exists for the culprit in 94/200 = 47.0%
+  [40.2%, 53.9%], and for an innocent in 0/200 [0.0%, 1.9%]. By shape: unreachable 48/49, evidence 46/48, companion 0/54,
+  occupied 0/49. This counts what a case allows, not what players do.
+- **Impact**: the page's hints and difficulty only. No change to phase order or exit criteria.
+- **Options**
+  - A. Leave it. No work and kind to a beginner, but in about half of cases a hint ends the deduction.
+  - B. A hard-mode switch on the page, off by default, as the terminal's `--hard` and DESIGN §8 already have. Little work, and
+    the default game and the owner's gate verdict do not change. The default keeps the problem.
+  - C. Stop hinting on one person's own answers. Closest to deduction, but it changes the default difficulty, so the gate
+    verdict would need redoing, and beginners may stall.
+- **Recommendation**: B. It is small and can be undone, and it shows whether anyone wants it.

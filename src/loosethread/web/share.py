@@ -32,10 +32,14 @@ def mark(verdict: Verdict) -> str:
             return "✗"
 
 
-def share_card(seed: int, verdict: Verdict, turns: Sequence[Turn], lang: Lang) -> str:
+def share_card(
+    seed: int, verdict: Verdict, turns: Sequence[Turn], lang: Lang, hard: bool = False
+) -> str:
     used, budget = verdict.questions_used, verdict.budget
     if lang is Lang.ZH:
         head, count = f"破绽 案件 #{seed} {mark(verdict)}", f"{used}/{budget} 问"
+        head += " 困难" if hard else ""
     else:
         head, count = f"Loose Thread case #{seed} {mark(verdict)}", f"{used}/{budget} questions"
+        head += " hard" if hard else ""
     return "\n".join(line for line in (head, count, squares(turns), LINK) if line)

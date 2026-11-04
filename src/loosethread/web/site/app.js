@@ -7,6 +7,9 @@ const TEXT = {
     brand: "破绽", caseNo: "案件", left: "还剩", asks: "问",
     ask: "问", accuse: "指认", notebook: "笔记", sheet: "案情", evidence: "证物", map: "地图", rules: "规则", talk: "审讯",
     goal: "目标：找出犯人，并拿出两条不能同时成立的记录，揭穿犯人的谎。同一时段多问几个人，说法对不上时会亮 ⚠。一次问一个人、一个时段。没听懂的、问过的、闲聊不花次数。问得越少，星越多。",
+    goalHard: "目标：找出犯人，并拿出两条不能同时成立的记录，揭穿犯人的谎。困难模式不会提示矛盾，要自己对照笔记和地图。一次问一个人、一个时段。没听懂的、问过的、闲聊不花次数。问得越少，星越多。",
+    hardOff: "困难模式：关", hardOn: "困难模式：开", hardTag: "困难", hardWhy: "开启后不提示矛盾，要自己对照笔记和地图。开始提问后不能再改。", hardNoHints: "困难模式：不提示矛盾。",
+    started: "开始提问后不能再改困难模式。",
     placeholder: "比如：{example}", thinking: "正在问……", chooseFirst: "先选要问的人。",
     noted: "说法", conflicts: "矛盾提示", noConflicts: "目前没有发现不能同时成立的两条。", noStatements: "还没有问到任何说法。",
     denials: "否认过的（不能当指认的编号）", gridNote: "时段 21:15 指 21:15–21:30。深色的列是作案时间窗。第二行是自称同处一室的人。",
@@ -35,6 +38,9 @@ const TEXT = {
     brand: "Loose Thread", caseNo: "Case", left: "", asks: "left",
     ask: "Ask", accuse: "Accuse", notebook: "Notebook", sheet: "The case", evidence: "Evidence", map: "Map", rules: "Rules", talk: "Questions",
     goal: "Goal: name the culprit, with two items that cannot both be true, to expose their lie. Ask several people about the same time; ⚠ shows when their stories clash. One person and one time per question. Unclear questions, repeats and small talk are free. Fewer questions earn more stars.",
+    goalHard: "Goal: name the culprit, with two items that cannot both be true, to expose their lie. Hard mode shows no contradiction hints, so check the notebook and the map yourself. One person and one time per question. Unclear questions, repeats and small talk are free. Fewer questions earn more stars.",
+    hardOff: "Hard mode: off", hardOn: "Hard mode: on", hardTag: "hard", hardWhy: "No contradiction hints: check the notebook and the map yourself. It cannot change once you start asking.", hardNoHints: "Hard mode: no contradiction hints.",
+    started: "Hard mode cannot change once you have started asking.",
     placeholder: "e.g. {example}", thinking: "Asking…", chooseFirst: "Choose someone to ask first.",
     noted: "Statements", conflicts: "Contradiction hints", noConflicts: "No contradictions found yet.", noStatements: "No statements yet.",
     denials: "Denials (not usable as accusation ids)", gridNote: "Slot 21:15 means 21:15–21:30. Shaded columns are the theft window. The second line is who they say was in the room.",
@@ -63,6 +69,7 @@ const TEXT = {
 
 const SAVE_PREFIX = "loosethread.game.";
 const LANG_NAME = "loosethread.lang";
+const HARD_NAME = "loosethread.hard";
 const KEEP_SAVES = 14;
 
 const store = {
@@ -178,8 +185,9 @@ function notesView(state) {
   const notes = state.notes;
   const denied = state.turns.filter((turn) => turn.denial);
   if (!notes.statements.length && !denied.length) return el("p", { class: "empty", text: t("noStatements") });
+  const noHints = !state.hints && !state.ending;
   return [
-    section(t("conflicts"), notes.conflicts.length
+    noHints ? el("p", { class: "gridnote", text: t("hardNoHints") }) : section(t("conflicts"), notes.conflicts.length
       ? notes.conflicts.map((c) => el("div", { class: "conflict" }, conflictView(c),
           state.ending ? null : el("button", {
             class: "plain", text: t("useThisPair"),
@@ -322,7 +330,13 @@ function talkPane(state) {
       el("div", { class: "briefing" },
         el("h2", { text: state.sheet.title }),
         el("p", { text: state.sheet.intro }),
-        state.ending ? null : el("p", { class: "goal", text: t("goal") })),
+        state.ending ? null : el("p", { class: "goal", text: t(state.hints ? "goal" : "goalHard") }),
+        state.turns.length || state.ending ? null : el("p", { class: "goal" },
+          el("button", {
+            class: "plain", type: "button", "aria-pressed": String(!state.hints),
+            text: t(state.hints ? "hardOff" : "hardOn"), onclick: switchHints,
+          }),
+          " ", t("hardWhy"))),
       state.turns.map(turnView)),
     askForm(state));
 }
@@ -331,7 +345,8 @@ function talkPane(state) {
 
 function topBar(state) {
   return el("header", { class: "top" },
-    el("h1", { class: "brand" }, t("brand"), el("small", { text: `${t("caseNo")} #${state.seed}` })),
+    el("h1", { class: "brand" }, t("brand"),
+      el("small", { text: `${t("caseNo")} #${state.seed}${state.hints ? "" : ` · ${t("hardTag")}`}` })),
     el("button", {
       class: "plain only-narrow", "aria-pressed": String(ui.pane === "book"),
       text: ui.pane === "book" ? t("talk") : t("notebook"),
@@ -397,6 +412,15 @@ async function switchLang() {
     store.set(LANG_NAME, lang);
     draw();
   }
+}
+
+async function switchHints() {
+  if (ui.busy) return;
+  const on = !ui.state.hints;
+  const reply = await call("set_hints", on);
+  if (take(reply)) store.set(HARD_NAME, on ? "" : "1");
+  else { ui.hint = errorText(reply); ui.hintBad = true; }
+  draw();
 }
 
 function dialog(...children) {
@@ -527,7 +551,7 @@ async function open() {
   store.prune();
   startWorker(async (booted) => {
     if (!booted) { bootFailed(); return; }
-    const reply = await call("start", seed, ui.lang, store.get(saveName));
+    const reply = await call("start", seed, ui.lang, store.get(saveName), store.get(HARD_NAME) !== "1");
     if (!take(reply)) { bootFailed(); return; }
     if (reply.restore_failed) ui.notice = t("restoreFailed");
     ui.scrollDown = !reply.state.ending;  // a finished game opens at its ending, on top

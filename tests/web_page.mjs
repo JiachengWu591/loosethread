@@ -97,6 +97,13 @@ look();
 await everyTab();
 look();
 
+// Hard mode, on and off again, before the first question.
+await clickOn("困难模式：关");
+look();
+const hardKept = storage["loosethread.hard"] === "1";
+await clickOn("困难模式：开");
+const hardReleased = storage["loosethread.hard"] !== "1";
+
 // The language, both ways.
 await clickOn("EN");
 look();
@@ -156,6 +163,8 @@ look();
 const stored = JSON.stringify(storage);
 process.stdout.write(JSON.stringify({
   problems,
+  hardKept,
+  hardReleased,
   sawEnding: onScreen.some((text) => text.includes(replies.ending[0])),
   keyInStorage: stored.includes(key),
   keyOnScreen: onScreen.some((text) => text.includes(key)),

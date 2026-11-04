@@ -1283,3 +1283,23 @@ directly.
   so such a hint leaves nothing to infer, and this game ended that way. A one-off count over 200 daily cases, not in
   `verify`: such a pair exists in 94/200 = 47.0% [40.2%, 53.9%], and for an innocent in 0/200 [0.0%, 1.9%]. By lie shape:
   unreachable 48/49, evidence 46/48, companion 0/54, occupied 0/49. It counts what a case allows, not what players do.
+
+## D-047 — CP-13 option B: hard mode on the page
+
+- **Date**: 2026-11-04 · **Type**: the owner's decision in chat ("选 B，加开关"), and the tactical details below.
+- **What it does**: hard mode shows no contradiction, on a turn or in the notebook. The confirmation before an accusation
+  gives no warning either, as a warning would be a hint, and a pair that does not conflict gets the same words. The default is
+  unchanged, with hints on, so the owner's gate verdict (D-033) still describes the default game.
+- **Details chosen here**
+  - It can be chosen only before the first question, a free one included, so that a card saying "hard" means the whole game.
+  - The choice is remembered for the next case, and a saved game keeps the mode it began with. A save from before this reads
+    as hints on.
+  - After the accusation the contradictions show, since they then give nothing away and show what could have been seen.
+  - The card adds "困难" or "hard". Its squares stay as they were, so 🟥 still marks where a contradiction became available.
+  - Stars and budget are the same in both modes. Their thresholds come from simulated players who stop the moment an exposing
+    pair exists, as a hint lets a player do, so the same stars are harder to earn in hard mode.
+- **Checks**: `tests/test_web.py` covers the hidden hints, the neutral confirmation, the lock, saves and the card.
+  `tests/web_page.mjs` plays the switch on and off through the page's code. By hand in the browser: case 20261110 in hard mode
+  and 7 questions, ★★★. Its contradiction was two witnesses against a third, found by reading the notebook, and I found that a
+  better moment than the hint in D-046. It is one game, by the person who built it, in a shape (companion) where hints
+  never named the culprit anyway. Nothing yet shows whether players want this mode, or whether it is fair to a beginner.

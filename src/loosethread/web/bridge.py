@@ -53,11 +53,19 @@ def _guarded(act: Callable[[], str]) -> str:
         return to_json(Reply(error=f"internal:{type(err).__name__}"))
 
 
-def start(seed: int, lang: str, saved: str) -> str:
+def start(seed: int, lang: str, saved: str, hints: bool = True) -> str:
     def act() -> str:
         global _session
-        _session, failed = open_session(seed, Lang(lang), saved)
+        _session, failed = open_session(seed, Lang(lang), saved, hints)
         return _done(restore_failed=failed)
+
+    return _guarded(act)
+
+
+def set_hints(on: bool) -> str:
+    def act() -> str:
+        _current().set_hints(on)
+        return _done()
 
     return _guarded(act)
 

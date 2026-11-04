@@ -35,6 +35,7 @@ def _page_replies() -> dict[str, object]:
     start = bridge.start(seed, "zh", "")
     state = json.loads(start)["state"]
     names = {p["id"]: p["name"] for p in state["sheet"]["people"]}
+    hard, normal = bridge.set_hints(False), bridge.set_hints(True)
     asked = _sweep(seed)
     current = bridge._current()
     pair = next(
@@ -52,6 +53,7 @@ def _page_replies() -> dict[str, object]:
     left = bridge.disconnect()
     return {
         "start": [start],
+        "set_hints": [hard, normal],
         "set_lang": [set_en, set_zh],
         "ask": [asked],
         "check": [no_conflict, conflict],
@@ -111,6 +113,8 @@ def test_the_page_draws_a_whole_game_with_nothing_stray_on_screen(tmp_path: Path
     assert run.returncode == 0, run.stderr[-2000:]
     report = json.loads(run.stdout)
     assert report["problems"] == []
+    assert report["hardKept"]
+    assert report["hardReleased"]
     assert report["sawEnding"]
     assert not report["keyInStorage"]
     assert not report["keyOnScreen"]
@@ -123,6 +127,7 @@ def test_the_page_draws_a_whole_game_with_nothing_stray_on_screen(tmp_path: Path
         "check",
         "connect",
         "disconnect",
+        "set_hints",
         "set_lang",
         "start",
     ]
