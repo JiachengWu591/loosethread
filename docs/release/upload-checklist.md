@@ -4,18 +4,18 @@ For the owner. Steps marked **Claude** are mine, and each waits for your OK. The
 
 ## 1. Put a test version online
 
-- [ ] **Claude**, after your OK: merge `p5-release` into `main`. The Pages workflow can only be run by hand once it is on `main`.
-- [ ] GitHub → Settings → Pages → Build and deployment → Source: **GitHub Actions**.
-- [ ] GitHub → Actions → **Pages** → Run workflow, on `main`.
-- [ ] Open https://jiachengwu591.github.io/loosethread/ and see that it loads.
+- [x] **Claude**, after your OK: merge `p5-release` into `main`. The Pages workflow can only be run by hand once it is on `main`.
+- [x] GitHub → Settings → Pages → Build and deployment → Source: **GitHub Actions**.
+- [x] GitHub → Actions → **Pages** → Run workflow, on `main`.
+- [x] Open https://jiachengwu591.github.io/loosethread/ and see that it loads.
 
 ## 2. Three checks only you can do
 
 Tell me what you find. If something fails, it gets fixed before the tag.
 
-- [ ] **A valid key in a real browser.** Use a key with a spending limit. Click 用模型, enter it, and ask a few questions. Expect natural lines, a cost shown at the top, and no error. Refresh, and it should ask for the key again.
-- [ ] **A real phone.** Open the link, or run `uv run python -m loosethread.web --host 0.0.0.0` and open your computer's LAN address. Play a few questions, open the notebook, and refresh. Check that nothing is cut off.
-- [ ] **From mainland China**, without a VPN. Does the page load, and how long does the first load take? If it is unstable, tell me, and the itch.io copy and README should say so.
+- [x] **A valid key in a real browser.** Use a key with a spending limit. Click 用模型, enter it, and ask a few questions. Expect natural lines, a cost shown at the top, and no error. Refresh, and it should ask for the key again.
+- [x] **A real phone.** Open the link, or run `uv run python -m loosethread.web --host 0.0.0.0` and open your computer's LAN address. Play a few questions, open the notebook, and refresh. Check that nothing is cut off.
+- [x] **From mainland China**, without a VPN. Does the page load, and how long does the first load take? If it is unstable, tell me, and the itch.io copy and README should say so.
 
 ## 3. Name
 

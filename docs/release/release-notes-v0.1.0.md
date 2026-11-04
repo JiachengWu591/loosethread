@@ -8,7 +8,7 @@ Every case is generated, and checked by a solver to have exactly one solution.
 
 ## 这个版本有什么 / What is in it
 
-- 每天一个新案子，三个场景，四种谎言。A new case each day, in three settings, with four shapes of lie.
+- 每天一个新案子（按你的本地日期），三个场景，四种谎言。A new case each day, by your own local date, in three settings, with four shapes of lie.
 - 自动笔记和矛盾提示，也可以开困难模式关掉提示。A notebook that fills itself in, with hints, or a hard mode without them.
 - 不含答案的分享卡。A share card with no answer in it.
 - 不填 key 时用规则和模板，什么都不外发；填自己的 DeepSeek key 后由模型理解问题、说台词。With no key, rules and templates, and nothing leaves your device. With a DeepSeek key of your own, a model reads the questions and speaks the lines.
@@ -24,6 +24,7 @@ The layered NPC had fewer flagged failures than a prompt-only one, 0/204 against
 
 - 没有 key 的玩家接触不到模型，台词是模板。With no key you never meet a model, and the lines are templates.
 - 约一半的案子里，同一个人两句话的矛盾提示会直接指向犯人。In about half of cases, a hint on one person's own two answers names the culprit.
+- 不同时区的人可能在玩不同的案子，可以对一下案件号。People in different time zones can be on different cases: compare the case number.
 - 发布前没有陌生玩家玩过。No stranger had played it before this release.
 
 ## 文件 / Files

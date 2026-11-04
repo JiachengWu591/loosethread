@@ -359,7 +359,8 @@ function talkPane(state) {
 function topBar(state) {
   return el("header", { class: "top" },
     el("h1", { class: "brand" }, t("brand"),
-      el("small", { text: `${t("caseNo")} #${state.seed}${state.hints ? "" : ` · ${t("hardTag")}`}` })),
+      el("small", {}, el("span", { class: "case-word", text: `${t("caseNo")} ` }),
+        `#${state.seed}${state.hints ? "" : ` · ${t("hardTag")}`}`)),
     el("button", {
       class: "plain only-narrow", "aria-pressed": String(ui.pane === "book"),
       text: ui.pane === "book" ? t("talk") : t("notebook"),

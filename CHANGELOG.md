@@ -7,7 +7,7 @@ The first release.
 ### The game
 
 - Interrogate suspects in natural language, in Chinese or English, and name the culprit with two records that cannot both be true.
-- A new case each day, from the date. Three settings and four shapes of lie. A solver checks that each case has exactly one solution
+- A new case each day, by your own local date. Three settings and four shapes of lie. A solver checks that each case has exactly one solution
   and needs a contradiction to solve.
 - A notebook that fills itself in, with contradiction hints, and a hard mode that turns them off.
 - A share card with no answer in it.
@@ -27,4 +27,5 @@ The first release.
 
 - With no key, the lines are plain templates and no model is involved.
 - In about half of cases, a hint on one person's own two answers names the culprit. Hard mode exists for this.
+- The date is each player's own, so people in different time zones can be on different cases. The case number is on the page and the share card.
 - No stranger had played it before this release.

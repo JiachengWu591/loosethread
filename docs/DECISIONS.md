@@ -1380,3 +1380,19 @@ directly.
     checks the site's files and types. It cannot show that a browser plays the game.
   - Not checked before merging: the Pages workflow, which can only run from `main`; the page on any host but this machine; and itch.io.
 - **Not tagged, not published**: those wait for the owner (`CLAUDE.md`).
+
+## D-052 — The owner's checks on the live page, and whose date picks the case
+
+- **Date**: 2026-11-04 · **Type**: the owner's report and decision in chat ("key有效；手机也可以打开；国内也可以访问", "选 A，保持本地日期"; CP-15).
+- **Deployment**: the Pages workflow ran by hand on `main` at `a57244e`, and succeeded. The live files match a local build: the page's files byte
+  for byte, and the package's 32 files one by one, though the zip's own bytes differ between Ubuntu and Windows.
+- **The three checks D-048 left open**, as the owner reported them
+  - A valid key in a real browser: works. The adapter has now carried a valid key.
+  - A real phone: it opens. The report does not say how far it was played.
+  - From mainland China: it can be reached. No load time was given, and one reach says little about stability.
+- **The difference the owner saw**: phone and computer showed different content at one link. The likely cause is the local date (CP-15). It was not
+  confirmed, as the owner chose an option without saying whether the case numbers differed, and I cannot see the phone.
+- **Decision**: the daily case stays on the player's local date, as D-043 set it, so "the same seed for everyone" in the brief means the same date,
+  the same case. Two players in different time zones may be on different cases, and their share cards then compare different cases.
+- **So that it does not surprise anyone**: the copy now says the date is the player's own, and narrow screens show the case number in the top bar, where
+  it was hidden and could not be compared once scrolled away.

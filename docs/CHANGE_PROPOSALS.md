@@ -345,3 +345,19 @@ alibi style). Full outputs: `docs/review/p1/batch-naive.txt`, `docs/review/p1/ba
   - B. itch.io only. No workflow, but no link until the owner uploads, and no online version to test before release.
   - C. A local command and a zip only. Least work, but few but developers will try it.
 - **Recommendation**: A.
+
+## CP-15 — Whose date picks the daily case · `decided: keep local`
+
+- **Decision** (owner, 2026-11-04, "选 A，保持本地日期"): option A, against my recommendation of B. See D-052.
+- **Trigger**: the owner's phone and computer showed different content at the same link. I could not see the phone. The computer's browser was
+  on America/Los_Angeles at 20261104, 晚潮号, while Beijing was already on 20261105, 青檐剧场, with a different setting and suspects. At one
+  time zone, phone and desktop views gave the same case, and the deployed files matched a local build. Los Angeles and Beijing differ in
+  date for 16 hours a day.
+- **Impact**: how the daily case is picked, on the page and in the terminal. No change to exit criteria.
+- **Options**
+  - A. Keep the local date. Next to no work, and each player's case changes at their own midnight. People in different time zones are often
+    on different cases.
+  - B. Beijing time for everyone. One case at any moment, changing at midnight in Beijing, 8 a.m. in Los Angeles. Overseas players see the
+    change by day.
+  - C. UTC for everyone. One case too, changing at 8 a.m. in Beijing, which is unnatural for Chinese players.
+- **Recommendation**: B, for "the same seed for everyone" in the brief, and share cards that compare the same case. Not taken.

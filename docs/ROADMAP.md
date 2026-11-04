@@ -212,7 +212,7 @@ Commands below use the package name `loosethread` (originally `alibi`; renamed b
   finding, and CP-13 option B added a hard-mode switch (D-046, D-047).
 - **Architecture, decided (CP-11)**: a static site with Pyodide, keyless by default, with an optional key of the
   player's own. No hosted demo in P4.
-- **Features**: date → seed, by the player's local date; notebook UI; zh/en toggle; mobile layout; progress that
+- **Features**: date → seed, by the player's local date (kept by CP-15); notebook UI; zh/en toggle; mobile layout; progress that
   survives a refresh; spoiler-free share card (emoji text grid, optional image).
 - **Lines (CP-12)**: change how times are said and how a repeat opens, with a regression on dev seeds.
 - **Test assertions**: the share card contains no answer; the key never appears in frontend logs, URLs
@@ -224,7 +224,8 @@ Commands below use the package name `loosethread` (originally `alibi`; renamed b
 
 - **Progress (2026-11-04, branch `p5-release`)**: plan and CP-14 option A approved (D-049). Related work re-searched, name checked (D-050).
   Licenses, notices, CHANGELOG, CITATION, privacy note, README, Pages workflow, a clean-run check and the release materials are done
-  (D-051). Left: merge, the owner's checks on the live page, the tag and the uploads (`docs/release/upload-checklist.md`).
+  (D-051). Merged and deployed by hand; the owner's checks on the live page passed, and the daily case stays on the local date (CP-15, D-052).
+  Left: the tag and the uploads (`docs/release/upload-checklist.md`).
 - **Play link (CP-14)**: GitHub Pages, deployed on a tag or by hand, beside itch.io.
 - **Work**: bilingual README (first-screen GIF, one-command run, problem–method–evidence–limitations);
   LICENSE with code and content licenses explained separately — **vendor the full CC BY 4.0 legal

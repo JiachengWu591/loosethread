@@ -188,5 +188,6 @@ textarea.card {
   .pane[data-hidden="true"] { display: none; }
   .only-narrow { display: inline-flex; align-items: center; }
   .top { padding: .4rem 1rem; gap: .5rem; }
-  .brand small { display: none; }
+  .brand small { display: block; margin-left: 0; font-size: .7rem; font-variant-numeric: tabular-nums; }
+  .case-word { display: none; }
 }

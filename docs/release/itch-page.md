@@ -27,7 +27,7 @@ itch.io asks whether a project uses generative AI. An honest answer, which is yo
 
 用自己的话问嫌疑人：“九点三刻你在哪？”“跟谁在一起？”每个人的回答都会自动记进笔记。无辜的人在作案时间窗里不说谎，犯人会说。找到两条不能同时成立的记录，指认犯人，揭穿谎言。
 
-- 每天一个新案子，由程序生成，求解器验证唯一可解。
+- 每天一个新案子（按你的本地日期），由程序生成，求解器验证唯一可解。
 - 三个场景，四种谎言，中英文随时切换。
 - 想要更难，可以开困难模式：不提示矛盾，自己对照笔记和地图。
 - 打完有一张不含答案的分享卡。
@@ -42,7 +42,7 @@ Something has been stolen, and nobody can leave. You are a retired detective who
 
 Ask in your own words: "Where were you at quarter to ten?" "Who was with you?" Every answer goes into your notebook by itself. Innocent people do not lie about the theft window, and the culprit does. Find two records that cannot both be true, name the culprit, and expose the lie.
 
-- A new case each day, generated and checked by a solver to have exactly one solution.
+- A new case each day, by your own local date, generated and checked by a solver to have exactly one solution.
 - Three settings, four shapes of lie, and Chinese or English at any time.
 - For more challenge, hard mode turns off the contradiction hints, leaving you the notebook and the map.
 - A share card with no answer in it at the end.

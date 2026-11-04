@@ -67,8 +67,8 @@ The same questions both ways. The model's lines are from [`results/rows/web-line
 | 刚才说过了：22:30 我一个人在观景厅，没有别人。 | 22:30那会儿观景厅就我一个，没别人。 |
 | Once more: At 20:15 I was alone in the foyer. | At 20:15 I was alone in the foyer. That's the same answer, clockwork. |
 
-Known limits of the game: a visitor with no key never meets a model, and no stranger had played it before this release. In about half of cases, a hint on one person's own two answers names the culprit, so there is a hard mode that turns hints off.
-游戏的已知局限：没有 key 的玩家接触不到模型；发布前没有陌生玩家玩过；约一半的案子里，同一个人两句话的矛盾提示会直接指向犯人，所以有关闭提示的困难模式。
+Known limits of the game: a visitor with no key never meets a model, and no stranger had played it before this release. In about half of cases, a hint on one person's own two answers names the culprit, so there is a hard mode that turns hints off. The daily case follows your own local date, so people in different time zones can be on different cases; compare the case number.
+游戏的已知局限：没有 key 的玩家接触不到模型；发布前没有陌生玩家玩过；约一半的案子里，同一个人两句话的矛盾提示会直接指向犯人，所以有关闭提示的困难模式。每日案件按你的本地日期选，不同时区的人可能在玩不同的案子，可以对一下案件号。
 
 ## Documents / 文档
 
