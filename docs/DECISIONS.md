@@ -1278,7 +1278,7 @@ directly.
   untested**. I do not type a real key into a page, so that stays with the owner. On the repeat, the model gave its first
   line word for word with no sign of a repeat; the status line under it still says so.
 - **What it felt like, one player's view**: reading the map to see that two places are two steps apart was the good moment.
-  With no key, 8 of the 9 answers read "我一个人在……，没有别人", nobody's persona shows, and it fills in like a form.
+  With no key, 7 of the 9 answers read "我一个人在……，没有别人", nobody's persona shows, and it fills in like a form.
 - **Finding, not changed: a ⚠ on one person's own two answers names the culprit.** Only the culprit lies inside the window,
   so such a hint leaves nothing to infer, and this game ended that way. A one-off count over 200 daily cases, not in
   `verify`: such a pair exists in 94/200 = 47.0% [40.2%, 53.9%], and for an innocent in 0/200 [0.0%, 1.9%]. By lie shape:
