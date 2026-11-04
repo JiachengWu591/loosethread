@@ -11,6 +11,6 @@ Model calls per game: median 28, p95 28, most 28
 Seconds per turn in the model: median 2.2, p95 3.8, most 16.9
 Lines the template replaced: 0/280 = 0.0% [Wilson 95%: 0.0%, 1.4%]
 Turns that could not reach the model: 0/280 = 0.0% [Wilson 95%: 0.0%, 1.4%]
-P4 model spending so far, upper bound: CNY 2.16 of 5.00
+P4 model spending so far, upper bound: CNY 2.18 of 5.00
 These are scripted questions, in a loop no player would write. The owner's own game is not in these rows.
 ```

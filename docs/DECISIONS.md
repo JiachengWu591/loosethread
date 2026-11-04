@@ -1252,3 +1252,34 @@ directly.
 - **Spending**: CNY 2.16 of the 5 for P4, upper bound: 0.63 for the regression, and the rest for the cost.
 - **Tactical**: `python -m loosethread.web` assembles the site on every start, so that it cannot serve an old one, and takes
   `--host` to let a phone on the same network try it.
+
+## D-046 — A game played through the page, and what it found
+
+- **Date**: 2026-11-04 · **Type**: tactical fixes, and one finding put to the owner as CP-13. The owner asked me to play one
+  game. This session has no tool that controls the desktop, so I played in the app's built-in browser.
+- **The game**: case 20261108, zh, with no key, reading only what the page shows. Nine questions, the right culprit, ★★★. I
+  built the game and know its rules, so this says nothing about whether a stranger can follow it. The app's window was often
+  behind others, so most input went in as events on the page's own elements, and not as a person's clicks.
+- **What held**: all nine questions were read at the first try, among them "那八点一刻呢", "八点半呢？" and "8:15 你在哪". Hints, the
+  accusation, the truth, the card and both languages worked.
+- **Found and fixed**
+  - The case tab showed its facts as `[object HTMLElement]`. I had not opened that tab before. `el` flattened one level.
+  - A second `python -m loosethread.web` shared the port with the first on Windows, and neither said so: the owner had two
+    running on 8000. It now stops with a message saying what to do.
+  - "⚠ S5 与 S8" sent the player to look both up, which is worse on a phone, so the hint now says what each one is.
+  - A finished game reopened at the bottom, with its ending out of sight above.
+- **New check, `tests/web_page.mjs`, in CI**: the page's real code plays a whole game on a stand-in for the DOM, with replies
+  from the real bridge. Both this bug and D-044's stray `null` were things a browser turns silently into text. With four
+  faults put back by hand (those two, a key written to storage, a key left in the field), it caught all four. It reads
+  code, so it cannot see layout, CSS or a real worker, and a stand-in may be kinder than a browser.
+- **The adapter on the real API** (`python -m loosethread.web.measure adapter`, `results/rows/web-adapter-r1.jsonl`): with the key
+  from the environment, `BrowserChat` listed the models and ran 3 turns, 6 calls, no problems, CNY 0.017. The API accepts what
+  the page's code sends, and the code reads the reply. It ran outside a browser, so **a valid key in a browser is still
+  untested**. I do not type a real key into a page, so that stays with the owner. On the repeat, the model gave its first
+  line word for word with no sign of a repeat; the status line under it still says so.
+- **What it felt like, one player's view**: reading the map to see that two places are two steps apart was the good moment.
+  With no key, 8 of the 9 answers read "我一个人在……，没有别人", nobody's persona shows, and it fills in like a form.
+- **Finding, not changed: a ⚠ on one person's own two answers names the culprit.** Only the culprit lies inside the window,
+  so such a hint leaves nothing to infer, and this game ended that way. A one-off count over 200 daily cases, not in
+  `verify`: such a pair exists in 94/200 = 47.0% [40.2%, 53.9%], and for an innocent in 0/200 [0.0%, 1.9%]. By lie shape:
+  unreachable 48/49, evidence 46/48, companion 0/54, occupied 0/49. It counts what a case allows, not what players do.

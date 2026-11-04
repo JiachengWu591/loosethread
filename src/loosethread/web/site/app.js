@@ -530,7 +530,7 @@ async function open() {
     const reply = await call("start", seed, ui.lang, store.get(saveName));
     if (!take(reply)) { bootFailed(); return; }
     if (reply.restore_failed) ui.notice = t("restoreFailed");
-    ui.scrollDown = true;
+    ui.scrollDown = !reply.state.ending;  // a finished game opens at its ending, on top
     draw();
   });
 }

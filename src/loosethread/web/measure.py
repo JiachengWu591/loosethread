@@ -39,7 +39,7 @@ from loosethread.study.tables import line_measures, rate, score_rq2
 from loosethread.web.browser_chat import BrowserChat
 from loosethread.web.session import BACKEND, WebSession
 
-P4_CAP_CNY = 5.0  # D-043
+P4_CAP_CNY = 5.0  # D-043, for every row in `web-*.jsonl`
 ROWS = Path("results/rows")
 LINES_ROWS = ROWS / "web-lines-r1.jsonl"
 COST_ROWS = ROWS / "web-cost-r1.jsonl"
