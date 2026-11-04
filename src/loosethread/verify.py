@@ -22,6 +22,7 @@ from loosethread.study import checks, control, figure, rq1, tables
 from loosethread.study.cases import held_out, study_case
 from loosethread.study.metered import CAP_CNY
 from loosethread.study.tables import rate
+from loosethread.web.measure import COST_ROWS, LINES_ROWS, cost_table, lines_table, spent_so_far
 
 RESULTS = Path("results")
 ROWS = RESULTS / "rows"
@@ -181,6 +182,14 @@ def owner_tables() -> list[str]:
     return lines
 
 
+def lines_check_tables() -> list[str]:
+    return lines_table(_rows(LINES_ROWS.name), _rows("study-rq2-pilot-r1.jsonl"))
+
+
+def web_cost_tables() -> list[str]:
+    return cost_table(_rows(COST_ROWS.name), spent_so_far())
+
+
 def _spend_group(name: str) -> str:
     if "-tune" in name or "-pilot" in name or "check" in name:
         return "tuning, pilot and checks"
@@ -226,6 +235,8 @@ TABLES: dict[str, tuple[str, Callable[[], Sequence[str]]]] = {
     "spend.md": ("Spending", spend_tables),
     "parser.md": ("Parser on the frozen test set (P2)", parser_tables),
     "simulated-player.md": ("Simulated players (P1, P2)", simulated_tables),
+    "lines-check.md": ("The lines before and after CP-12 (P4)", lines_check_tables),
+    "web-cost.md": ("What a game costs with a model (P4)", web_cost_tables),
 }
 
 

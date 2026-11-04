@@ -20,6 +20,7 @@ from loosethread.npc import BackendUnavailable
 from loosethread.web import bridge
 from loosethread.web.browser_chat import BrowserChat, KeyRejected, ModelMissing
 from loosethread.web.build import bundled_files, pack_package
+from loosethread.web.measure import cost_table, play_game, script
 from loosethread.web.session import (
     MAX_QUESTION,
     SavedGame,
@@ -453,6 +454,54 @@ def test_an_unexpected_failure_is_reported_by_its_type_only() -> None:
 def test_restoring_says_when_a_save_was_dropped() -> None:
     assert _reply(bridge.start(SEED, "zh", "{"))["restore_failed"] is True
     assert _reply(bridge.start(SEED, "zh", ""))["restore_failed"] is False
+
+
+# --- Measuring -------------------------------------------------------------------------------
+
+
+def test_the_cost_game_charges_the_budget_and_records_what_it_spent() -> None:
+    reply = json.dumps(
+        {
+            "choices": [{"message": {"content": "{}"}, "finish_reason": "stop"}],
+            "usage": {"prompt_tokens": 100, "completion_tokens": 10},
+        }
+    )
+    wire = _Wire(*[(200, reply)] * 200)
+    session = WebSession(SEED, Lang.EN)
+    session.use_model(_chat(wire))
+    row = play_game(session)  # the model reads nothing, so every turn is a free "please rephrase"
+    assert row["charged"] == 0
+    assert row["calls"] == row["turns"] * 2
+    assert row["prompt_tokens"] == row["calls"] * 100
+    assert len(row["turn_seconds"]) == row["turns"]
+    assert session.game.verdict is not None
+
+
+def test_the_script_holds_a_repeat_and_small_talk_and_stays_inside_the_budget() -> None:
+    session = WebSession(SEED, Lang.ZH)
+    turns = script(session)
+    assert turns[3] == turns[0]
+    assert "你在哪" not in turns[6][1]
+    row = play_game(session)
+    assert row["charged"] <= session.game.budget
+    assert row["charged"] < row["turns"]  # some of its turns are free
+
+
+def test_the_cost_table_says_what_it_measured() -> None:
+    row = {
+        "model": "m",
+        "commit": "abcdef1",
+        "cost_cny_max": 0.1,
+        "charged": 12,
+        "calls": 28,
+        "turns": 14,
+        "turn_seconds": [1.0, 2.0],
+        "problems": ["line_unauthorised:x", "parser_unavailable:y"],
+    }
+    text = "\n".join(cost_table([row], 0.5))
+    assert "at commit abcdef1" in text
+    assert "1/14" in text
+    assert "CNY 0.50 of 5.00" in text
 
 
 # --- Build and page --------------------------------------------------------------------------

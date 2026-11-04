@@ -17,5 +17,6 @@ Start with `docs/REPORT.md`, which says what these results do and do not show.
 | `owner-checks.md` | The reviews and the blind rating, and who did each |
 | `spend.md` | Study spending, upper bound |
 | `parser.md`, `simulated-player.md` | Results from earlier phases |
+| `lines-check.md`, `web-cost.md` | P4: the lines before and after CP-12, and what a game costs with a model |
 
 License: CC BY 4.0 (see `LICENSE-CONTENT.md`).

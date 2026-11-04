@@ -43,7 +43,7 @@ _RESERVE = 0.02  # CNY: more than any one turn has cost in these runs
 type Row = dict[str, Any]
 
 
-def _spent() -> float:
+def spent_so_far() -> float:
     total = 0.0
     for path in sorted(ROWS.glob("web-*.jsonl")):
         total += sum(float(r.get("cost_cny_max", 0.0)) for r in read_rows(path))
@@ -103,7 +103,7 @@ def run_cost() -> list[Row]:
     from loosethread.llm.client import open_model  # noqa: PLC0415
 
     model = open_model(BACKEND)
-    spend = Spend(P4_CAP_CNY, _spent())
+    spend = Spend(P4_CAP_CNY, spent_so_far())
     metered = Metered(model, model.backend.cost, spend)
     commit = commit_now()
     rows: list[Row] = []
@@ -133,7 +133,7 @@ def run_lines() -> list[Row]:
     from loosethread.llm.client import open_model  # noqa: PLC0415
 
     model = open_model(BACKEND)
-    spend = Spend(min(P4_CAP_CNY, _spent() + 1.0), _spent())
+    spend = Spend(min(P4_CAP_CNY, spent_so_far() + 1.0), spent_so_far())
     bench = Bench(
         Metered(model, model.backend.cost, spend),
         model.backend.cost,
@@ -210,8 +210,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         before = read_rows(ROWS / "study-rq2-pilot-r1.jsonl")
         print("\n".join(lines_table(rows, before)))
     else:
-        print("\n".join(cost_table(run_cost(), _spent())))
-    print(json.dumps({"p4_spent_cny_max": round(_spent(), 4)}))
+        print("\n".join(cost_table(run_cost(), spent_so_far())))
+    print(json.dumps({"p4_spent_cny_max": round(spent_so_far(), 4)}))
     return 0
 
 

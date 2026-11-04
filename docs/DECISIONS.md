@@ -1214,3 +1214,41 @@ directly.
   - By hand: a whole game on the desktop layout, part of one at 375 px wide with no sideways page scroll. It has not been
     tried on a real phone.
 - **Found by playing it**: a stray `null` in the confirmation, and the stars printed twice. Both fixed.
+
+## D-045 — CP-12 done, and what a game costs
+
+- **Date**: 2026-11-04 · **Type**: carries out CP-12 option B; the measurements D-043 planned. CP-12 ran before the cost
+  measurement, not after it as first listed, since it changes what the cost is of.
+- **What changed in the lines, and nothing else**: a line says a slot's start ("At 20:15"), where it gave the span
+  ("Between 20:15 and 20:30", "20:15–20:30"). The writer's prompt drops the span too. A repeat no longer has one fixed
+  opening: templates draw one of three by speaker and slot, and the writer is told to use the persona's own words and
+  no stock phrase. The status line under each answer still shows the whole slot. The notebook and the answers' facts do
+  not change, and neither does anything in `results/` that P3 produced: `verify` stayed clean through the change.
+- **Regression** (`results/lines-check.md`): arm B on the pilot's 10 development cases, 80 turns, against the pilot's rows.
+
+  | | Pilot | After CP-12 |
+  |---|---|---|
+  | Sessions with a failure | 0/10 [0.0%, 27.8%] | 0/10 [0.0%, 27.8%] |
+  | Valid answers | 60/60 [94.0%, 100%] | 60/60 [94.0%, 100%] |
+  | Lines the template replaced | 0/80 [0.0%, 4.6%] | 0/80 [0.0%, 4.6%] |
+  | Sentences repeating one in the session | 18/104, 17.3% [11.2%, 25.7%] | 11/100, 11.0% [6.3%, 18.6%] |
+  | Median line, zh characters / en words | 29 / 13 | 22 / 11 |
+
+  Ten cases show that nothing broke and cannot show a small harm. The two repeat intervals overlap, so that drop is
+  descriptive. The pilot ran at an earlier commit, so the difference is not CP-12's alone.
+- **Reading 32 pairs by hand**: fewer lines read as a form, and most changes are for the better. There are flaws. One English
+  speaker added "That's the same answer, clockwork", and said it word for word on two turns: at temperature 0, a speaker
+  asked twice in one way gives one line. Some lines now say "九点" for 21:00, which the post-check allows. **Nothing here shows
+  that the lines read better to a person.** The blind rating was not repeated; that question is for the owner's game.
+- **Cost** (`results/web-cost.md`): 20 scripted games, 10 per language, on daily cases, at commit `ff1300e`. Each asks
+  everyone over the theft window until the budget of 12 ends, with one repeat and one bit of small talk: 14 turns and 28
+  model calls.
+  - CNY per game, upper bound: median 0.077, most 0.079, at the prices of 2026-10-31.
+  - Seconds per turn in the model: median 2.2, p95 3.8, most 16.9. The page stays usable meanwhile, since the call blocks
+    only the worker.
+  - Lines the template replaced: 0/280 [0.0%, 1.4%]. Turns that could not reach the model: 0/280 [0.0%, 1.4%].
+  - These calls went through `openai` in Python, with the page's session and prompts. The adapter's path was checked on a
+    fake network and a fake server, and has not yet carried a valid key. A real player's questions differ from a script.
+- **Spending**: CNY 2.16 of the 5 for P4, upper bound: 0.63 for the regression, and the rest for the cost.
+- **Tactical**: `python -m loosethread.web` assembles the site on every start, so that it cannot serve an old one, and takes
+  `--host` to let a phone on the same network try it.

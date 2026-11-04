@@ -205,8 +205,8 @@ Commands below use the package name `loosethread` (originally `alibi`; renamed b
 ## P4 — Web version, daily case, sharing · `in progress`
 
 - **Progress (2026-11-04, branch `p4-web`)**: plan, CP-11 option A and CP-12 option B approved, CNY 5 of model
-  calls (D-043). The spike passed, and the page, daily case, share card and player's key work (D-044). Left: CP-12, cost
-  measured, the owner's game.
+  calls (D-043). The spike passed, and the page, daily case, share card and player's key work (D-044). CP-12 is done and a
+  game costs at most CNY 0.08 (D-045). Left: the owner's game with a valid key, and sign-off on the feel.
 - **Architecture, decided (CP-11)**: a static site with Pyodide, keyless by default, with an optional key of the
   player's own. No hosted demo in P4.
 - **Features**: date → seed, by the player's local date; notebook UI; zh/en toggle; mobile layout; progress that

@@ -4,6 +4,10 @@
 `python -m loosethread.verify` and appears in `results/*.md`. Plan: `docs/STUDY_PLAN.md`. Changes to it: §15 there, and
 `docs/DECISIONS.md` D-035 to D-042.
 
+**The game's lines have changed since.** P4 changed how lines say a time and how a repeat opens (CP-12, D-045). Every
+number here describes the game at the commit in the rows, `7fa7049`, and not the lines it ships now. `results/lines-check.md`
+sets the old and new lines side by side on 10 development cases, which is a regression check and not a repeat of this study.
+
 ## 1. What the results say
 
 The project's thesis (`docs/BRIEF.md` §2) was that *structural isolation, not prompt instructions, keeps LLM NPCs
