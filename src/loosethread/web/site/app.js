@@ -153,7 +153,7 @@ function el(tag, props = {}, ...children) {
     else if (value === true) node.setAttribute(name, "");
     else if (value !== false && value !== null && value !== undefined) node.setAttribute(name, value);
   }
-  for (const child of children.flat()) if (child !== null && child !== undefined && child !== false) node.append(child);
+  for (const child of children.flat(Infinity)) if (child !== null && child !== undefined && child !== false) node.append(child);
   return node;
 }
 
@@ -180,7 +180,7 @@ function notesView(state) {
   if (!notes.statements.length && !denied.length) return el("p", { class: "empty", text: t("noStatements") });
   return [
     section(t("conflicts"), notes.conflicts.length
-      ? notes.conflicts.map((c) => el("div", { class: "conflict" }, el("span", { text: c.text }),
+      ? notes.conflicts.map((c) => el("div", { class: "conflict" }, conflictView(c),
           state.ending ? null : el("button", {
             class: "plain", text: t("useThisPair"),
             onclick: () => openAccuse(c.first, c.second),
@@ -275,7 +275,13 @@ function turnView(turn) {
     el("p", { class: "asked", text: `${turn.speaker} ← ${turn.question}` }),
     el("p", { class: "said" }, el("b", { text: turn.speaker + colon }), turn.line),
     el("p", { class: "status", text: turn.status }),
-    turn.conflicts.map((c) => el("p", { class: "alarm", text: c })));
+    turn.conflicts.map(conflictView));
+}
+
+function conflictView(c) {
+  return el("div", {},
+    el("p", { class: "alarm", text: c.text }),
+    c.said.map((text) => el("p", { class: "status", text })));
 }
 
 function askForm(state) {

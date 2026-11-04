@@ -18,6 +18,7 @@ from loosethread.llm.config import load_backends
 from loosethread.model import Lang
 from loosethread.npc import BackendUnavailable
 from loosethread.web import bridge
+from loosethread.web.__main__ import open_server
 from loosethread.web.browser_chat import BrowserChat, KeyRejected, ModelMissing
 from loosethread.web.build import bundled_files, pack_package
 from loosethread.web.measure import cost_table, play_game, script
@@ -514,6 +515,25 @@ def test_the_bundle_leaves_out_what_a_browser_cannot_or_need_not_run() -> None:
     assert "loosethread/content/mistpine.json" in names
     assert "loosethread/llm/client.py" not in names
     assert not {n for n in names if "/study/" in n or "/site/" in n or "__pycache__" in n}
+
+
+def test_a_second_server_on_a_port_in_use_fails_rather_than_shares_it(tmp_path: Path) -> None:
+    first = open_server("127.0.0.1", 0, tmp_path)
+    try:
+        with pytest.raises(OSError):  # noqa: PT011
+            open_server("127.0.0.1", first.server_address[1], tmp_path)
+    finally:
+        first.server_close()
+
+
+def test_a_contradiction_says_what_its_two_ids_stand_for() -> None:
+    session = _solvable()
+    _everyone(session)
+    card = next(t for t in session.state().turns if t.conflicts)
+    conflict = card.conflicts[0]
+    assert conflict.first in conflict.text
+    assert conflict.said[0].startswith(conflict.first + " ")
+    assert conflict.said[1].startswith(conflict.second + " ")
 
 
 def test_the_bundle_is_the_same_bytes_on_every_build(tmp_path: Path) -> None:

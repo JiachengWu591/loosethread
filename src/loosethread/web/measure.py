@@ -2,6 +2,7 @@
 
 python -m loosethread.web.measure lines  # CP-12: arm B on the pilot's 10 cases, beside the pilot
 python -m loosethread.web.measure cost   # 20 scripted games through `WebSession`, 10 per language
+python -m loosethread.web.measure adapter  # the page's own request code against the real API
 
 Rows go to `results/rows/web-*.jsonl`, apart from the study's, whose budget is closed. D-043 allows
 CNY 5 for all of P4, and the guard stops before the running upper bound passes it. It cannot count a
@@ -10,12 +11,16 @@ game the owner plays with their own key, which costs them and is not in these ro
 
 import argparse
 import json
+import os
 import statistics
 import sys
-from collections.abc import Sequence
+import urllib.error
+import urllib.request
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
+from loosethread.llm.config import load_backends
 from loosethread.model import Lang, PersonId
 from loosethread.npc import Usage
 from loosethread.stats import percentile
@@ -31,6 +36,7 @@ from loosethread.study.run import (
     write_rows,
 )
 from loosethread.study.tables import line_measures, rate, score_rq2
+from loosethread.web.browser_chat import BrowserChat
 from loosethread.web.session import BACKEND, WebSession
 
 P4_CAP_CNY = 5.0  # D-043
@@ -129,6 +135,56 @@ def run_cost() -> list[Row]:
     return rows
 
 
+def _plain_send(
+    method: str, url: str, headers: Mapping[str, str], body: str | None, timeout: float
+) -> tuple[int, str]:
+    """What `xhr_send` does in a browser, for a run outside one. A failed reply is dropped."""
+    data = None if body is None else body.encode("utf-8")
+    request = urllib.request.Request(url, data, dict(headers), method=method)
+    try:
+        with urllib.request.urlopen(request, timeout=timeout) as reply:
+            return int(reply.status), reply.read().decode("utf-8")
+    except urllib.error.HTTPError as err:
+        return int(err.code), ""
+    except OSError:
+        return 0, ""
+
+
+def run_adapter() -> list[Row]:
+    """`BrowserChat`'s request against the real API, with the key from the environment, and a real
+    game on top. It shows the API accepts what the page's code sends and the code reads the reply.
+    It cannot show that a browser sends it the same way: only a game in a browser can."""
+    backend = load_backends()[BACKEND]
+    key = os.environ.get(backend.api_key_env, "")
+    if not key:
+        raise SystemExit(f"environment variable {backend.api_key_env} is not set")
+    chat = BrowserChat(backend, key, _plain_send)
+    chat.check_model()
+    session = WebSession(20261108, Lang.ZH)
+    session.use_model(chat)
+    people = sorted(session.game.case.view.suspects)
+    for person, text in (
+        (people[0], "八点一刻你在哪？"),
+        (people[1], "你八点半跟谁在一起？"),
+        (people[0], "八点一刻你到底在哪？"),
+    ):
+        session.ask(person, text)
+    game = session.game
+    usage = Usage(prompt_tokens=session.prompt_tokens, completion_tokens=session.completion_tokens)
+    row = {
+        "commit": commit_now(),
+        "model": backend.model,
+        "turns": len(game.turns),
+        "charged": game.used,
+        "calls": sum(t.parse_usage.calls + t.line_usage.calls for t in game.turns),
+        "problems": [p for t in game.turns for p in t.problems],
+        "lines": [t.line for t in game.turns],
+        "cost_cny_max": round(backend.cost(usage), 6),
+    }
+    write_rows(ROWS / "web-adapter-r1.jsonl", [row])
+    return [row]
+
+
 def run_lines() -> list[Row]:
     from loosethread.llm.client import open_model  # noqa: PLC0415
 
@@ -201,11 +257,13 @@ def cost_table(rows: Sequence[Row], spent: float) -> list[str]:
 
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="python -m loosethread.web.measure", description=__doc__)
-    parser.add_argument("run", choices=["lines", "cost"])
+    parser.add_argument("run", choices=["lines", "cost", "adapter"])
     args = parser.parse_args(argv)
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
-    if args.run == "lines":
+    if args.run == "adapter":
+        print(json.dumps(run_adapter(), ensure_ascii=False, indent=1))
+    elif args.run == "lines":
         rows = run_lines()
         before = read_rows(ROWS / "study-rq2-pilot-r1.jsonl")
         print("\n".join(lines_table(rows, before)))

@@ -22,6 +22,7 @@ from loosethread.llm.config import load_backends
 from loosethread.llm.parser import LLMParser
 from loosethread.llm.writer import LLMWriter
 from loosethread.model import (
+    Evidence,
     ItemId,
     Lang,
     LocationId,
@@ -197,7 +198,7 @@ class TurnCard:
     line: str
     status: str
     cost: int
-    conflicts: tuple[str, ...]
+    conflicts: tuple["Conflict", ...]
     denial: bool
 
 
@@ -212,6 +213,7 @@ class Conflict:
     first: str
     second: str
     text: str
+    said: tuple[str, str]  # what the two ids stand for, so that nobody has to go and look them up
 
 
 @dataclass(frozen=True)
@@ -397,8 +399,20 @@ class WebSession:
             turn.line,
             status_of(turn, world, lang),
             turn.cost,
-            tuple(conflict_text(a, b, lang) for a, b in turn.new_conflicts),
+            tuple(self._conflict(a, b, lang) for a, b in turn.new_conflicts),
             turn.stance is Stance.DENY,
+        )
+
+    def _item_text(self, note_id: str, lang: Lang) -> str:
+        item = self.game.notebook.lookup(note_id)
+        if isinstance(item, Evidence):
+            return f"{note_id} {item.text.get(lang)}"
+        assert item is not None  # the notebook gave this id
+        return f"{note_id} {describe(item, self.game.case.view.world, lang)}"
+
+    def _conflict(self, a: str, b: str, lang: Lang) -> Conflict:
+        return Conflict(
+            a, b, conflict_text(a, b, lang), (self._item_text(a, lang), self._item_text(b, lang))
         )
 
     def _notes(self, lang: Lang) -> Notes:
@@ -409,7 +423,7 @@ class WebSession:
             grid,
             extras,
             tuple(Note(i, describe(s, world, lang)) for i, s in book.statements),
-            tuple(Conflict(a, b, conflict_text(a, b, lang)) for a, b in book.conflicts()),
+            tuple(self._conflict(a, b, lang) for a, b in book.conflicts()),
         )
 
     def _ending(self, lang: Lang) -> Ending | None:

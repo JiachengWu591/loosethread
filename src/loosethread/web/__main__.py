@@ -10,6 +10,7 @@ types are set here because `mimetypes` reads the Windows registry, which may cal
 
 import argparse
 import contextlib
+import sys
 from collections.abc import Sequence
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
@@ -29,6 +30,11 @@ _TYPES = {
 }
 
 
+class _Server(ThreadingHTTPServer):
+    # On Windows this flag lets a second server share a port in use, and neither says so.
+    allow_reuse_address = sys.platform != "win32"
+
+
 class _Handler(SimpleHTTPRequestHandler):
     def guess_type(self, path: str | PathLike[str]) -> str:
         return _TYPES.get(Path(path).suffix, "application/octet-stream")
@@ -41,13 +47,22 @@ class _Handler(SimpleHTTPRequestHandler):
         pass
 
 
+def open_server(host: str, port: int, site: Path) -> _Server:
+    return _Server((host, port), partial(_Handler, directory=str(site)))
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="python -m loosethread.web", description=__doc__)
     parser.add_argument("--port", type=int, default=8000)
     parser.add_argument("--host", default="127.0.0.1")
     args = parser.parse_args(argv)
     site = build()  # every time, so that it cannot serve an old copy
-    server = ThreadingHTTPServer((args.host, args.port), partial(_Handler, directory=str(site)))
+    try:
+        server = open_server(args.host, args.port, site)
+    except OSError:
+        print(f"Port {args.port} is in use, perhaps by another copy of the game. Stop it, or use")
+        print(f"python -m loosethread.web --port {args.port + 1}")
+        return 1
     print(f"Loose Thread: http://{args.host}:{args.port}  (Ctrl-C to stop)", flush=True)
     with contextlib.suppress(KeyboardInterrupt):
         server.serve_forever()
