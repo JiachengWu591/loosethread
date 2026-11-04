@@ -1325,3 +1325,58 @@ directly.
   will first run on the push.
 - **Consequences**: P5 does not start by itself. Before it: re-read ROADMAP and DECISIONS, restate the plan in at most ten lines,
   flag deviations, and wait for the owner's OK.
+
+## D-049 — P5 begins: plan approved, with a play link
+
+- **Date**: 2026-11-04 · **Type**: strategic, approved by the owner in chat ("都按建议"): the restated P5 plan, CP-14 option A, and
+  branch `p5-release`.
+- **Plan**: re-search related work and check the name; licenses and third-party notices; version 0.1.0, CHANGELOG, CITATION; a
+  privacy note linked from the page; the README rewrite; the Pages workflow; a clean-environment check, locally and in CI; the
+  owner's checks with a valid key, on a real phone and from mainland China; itch.io copy, release notes and upload checklist.
+  Exit criteria are unchanged. Tags and publishing wait for the owner.
+- **Decided with it**
+  - Third-party notices, which the roadmap did not list: the site distributes Pyodide (MPL-2.0) and CPython.
+  - No desktop packaging. It was optional, and the page makes it worth little, so it gets no ADR.
+  - No model budget, since no model call is planned. The owner's own game uses their own key.
+  - The GIF shows keyless play, since I do not type a real key into a page. The README quotes a few real model lines from
+    `results/rows/`, and says where they come from.
+- **Known limit, stated in the README**: a visitor with no key plays rules and templates and never sees a model. A hosted demo
+  needs a server and a budget, and stays out of P5. It may be the first thing worth revisiting after release.
+
+## D-050 — Re-search before release: no novelty claim, and the name stands for now
+
+- **Date**: 2026-11-04 · **Type**: tactical, with one point the owner may overrule. Details: `docs/RELATED_WORK.md`.
+- **Search**: no new game or paper found that does the same thing, so nothing here triggers a re-plan. Several projects now sit
+  close: AI Alibis (a reviser over one authored story), Hex Judge (a local LLM, zh), and more LLM interrogation games than in
+  October. Pages read say nothing about a solvability check or a leak measurement, and silence on a page shows little.
+- **Hard rule stays in force**: a few searches cannot support "first" or "novel", so the release copy says what this project does
+  and measured, and claims nothing about others.
+- **A paper found after P3**: Holtzman & West (2026) saw secrets in a prompt leak by theme through long stories, at up to 79%
+  detection, without one verbatim mention, and not in short writing. It is added to related work, and the signed-off report is left
+  as it is. It reads with RQ3 in this way: A's 0/200 was measured on short lines by exact match and a judge, and neither looked for
+  a thematic channel.
+- **Name**: more on itch.io than D-001 recorded, including two detective games, Loose Threads (Cheesebear Games, GGJ21) and No Loose
+  Threads (SoysCodingCafe). A LOOSE THREADS trademark filing turned up too, and its page could not be opened. I recommend keeping 破绽 /
+  Loose Thread: it is free on PyPI and Steam, the Chinese name is what most players will meet, and the copy will use the two together.
+  This is no legal opinion. A search of USPTO TSDR, EUIPO and CNIPA is on the owner's upload checklist.
+
+## D-051 — What the release ships, and in what order
+
+- **Date**: 2026-11-04 · **Type**: tactical, inside D-049 and CP-14.
+- **Licenses**: `LICENSE-CC-BY-4.0.txt`, fetched unchanged from creativecommons.org (D-003). The site carries `NOTICES.txt` and `licenses/`,
+  with MPL 2.0 and CPython's license fetched from their sources, since it distributes both. This is my reading of what those
+  licenses ask, and no legal opinion.
+- **The order is forced**: a workflow can be run by hand only once it is on `main`, and a tag can deploy only if the `github-pages`
+  environment allows it. So: merge, turn Pages on, run by hand, do the owner's three checks on the live page, and only then tag.
+  `docs/release/upload-checklist.md` sets this out.
+- **The share card links to the play page**, which is not online until that first run.
+- **A wording change**: the ending said "this case can be solved in 3" after a win in 2, seen while recording. `min_questions` says what is
+  enough to prove the answer, and a player can get there sooner by guessing who lies, so it now says "3 are enough to prove the answer".
+- **The README's evidence** follows the report, including what failed, and no number in it is new. The line comparison uses model lines from
+  the rows, with the templates' lines for those turns computed by playing the same questions. The GIF is a game played in the browser,
+  in a case picked for a quick contradiction, by someone who knew the culprit. It shows how the page works and nothing about how hard a case is.
+- **Checks**
+  - `tests/readme_check.py`, a CI job of its own: runs the README's web, terminal and `verify` commands on a fresh machine with no extras, and
+    checks the site's files and types. It cannot show that a browser plays the game.
+  - Not checked before merging: the Pages workflow, which can only run from `main`; the page on any host but this machine; and itch.io.
+- **Not tagged, not published**: those wait for the owner (`CLAUDE.md`).

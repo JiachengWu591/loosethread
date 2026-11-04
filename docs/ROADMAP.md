@@ -11,7 +11,7 @@ All numeric thresholds are provisional and may only change through the process i
 | P2 | NPC pipeline and CLI playable | done |
 | P3 | Evaluation study | done |
 | P4 | Web version, daily case, sharing | done |
-| P5 | Release v0.1.0 | planned |
+| P5 | Release v0.1.0 | in progress |
 
 Commands below use the package name `loosethread` (originally `alibi`; renamed by D-001).
 
@@ -220,13 +220,17 @@ Commands below use the package name `loosethread` (originally `alibi`; renamed b
 - **Exit criteria**: a full session playable in a local browser; per-session cost measured; the owner
   signs off on the feel.
 
-## P5 — Release v0.1.0 · `planned`
+## P5 — Release v0.1.0 · `in progress`
 
+- **Progress (2026-11-04, branch `p5-release`)**: plan and CP-14 option A approved (D-049). Related work re-searched, name checked (D-050).
+  Licenses, notices, CHANGELOG, CITATION, privacy note, README, Pages workflow, a clean-run check and the release materials are done
+  (D-051). Left: merge, the owner's checks on the live page, the tag and the uploads (`docs/release/upload-checklist.md`).
+- **Play link (CP-14)**: GitHub Pages, deployed on a tag or by hand, beside itch.io.
 - **Work**: bilingual README (first-screen GIF, one-command run, problem–method–evidence–limitations);
   LICENSE with code and content licenses explained separately — **vendor the full CC BY 4.0 legal
   code** (added 2026-10-30, see D-003); CHANGELOG and CITATION.cff; privacy note (what is sent to model
   providers); itch.io page copy and screenshots, release notes; re-run the RELATED_WORK search and the
   name check before release. Before release, also play once with a valid key in a real browser and once on a real phone,
   and try the page from mainland China (D-043, D-048).
-- **Optional**: desktop packaging (PyInstaller, Tauri, …; ADR first).
+- **Dropped**: desktop packaging, which was optional (D-049).
 - **Exit criteria**: runs from the README in a clean environment; upload checklist handed to the owner.

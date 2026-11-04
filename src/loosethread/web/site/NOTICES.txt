@@ -1,0 +1,19 @@
+破绽 / Loose Thread: notices
+
+THIS GAME
+Code: MIT License, licenses/LICENSE-MIT.txt.
+Content (the cases' people, places, items and text): Creative Commons Attribution 4.0 International,
+https://creativecommons.org/licenses/by/4.0/ . Attribution: "破绽 / Loose Thread, by Jiacheng Wu".
+Source: https://github.com/JiachengWu591/loosethread
+
+THIRD-PARTY SOFTWARE SHIPPED WITH THIS PAGE
+Pyodide 314.0.7, in the folder pyodide/: Mozilla Public License 2.0, licenses/MPL-2.0.txt.
+This is an unmodified copy of Pyodide's own release files. Its source is at
+https://github.com/pyodide/pyodide/tree/314.0.7
+
+CPython 3.14.2, built into pyodide/pyodide.asm.wasm and pyodide/python_stdlib.zip:
+Python Software Foundation License and the other terms in licenses/CPython-LICENSE.txt.
+Its source is at https://github.com/python/cpython/tree/v3.14.2
+
+The Pyodide runtime is built with Emscripten and holds other libraries under their own licenses.
+Pyodide's source, above, shows which.

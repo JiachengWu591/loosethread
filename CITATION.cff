@@ -1,0 +1,20 @@
+cff-version: 1.2.0
+message: "If you use this software or its evaluation, please cite it as below."
+type: software
+title: "破绽 / Loose Thread"
+abstract: >-
+  A Chinese-first, bilingual deduction game with solver-checked cases, in which suspects are voiced
+  by an LLM behind a layered pipeline, with a reproducible study of what that pipeline does and
+  costs.
+authors:
+  - family-names: "Wu"
+    given-names: "Jiacheng"
+version: "0.1.0"
+license: MIT
+repository-code: "https://github.com/JiachengWu591/loosethread"
+url: "https://jiachengwu591.github.io/loosethread/"
+keywords:
+  - LLM
+  - game AI
+  - prompt injection
+  - procedural generation

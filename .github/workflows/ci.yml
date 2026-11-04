@@ -34,3 +34,16 @@ jobs:
           LOOSETHREAD_WEB_CHECK: "1"  # the Pyodide build must match, not be skipped
       - name: Every table comes from its rows
         run: uv run python -m loosethread.verify
+
+  # The roadmap's exit criterion: it runs from the README in a clean environment.
+  follow-the-readme:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - name: Run what the README says, with no extras installed
+        run: uv run python tests/readme_check.py

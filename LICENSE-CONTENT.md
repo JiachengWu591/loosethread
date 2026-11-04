@@ -14,5 +14,8 @@ Attribution: "破绽 / Loose Thread, by Jiacheng Wu".
 All cases, characters, places and organizations are fictional. Any resemblance to real
 persons, brands or institutions is coincidental.
 
-> The full CC BY 4.0 legal code will be vendored from creativecommons.org before the
-> v0.1.0 release (tracked in `docs/ROADMAP.md`, Phase 5).
+The full legal code is in `LICENSE-CC-BY-4.0.txt`, unchanged from
+<https://creativecommons.org/licenses/by/4.0/legalcode.txt>.
+
+The browser version also ships third-party software under its own licenses: see
+`src/loosethread/web/site/NOTICES.txt`.

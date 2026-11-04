@@ -20,7 +20,7 @@ from loosethread.npc import BackendUnavailable
 from loosethread.web import bridge
 from loosethread.web.__main__ import open_server
 from loosethread.web.browser_chat import BrowserChat, KeyRejected, ModelMissing
-from loosethread.web.build import bundled_files, pack_package
+from loosethread.web.build import PYODIDE_VERSION, bundled_files, pack_package
 from loosethread.web.measure import cost_table, play_game, script
 from loosethread.web.session import (
     MAX_QUESTION,
@@ -351,7 +351,7 @@ def test_the_share_card_holds_no_answer_in_any_outcome(lang: Lang) -> None:
         rf"^(破绽 案件|Loose Thread case) #\d+ (★{{1,3}}|☆|✗)( 困难| hard)?\n"
         rf"\d+/\d+ (问|questions)\n"
         rf"[{NOTHING_NEW}{NEW_FACT}{CONTRADICTION}]*\n?"
-        rf"github\.com/JiachengWu591/loosethread$"
+        rf"jiachengwu591\.github\.io/loosethread$"
     )
     seen = set()
     for seed in range(SEED, SEED + 12):
@@ -628,6 +628,22 @@ def test_a_contradiction_says_what_its_two_ids_stand_for() -> None:
     assert conflict.first in conflict.text
     assert conflict.said[0].startswith(conflict.first + " ")
     assert conflict.said[1].startswith(conflict.second + " ")
+
+
+def test_the_site_ships_its_notices_and_they_name_what_it_ships() -> None:
+    notices = (SITE / "NOTICES.txt").read_text(encoding="utf-8")
+    assert f"Pyodide {PYODIDE_VERSION}" in notices
+    assert f"pyodide/tree/{PYODIDE_VERSION}" in notices
+    for name in ("LICENSE-MIT.txt", "MPL-2.0.txt", "CPython-LICENSE.txt"):
+        assert f"licenses/{name}" in notices
+        assert (SITE / "licenses" / name).stat().st_size > 500
+    root = Path(loosethread.__file__).parents[2]
+    ours = (SITE / "licenses" / "LICENSE-MIT.txt").read_text(encoding="utf-8")
+    assert ours == (root / "LICENSE").read_text(encoding="utf-8")
+
+
+def test_the_state_says_which_version_it_is() -> None:
+    assert WebSession(SEED, Lang.ZH).state().version == loosethread.__version__
 
 
 def test_the_bundle_is_the_same_bytes_on_every_build(tmp_path: Path) -> None:

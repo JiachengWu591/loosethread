@@ -10,7 +10,7 @@ from loosethread.game import Outcome, Turn, Verdict
 from loosethread.model import Lang
 
 NOTHING_NEW, NEW_FACT, CONTRADICTION = "⬜", "🟨", "🟥"
-LINK = "github.com/JiachengWu591/loosethread"
+LINK = "jiachengwu591.github.io/loosethread"  # the play page (CP-14)
 
 
 def squares(turns: Sequence[Turn]) -> str:

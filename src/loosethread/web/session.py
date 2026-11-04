@@ -13,6 +13,7 @@ import json
 from dataclasses import asdict, dataclass, field
 from typing import Any
 
+from loosethread import __version__
 from loosethread.case import Grid, Sheet, TruthParts, notebook_grid, sheet_parts, truth_parts
 from loosethread.game import AccusationError, Game, GameOver, Turn
 from loosethread.generator import daily_case
@@ -240,6 +241,7 @@ class Ending:
 
 @dataclass(frozen=True)
 class State:
+    version: str
     seed: int
     lang: str
     mode: str  # "rules", or "model" with the player's own key
@@ -473,6 +475,7 @@ class WebSession:
         game, lang = self.game, self.game.lang
         spent = Usage(prompt_tokens=self.prompt_tokens, completion_tokens=self.completion_tokens)
         return State(
+            __version__,
             self.seed,
             lang.value,
             self.mode,

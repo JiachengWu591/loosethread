@@ -1,11 +1,11 @@
 [project]
 name = "loosethread"
-version = "0.0.0"
+version = "0.1.0"
 description = "破绽 / Loose Thread: a Chinese-first bilingual deduction game where LLM-voiced suspects are structurally isolated from the truth."
 readme = "README.md"
 requires-python = ">=3.12"
 license = "MIT"
-license-files = ["LICENSE", "LICENSE-CONTENT.md"]
+license-files = ["LICENSE", "LICENSE-CONTENT.md", "LICENSE-CC-BY-4.0.txt"]
 authors = [{ name = "Jiacheng Wu" }]
 classifiers = [
     "Programming Language :: Python :: 3",

@@ -1,0 +1,35 @@
+name: Pages
+
+# Puts the browser version online (CP-14). It runs on a version tag or by hand, so that what is online
+# is a release, or what the owner chose to try. The repository's Pages source must be GitHub Actions,
+# and the github-pages environment must allow the tag: see docs/release/upload-checklist.md.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - name: Build the browser version
+        run: uv run python -m loosethread.web.build
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: dist/web
+      - id: deployment
+        uses: actions/deploy-pages@v5

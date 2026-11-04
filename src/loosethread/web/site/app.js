@@ -7,6 +7,7 @@ const TEXT = {
     brand: "破绽", caseNo: "案件", left: "还剩", asks: "问",
     ask: "问", accuse: "指认", notebook: "笔记", sheet: "案情", evidence: "证物", map: "地图", rules: "规则", talk: "审讯",
     goal: "目标：找出犯人，并拿出两条不能同时成立的记录，揭穿犯人的谎。同一时段多问几个人，说法对不上时会亮 ⚠。一次问一个人、一个时段。没听懂的、问过的、闲聊不花次数。问得越少，星越多。",
+    about: "关于", sourceLink: "源码", reportLink: "评估报告：做到了什么、没做到什么", privacyLink: "隐私说明", noticesLink: "许可与第三方声明",
     goalHard: "目标：找出犯人，并拿出两条不能同时成立的记录，揭穿犯人的谎。困难模式不会提示矛盾，要自己对照笔记和地图。一次问一个人、一个时段。没听懂的、问过的、闲聊不花次数。问得越少，星越多。",
     hardOff: "困难模式：关", hardOn: "困难模式：开", hardTag: "困难", hardWhy: "开启后不提示矛盾，要自己对照笔记和地图。开始提问后不能再改。", hardNoHints: "困难模式：不提示矛盾。",
     started: "开始提问后不能再改困难模式。",
@@ -38,7 +39,8 @@ const TEXT = {
     brand: "Loose Thread", caseNo: "Case", left: "", asks: "left",
     ask: "Ask", accuse: "Accuse", notebook: "Notebook", sheet: "The case", evidence: "Evidence", map: "Map", rules: "Rules", talk: "Questions",
     goal: "Goal: name the culprit, with two items that cannot both be true, to expose their lie. Ask several people about the same time; ⚠ shows when their stories clash. One person and one time per question. Unclear questions, repeats and small talk are free. Fewer questions earn more stars.",
-    goalHard: "Goal: name the culprit, with two items that cannot both be true, to expose their lie. Hard mode shows no contradiction hints, so check the notebook and the map yourself. One person and one time per question. Unclear questions, repeats and small talk are free. Fewer questions earn more stars.",
+    about: "About", sourceLink: "Source code", reportLink: "The evaluation: what held and what did not", privacyLink: "Privacy", noticesLink: "Licenses and third-party notices",
+    goalHard: "Goal:name the culprit, with two items that cannot both be true, to expose their lie. Hard mode shows no contradiction hints, so check the notebook and the map yourself. One person and one time per question. Unclear questions, repeats and small talk are free. Fewer questions earn more stars.",
     hardOff: "Hard mode: off", hardOn: "Hard mode: on", hardTag: "hard", hardWhy: "No contradiction hints: check the notebook and the map yourself. It cannot change once you start asking.", hardNoHints: "Hard mode: no contradiction hints.",
     started: "Hard mode cannot change once you have started asking.",
     placeholder: "e.g. {example}", thinking: "Asking…", chooseFirst: "Choose someone to ask first.",
@@ -67,6 +69,7 @@ const TEXT = {
   },
 };
 
+const REPO = "https://github.com/JiachengWu591/loosethread";
 const SAVE_PREFIX = "loosethread.game.";
 const LANG_NAME = "loosethread.lang";
 const HARD_NAME = "loosethread.hard";
@@ -228,7 +231,17 @@ function rulesView(state) {
   return [
     section(t("keyRules"), el("ul", { class: "rules" }, state.sheet.key_rules.map((r) => el("li", { text: r })))),
     section(t("allRules"), el("ol", { class: "rules" }, state.sheet.rules.map((r) => el("li", { text: r })))),
+    section(`${t("about")} · v${state.version}`, el("ul", { class: "rules" }, [
+      [t("sourceLink"), REPO],
+      [t("reportLink"), `${REPO}/blob/main/docs/REPORT.md`],
+      [t("privacyLink"), `${REPO}/blob/main/docs/PRIVACY.md`],
+      [t("noticesLink"), "./NOTICES.txt"],
+    ].map(([text, href]) => el("li", {}, outLink(text, href))))),
   ];
+}
+
+function outLink(text, href) {
+  return el("a", { href, target: "_blank", rel: "noopener noreferrer", text });
 }
 
 const TABS = [
@@ -531,6 +544,7 @@ function openModel() {
     el("h2", { text: t("modelTitle") }),
     el("p", { class: "small", text: t("modelWhy") }),
     el("p", { class: "small", text: t("modelPrivacy") }),
+    el("p", { class: "small" }, outLink(t("privacyLink"), `${REPO}/blob/main/docs/PRIVACY.md`)),
     state.mode === "model"
       ? el("div", { class: "row" },
           el("button", { class: "plain", text: t("close"), onclick: () => box.close() }),

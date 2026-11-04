@@ -143,8 +143,8 @@ _UI: dict[str, tuple[str, str]] = {
         "Your notebook had no pair yet that exposes {name}'s lie.",
     ),
     "summary": (
-        "用了 {used}/{budget} 问；这个案子最少 {min} 问能破。",
-        "You used {used}/{budget} questions; this case can be solved in {min}.",
+        "用了 {used}/{budget} 问；这个案子问 {min} 问就足以确定答案。",
+        "You used {used}/{budget} questions; {min} are enough to prove the answer in this case.",
     ),
     "stars_rule": (
         "（本案：★★★ 不超过 {three} 问，★★ 不超过 {two} 问，★ 其余。）",

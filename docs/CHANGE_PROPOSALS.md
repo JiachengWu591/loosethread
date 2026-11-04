@@ -330,3 +330,18 @@ alibi style). Full outputs: `docs/review/p1/batch-naive.txt`, `docs/review/p1/ba
   - C. Stop hinting on one person's own answers. Closest to deduction, but it changes the default difficulty, so the gate
     verdict would need redoing, and beginners may stall.
 - **Recommendation**: B. It is small and can be undone, and it shows whether anyone wants it.
+
+## CP-14 — A link that plays at once · `approved`
+
+- **Decision** (owner, 2026-11-04, "都按建议"): option A. See D-049.
+- **Trigger**: the brief asks that a reviewer grasp the first screen within a minute, and playing now means installing uv and
+  running a command. The site is static: 10 files, a 6.2 MiB zip. The repository is public, and has no Pages site yet.
+- **Impact**: one more way to release, one more workflow, and the share card's link points at the play page. No change to
+  phase order or exit criteria.
+- **Options**
+  - A. GitHub Pages and itch.io. Free, with a play link at the top of the README. It deploys only on a tag or by hand, so what is
+    online matches a release, and the phone and mainland China checks can use it before release. Cost: a workflow to keep, a
+    repository setting for the owner to change, and `github.io` may be unstable in mainland China, which needs measuring.
+  - B. itch.io only. No workflow, but no link until the owner uploads, and no online version to test before release.
+  - C. A local command and a zip only. Least work, but few but developers will try it.
+- **Recommendation**: A.

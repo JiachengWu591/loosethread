@@ -147,6 +147,7 @@ table.grid { border-collapse: collapse; font-size: .82rem; width: 100%; }
 pre.map { font: .85rem/1.35 var(--mono); overflow-x: auto; margin: 0; padding: .6rem; background: var(--sheet); border: 1px solid var(--rule); }
 .rules { margin: 0; padding-left: 1.3rem; }
 .rules li { margin-bottom: .35rem; }
+a { color: var(--thread); }
 
 /* --- Accusation and ending ------------------------------------------------------------------- */
 dialog {

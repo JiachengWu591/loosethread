@@ -27,6 +27,7 @@ _TYPES = {
     ".wasm": "application/wasm",
     ".json": "application/json",
     ".zip": "application/zip",
+    ".txt": "text/plain; charset=utf-8",
 }
 
 
