@@ -18,7 +18,7 @@ dependencies = []
 
 [project.optional-dependencies]
 llm = ["openai>=1.0"]
-# Web stack is chosen by an ADR in Phase 4; intentionally empty until then.
+# The web build runs the package itself in Pyodide (CP-11), so it needs no Python dependency.
 web = []
 dev = ["pytest>=8", "ruff>=0.6", "mypy>=1.11"]
 

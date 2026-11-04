@@ -1157,3 +1157,26 @@ directly.
   has played B's lines, and those lines have a recognisable form, so hiding the arm may not have hidden it.
 - **Sign-off**: the owner passed P3 in chat ("通过，推送合并") after seeing the results and four open items: few checks by
   a person, no real players, B's stiff lines left unhandled, and `verify` not yet run on CI.
+
+## D-043 — P4 begins: static site with Pyodide, keyless by default
+
+- **Date**: 2026-11-04 · **Type**: strategic, approved by the owner in chat ("都按建议"): the restated P4 plan, CP-11
+  option A, CP-12 option B, and branch `p4-web`.
+- **Plan**: a spike first (the core in the browser, the same cases, load time); a session layer `loosethread.web`; the
+  interface; the daily case and share card; a key of the player's own; cost measured over 20 scripted sessions, 10 per
+  language; CP-12's change to the lines; the owner's game and sign-off on the feel. Exit criteria are unchanged.
+- **Budget**: CNY 5 of model calls for all of P4, expected to come to about CNY 2 for the cost measurement and under
+  CNY 1 for CP-12.
+- **Decided with it**
+  - No hosted demo in P4 (CP-11). It stays open for later, and would need a token cap, rate limits and a kill switch.
+  - The daily case follows the player's local date, as the terminal game does, so a date gives everyone the same case.
+  - A player's key stays in memory, and is never written to browser storage. Static hosts can serve many games from
+    one origin, so anything stored might be readable by them.
+  - Progress survives a refresh, which was not in the roadmap: a phone can reload a tab on any app switch.
+- **Deviations**
+  - The owner's rule that DeepSeek goes through the `openai` package cannot hold in a browser. The web build uses a thin
+    adapter. It reuses the parser and writer prompts and the post-check, reads the model name from the config, and
+    lists the models before first use. The terminal game is unchanged.
+  - I do not type a real key into a page, so interface tests use a fake one on a local host, and the owner enters the
+    real one for the game played with a model. Cost comes from scripted sessions with the key from the environment.
+- **Left for P5**: whether itch.io and GitHub Pages can be reached quickly from mainland China has not been measured.

@@ -270,3 +270,47 @@ alibi style). Full outputs: `docs/review/p1/batch-naive.txt`, `docs/review/p1/ba
   - C. B, plus multi-turn attacks or a second model. Cost: past the cap, or days of local runs; a plan of its own.
 - **Recommendation**: B. A null result with no positive control is hard to read, and this one is cheap. C is
   worth doing only as later work.
+
+## CP-11 — P4 architecture and hosting · `approved`
+
+- **Decision** (owner, 2026-11-04, "都按建议"): option A. See D-043.
+- **Trigger**: the roadmap asks for these choices before P4. Facts checked on 2026-11-04:
+  - itch.io's HTML5 option hosts static files only, up to 1,000 files and 500 MB extracted, so it cannot run a Python
+    backend.
+  - The core is stdlib-only. `daily_case` takes a median of 0.02 s and at most 0.25 s on 30 seeds under CPython.
+  - The Pyodide 314.0.7 core archive is 6.4 MiB, and its size once unpacked is not measured yet.
+  - A keyless preflight from an itch.io origin succeeds on DeepSeek's chat and models endpoints, and a keyless POST
+    returns 401 with the CORS header. No call with a key has been made from a browser yet.
+  - The rule parser scores 89.2% [83.2%, 93.2%] and DeepSeek 93.2% [88.0%, 96.3%] on the frozen set, exact p = 0.18,
+    on Mistpine names only.
+- **Impact**: the stack of P4 and P5, with one new frontend dependency, Pyodide. The `openai` package cannot run in a
+  browser, so the web build calls the API through a thin adapter. The terminal game keeps the package. No change to
+  phase order or exit criteria.
+- **Options**
+  - A. Static site with Pyodide: keyless by default, with an optional key of the player's own. No server cost, fits
+    itch.io and GitHub Pages, and the core is not rewritten. Cost: a slower first load, and the truth is in the
+    player's browser.
+  - B. Python backend and a light frontend. The truth stays on the server, and a hosted demo becomes possible. Cost: a
+    server to pay for, a token cap, rate limits and a kill switch; a player's key would pass through the server; and
+    itch.io can only link to it.
+  - C. Rewrite in TypeScript. Fastest to load. Cost: two implementations, with "same seed, same case" hard to keep.
+- **Recommendation**: A, with no hosted demo in P4. The repository is open and seeds are public, so anyone can already
+  compute a case's answer, and there is no leaderboard to protect. The LLM still never receives the truth.
+
+## CP-12 — Put the stiffness of the lines into P4 · `approved`
+
+- **Decision** (owner, 2026-11-04, "都按建议"): option B. See D-043.
+- **Trigger**: in the owner's blind rating A won 20 pairs to B's 10 (p = 0.099, D-042), B repeats 17.7% of its sentences
+  against A's 1.1%, and all four AI players called the lines report-like. The causes are in the code: `lines.py` has
+  fixed fact sentences ("Between {t} I was ...", in both languages), the writer's prompt says to keep every time
+  exactly as written, and a repeat opens by saying the question was answered already. A keyless game plays these
+  templates directly.
+- **Impact**: one more step in P4, on lines the game ships. From then on P3's numbers describe the commit they were
+  measured at, and the report must say so. No change to exit criteria.
+- **Options**
+  - A. Leave the lines. Nothing to do, and the report matches the game exactly. Both template and model lines stay stiff.
+  - B. Change only how times are said and how a repeat opens, then run a regression on dev seeds for the post-check and
+    the replacement rate, under CNY 1.
+  - C. Rewrite the writer. A large change that could undermine P3's conclusions.
+- **Recommendation**: B, after the interface works. It can show the lines did not get worse. Whether they got better is
+  for the owner's sign-off on the feel.

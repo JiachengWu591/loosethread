@@ -10,7 +10,7 @@ All numeric thresholds are provisional and may only change through the process i
 | P1 | Case generator and solver | done |
 | P2 | NPC pipeline and CLI playable | done |
 | P3 | Evaluation study | done |
-| P4 | Web version, daily case, sharing | planned |
+| P4 | Web version, daily case, sharing | in progress |
 | P5 | Release v0.1.0 | planned |
 
 Commands below use the package name `loosethread` (originally `alibi`; renamed by D-001).
@@ -202,14 +202,15 @@ Commands below use the package name `loosethread` (originally `alibi`; renamed b
 - **Exit criteria**: `verify` reproduces every table offline; the report states what the results do
   and do not show.
 
-## P4 — Web version, daily case, sharing · `planned`
+## P4 — Web version, daily case, sharing · `in progress`
 
-- **ADR first — architecture**: (a) Python backend + light frontend; (b) in-browser, bring-your-own
-  key; (c) other. Compare cost, privacy, deployment, maintenance.
-- **ADR — hosting mode**: BYO key / hosted demo / both. A hosted demo must have a daily token cap, rate
-  limiting and a one-switch kill.
-- **Features**: date → seed (time zone in the ADR); notebook UI; zh/en toggle; mobile layout;
-  spoiler-free share card (emoji text grid, optional image).
+- **Progress (2026-11-04, branch `p4-web`)**: plan, CP-11 option A and CP-12 option B approved, CNY 5 of model
+  calls (D-043). Spike running.
+- **Architecture, decided (CP-11)**: a static site with Pyodide, keyless by default, with an optional key of the
+  player's own. No hosted demo in P4.
+- **Features**: date → seed, by the player's local date; notebook UI; zh/en toggle; mobile layout; progress that
+  survives a refresh; spoiler-free share card (emoji text grid, optional image).
+- **Lines (CP-12)**: change how times are said and how a repeat opens, with a regression on dev seeds.
 - **Test assertions**: the share card contains no answer; the key never appears in frontend logs, URLs
   or shared content.
 - **Exit criteria**: a full session playable in a local browser; per-session cost measured; the owner
