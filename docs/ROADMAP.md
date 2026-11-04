@@ -205,7 +205,8 @@ Commands below use the package name `loosethread` (originally `alibi`; renamed b
 ## P4 — Web version, daily case, sharing · `in progress`
 
 - **Progress (2026-11-04, branch `p4-web`)**: plan, CP-11 option A and CP-12 option B approved, CNY 5 of model
-  calls (D-043). Spike running.
+  calls (D-043). The spike passed, and the page, daily case, share card and player's key work (D-044). Left: CP-12, cost
+  measured, the owner's game.
 - **Architecture, decided (CP-11)**: a static site with Pyodide, keyless by default, with an optional key of the
   player's own. No hosted demo in P4.
 - **Features**: date → seed, by the player's local date; notebook UI; zh/en toggle; mobile layout; progress that

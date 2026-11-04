@@ -29,7 +29,7 @@ from loosethread.npc import BackendUnavailable, ClarifyReason, Usage
 from loosethread.study.cases import StudyCase
 
 if TYPE_CHECKING:
-    from loosethread.llm.client import ChatModel
+    from loosethread.llm.chat import ChatModel
 
 LINE_MAX_TOKENS = 200
 _LANGUAGE = {Lang.ZH: "Simplified Chinese", Lang.EN: "English"}

@@ -15,7 +15,7 @@ from typing import TYPE_CHECKING
 from loosethread.npc import Usage
 
 if TYPE_CHECKING:
-    from loosethread.llm.client import ChatModel, Completion
+    from loosethread.llm.chat import ChatModel, Completion
 
 # CP-9 option A (D-037): the whole study, tuning and pilot included. CP-7 had CNY 5 for those alone.
 CAP_CNY = 80.0

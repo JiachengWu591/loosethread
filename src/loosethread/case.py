@@ -328,6 +328,35 @@ def render_rules(lang: Lang) -> list[str]:
     return out
 
 
+def _intro(view: PlayerView, lang: Lang, nm: _Names) -> str:
+    world, crime = view.world, view.crime
+    client = next(p for p in world.people if p.id not in view.suspects)
+    pack = load_pack(view.pack_id)
+    return pack.intro.get(lang).format(
+        setting=pack.setting.get(lang),
+        client=nm.person[client.id],
+        item=world.items[0].name.get(lang),
+        seen=nm.slot[crime.last_seen].label,
+        found=nm.time(crime.discovered),
+    )
+
+
+def _facts(view: PlayerView, lang: Lang, nm: _Names) -> list[tuple[str, str]]:
+    world, crime, window = view.world, view.crime, view.crime.window
+    item = world.items[0]
+    client = next(p for p in world.people if p.id not in view.suspects)
+    end = nm.slot[window[-1]].label.split("–")[1]
+    length = world.slots[0].end_minute - world.slots[0].start_minute
+    span = _t("f_window_v", lang, start=nm.time(window[0]), end=end, n=len(window), m=length)
+    return [
+        ("f_item", _t("f_item_v", lang, item=item.name.get(lang), owner=nm.person[client.id])),
+        ("f_scene", nm.loc[crime.location]),
+        ("f_seen", nm.slot[crime.last_seen].label),
+        ("f_found", nm.slot[crime.discovered].label),
+        ("f_window", span),
+    ]
+
+
 def render_sheet(view: PlayerView, lang: Lang, full: bool = True) -> list[str]:
     """Banner, story, case facts, people, map, rules and evidence; ends with a blank line.
 
@@ -337,35 +366,17 @@ def render_sheet(view: PlayerView, lang: Lang, full: bool = True) -> list[str]:
     world = view.world
     nm = _Names(world, lang)
     pack = load_pack(view.pack_id)
-    item = world.items[0]
     client = next(p for p in world.people if p.id not in view.suspects)
-    crime, window = view.crime, view.crime.window
     out: list[str] = []
 
     title = _t("title", lang, setting=pack.setting.get(lang), seed=view.seed)
     out += ["═" * WIDTH, " " * ((WIDTH - display_width(title)) // 2) + title, "═" * WIDTH, ""]
-    intro = pack.intro.get(lang).format(
-        setting=pack.setting.get(lang),
-        client=nm.person[client.id],
-        item=item.name.get(lang),
-        seen=nm.slot[crime.last_seen].label,
-        found=nm.time(crime.discovered),
-    )
-    for line in intro.split("\n"):
+    for line in _intro(view, lang, nm).split("\n"):
         out += hang("  ", line) if line else [""]
     out.append("")
 
     out.append(rule(_t("facts", lang)))
-    end = nm.slot[window[-1]].label.split("–")[1]
-    length = world.slots[0].end_minute - world.slots[0].start_minute
-    span = _t("f_window_v", lang, start=nm.time(window[0]), end=end, n=len(window), m=length)
-    facts = [
-        ("f_item", _t("f_item_v", lang, item=item.name.get(lang), owner=nm.person[client.id])),
-        ("f_scene", nm.loc[crime.location]),
-        ("f_seen", nm.slot[crime.last_seen].label),
-        ("f_found", nm.slot[crime.discovered].label),
-        ("f_window", span),
-    ]
+    facts = _facts(view, lang, nm)
     label_w = max(display_width(_t(key, lang)) for key, _ in facts) + 2
     out += [f"  {_fit(_t(key, lang), label_w)}{value}" for key, value in facts]
     out.append("")
@@ -423,14 +434,16 @@ def render_notebook(
     return out + _testimony_block(view, nm, unknown)
 
 
-def _testimony_block(view: PlayerView, nm: _Names, unknown: str = "?") -> list[str]:
+def _said(
+    view: PlayerView, nm: _Names
+) -> tuple[list[tuple[str, dict[int, str], dict[int, str]]], list[str]]:
+    """Per person: where they say they were and who with, by slot. Then what fits no grid cell."""
     lang = nm.lang
-    slots = sorted(nm.slot)
     item = view.world.items[0].name.get(lang)
     by_speaker: dict[PersonId, list[Statement]] = {}
     for s in view.statements:
         by_speaker.setdefault(s.speaker, []).append(s)
-    rows: list[_Row] = []
+    said: list[tuple[str, dict[int, str], dict[int, str]]] = []
     extras: list[str] = []
     for person in view.world.people:
         stmts = by_speaker.get(person.id, [])
@@ -440,22 +453,11 @@ def _testimony_block(view: PlayerView, nm: _Names, unknown: str = "?") -> list[s
             if s.basis is Basis.WITNESSED  # "with Lin in the kitchen" and "saw Lin there" say where
         }
         company = {
-            int(s.claim.slot): s.claim.people - {person.id}
+            int(s.claim.slot): nm.group(s.claim.people - {person.id}) or _t("alone", lang)
             for s in stmts
             if isinstance(s.claim, Occupants)
         }
-        rows += [
-            _Row(nm.row[person.id], _t("tag_at", lang), tuple(at.get(t, unknown) for t in slots)),
-            _Row(
-                "",
-                _t("tag_with", lang),
-                tuple(
-                    (nm.group(company[t]) or _t("alone", lang)) if t in company else ""
-                    for t in slots
-                ),
-            ),
-            _Row("", "", ("",) * len(slots)),  # spacer; keeps the window bars continuous
-        ]
+        said.append((nm.row[person.id], at, company))
         seen = sorted(int(s.claim.slot) for s in stmts if isinstance(s.claim, ItemAt))
         if seen:
             times = ("、" if lang is Lang.ZH else ", ").join(nm.time(t) for t in seen)
@@ -471,6 +473,20 @@ def _testimony_block(view: PlayerView, nm: _Names, unknown: str = "?") -> list[s
                     loc=nm.loc[s.claim.location],
                 )
                 extras.append(_t("heard", lang, p=nm.person[person.id], told=told))
+    return said, extras
+
+
+def _testimony_block(view: PlayerView, nm: _Names, unknown: str = "?") -> list[str]:
+    lang = nm.lang
+    slots = sorted(nm.slot)
+    said, extras = _said(view, nm)
+    rows: list[_Row] = []
+    for name, at, company in said:
+        rows += [
+            _Row(name, _t("tag_at", lang), tuple(at.get(t, unknown) for t in slots)),
+            _Row("", _t("tag_with", lang), tuple(company.get(t, "") for t in slots)),
+            _Row("", "", ("",) * len(slots)),  # spacer; keeps the window bars continuous
+        ]
     lines = _grid(nm, view.crime.window, rows[:-1])
     if extras:
         lines += ["", "  " + _t("extra", lang)]
@@ -479,8 +495,7 @@ def _testimony_block(view: PlayerView, nm: _Names, unknown: str = "?") -> list[s
     return lines
 
 
-def render_truth(case: Case, lang: Lang) -> list[str]:
-    nm = _Names(case.view.world, lang)
+def _true_rows(case: Case, nm: _Names) -> list[_Row]:
     truth = case.truth
     (theft,) = truth.events
     where: dict[tuple[PersonId, int], LocationId] = {
@@ -495,22 +510,42 @@ def render_truth(case: Case, lang: Lang) -> list[str]:
             mark += "!" if (p.id, t) in lied else ""
             cells.append(nm.loc[where[(p.id, t)]] + mark)
         rows.append(_Row(nm.row[p.id], "", tuple(cells)))
-    culprit = _t(
+    return rows
+
+
+def _culprit_line(case: Case, nm: _Names) -> str:
+    (theft,) = case.truth.events
+    return _t(
         "culprit",
-        lang,
-        name=nm.person[truth.culprit],
+        nm.lang,
+        name=nm.person[case.truth.culprit],
         time=nm.slot[int(theft.slot)].label,
         loc=nm.loc[theft.location],
     )
+
+
+def render_truth(case: Case, lang: Lang) -> list[str]:
+    nm = _Names(case.view.world, lang)
     lines = [
         rule(_t("truth", lang)),
-        "  " + culprit,
+        "  " + _culprit_line(case, nm),
         "",
         *hang("  ", _t("timeline", lang)),
-        *_grid(nm, case.view.crime.window, rows),
+        *_grid(nm, case.view.crime.window, _true_rows(case, nm)),
         "",
         "  " + _t("lies", lang),
     ]
+    for text in _lie_texts(case, nm):
+        lines += hang("  · ", text)
+    return lines
+
+
+def _lie_texts(case: Case, nm: _Names) -> list[str]:
+    lang, truth = nm.lang, case.truth
+    where: dict[tuple[PersonId, int], LocationId] = {
+        (f.person, int(f.slot)): f.location for f in truth.timeline
+    }
+    texts = []
     book = AnswerBook.from_truth(case.view.world, truth)
     sep = "、" if lang is Lang.ZH else ", "
     for lie in truth.lies:
@@ -519,19 +554,145 @@ def render_truth(case: Case, lang: Lang) -> list[str]:
         by = [x if isinstance(x, str) else nm.person[x.speaker] for x in lie.exposed_by]
         others = claim.people - {speaker} if isinstance(claim, Occupants) else frozenset()
         named = sep.join(nm.person[p] for p in nm.order if p in others)
-        text = _t(
-            "lie",
-            lang,
-            name=nm.person[speaker],
-            why=_t("alibi" if lie.reason is LieReason.ALIBI else "privacy", lang),
-            time=nm.time(slot),
-            claim=nm.loc[book.claimed_location(speaker, slot)],
-            company=_t("lie_with", lang, others=named) if named else "",
-            real=nm.loc[where[(speaker, slot)]],
-            by=sep.join(dict.fromkeys(by)),
+        texts.append(
+            _t(
+                "lie",
+                lang,
+                name=nm.person[speaker],
+                why=_t("alibi" if lie.reason is LieReason.ALIBI else "privacy", lang),
+                time=nm.time(slot),
+                claim=nm.loc[book.claimed_location(speaker, slot)],
+                company=_t("lie_with", lang, others=named) if named else "",
+                real=nm.loc[where[(speaker, slot)]],
+                by=sep.join(dict.fromkeys(by)),
+            )
         )
-        lines += hang("  · ", text)
-    return lines
+    return texts
+
+
+# --- The same parts as data, for a front end that lays them out itself ---------------------------
+
+
+@dataclass(frozen=True)
+class PersonCard:
+    id: str
+    name: str
+    role: str
+    persona: str
+    motive: str  # empty for the owner
+    suspect: bool
+
+
+@dataclass(frozen=True)
+class EvidenceCard:
+    id: str
+    time: str
+    text: str
+
+
+@dataclass(frozen=True)
+class Sheet:
+    title: str
+    intro: str
+    facts: tuple[tuple[str, str], ...]
+    people: tuple[PersonCard, ...]
+    map_picture: str
+    rules: tuple[str, ...]
+    key_rules: tuple[str, ...]
+    evidence: tuple[EvidenceCard, ...]
+
+
+@dataclass(frozen=True)
+class Grid:
+    """People by time slot. Each cell holds what is said of that person then; `first` and `last` are
+    the theft window's columns."""
+
+    slots: tuple[str, ...]
+    first: int
+    last: int
+    names: tuple[str, ...]
+    places: tuple[tuple[str, ...], ...]
+    company: tuple[tuple[str, ...], ...]
+
+
+@dataclass(frozen=True)
+class TruthParts:
+    culprit: str
+    legend: str
+    grid: Grid
+    lies: tuple[str, ...]
+
+
+def sheet_parts(view: PlayerView, lang: Lang) -> Sheet:
+    world, nm = view.world, _Names(view.world, lang)
+    client = next(p for p in world.people if p.id not in view.suspects)
+    motives = {m.person: m.reason.get(lang) for m in view.motives}
+    suspects = [p for p in world.people if p.id in view.suspects]
+    cards = tuple(
+        PersonCard(
+            str(p.id),
+            nm.person[p.id],
+            p.role.get(lang),
+            p.persona.get(lang),
+            motives.get(p.id, ""),
+            p.id in view.suspects,
+        )
+        for p in [*suspects, client]
+    )
+    pack = load_pack(view.pack_id)
+    present = frozenset(loc.id for loc in world.locations)
+    evidence = tuple(
+        EvidenceCard(
+            e.id,
+            "/".join(nm.time(t) for t in sorted({int(f.slot) for f in e.establishes})),
+            e.text.get(lang),
+        )
+        for e in view.evidence
+    )
+    return Sheet(
+        _t("title", lang, setting=pack.setting.get(lang), seed=view.seed),
+        _intro(view, lang, nm),
+        tuple((_t(key, lang), value) for key, value in _facts(view, lang, nm)),
+        cards,
+        pack.map_picture(lang, present),
+        tuple(zh if lang is Lang.ZH else en for zh, en in _RULES),
+        tuple(zh if lang is Lang.ZH else en for zh, en in _KEY_RULES),
+        evidence,
+    )
+
+
+def notebook_grid(view: PlayerView, lang: Lang) -> tuple[Grid, tuple[str, ...]]:
+    """The testimony in `view` as a grid, and what fits no cell (seen the item, hearsay)."""
+    nm = _Names(view.world, lang)
+    slots = sorted(nm.slot)
+    said, extras = _said(view, nm)
+    grid = Grid(
+        tuple(nm.time(t) for t in slots),
+        int(view.crime.window[0]),
+        int(view.crime.window[-1]),
+        tuple(name for name, _, _ in said),
+        tuple(tuple(at.get(t, "") for t in slots) for _, at, _ in said),
+        tuple(tuple(company.get(t, "") for t in slots) for _, _, company in said),
+    )
+    return grid, tuple(extras)
+
+
+def truth_parts(case: Case, lang: Lang) -> TruthParts:
+    """Spoilers: only for after the accusation."""
+    nm = _Names(case.view.world, lang)
+    window = case.view.crime.window
+    rows = _true_rows(case, nm)
+    grid = Grid(
+        tuple(nm.time(t) for t in sorted(nm.slot)),
+        int(window[0]),
+        int(window[-1]),
+        tuple(r.name for r in rows),
+        tuple(r.cells for r in rows),
+        tuple(("",) * len(r.cells) for r in rows),
+    )
+    return TruthParts(
+        _culprit_line(case, nm), _t("timeline", lang), grid, tuple(_lie_texts(case, nm))
+    )
 
 
 def _metrics_block(metrics: Metrics, nm: _Names, case: Case) -> str:

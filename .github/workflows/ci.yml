@@ -26,7 +26,11 @@ jobs:
         run: uv run ruff format --check .
       - name: Mypy (strict)
         run: uv run mypy
+      - name: Build the browser version
+        run: uv run python -m loosethread.web.build
       - name: Pytest
         run: uv run pytest
+        env:
+          LOOSETHREAD_WEB_CHECK: "1"  # the Pyodide build must match, not be skipped
       - name: Every table comes from its rows
         run: uv run python -m loosethread.verify

@@ -10,7 +10,7 @@ import argparse
 import io
 import json
 import sys
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import asdict
 from datetime import date
 from pathlib import Path
@@ -19,7 +19,7 @@ from typing import Any
 from loosethread.case import hang, render_notebook, render_rules, render_sheet, render_truth, rule
 from loosethread.game import DEFAULT_BUDGET, AccusationError, Game, Outcome, Turn
 from loosethread.generator import DAILY, daily_case, generate
-from loosethread.lexicon import normalize
+from loosethread.lexicon import Lexicon, normalize
 from loosethread.lines import TemplateWriter
 from loosethread.model import Lang, PersonId, Query, QueryKind, Stance, World
 from loosethread.notebook import describe
@@ -219,6 +219,82 @@ def read_as(query: Query, world: World, lang: Lang) -> str:
     return (zh if lang is Lang.ZH else en).format(**fields)
 
 
+def addressee_of(lexicon: Lexicon, text: str) -> tuple[PersonId | None, str]:
+    """Who a line of input addresses by name, if anyone, and the rest of the line."""
+    norm = normalize(text)
+    at = norm.startswith("@")
+    body = norm[1:].lstrip() if at else norm
+    for alias, pid in lexicon.people_by_alias():
+        rest = body[len(alias) :]
+        if body.startswith(alias) and (at or rest[:1] in _SEPARATORS or _asks_after_name(rest)):
+            return PersonId(pid), rest.lstrip(_SEPARATORS + " ")
+    return None, text
+
+
+def status_of(turn: Turn, world: World, lang: Lang) -> str:
+    """The line under an answer: how the question was read, what it cost, what was noted."""
+    if turn.query is None:
+        unavailable = turn.reason is ClarifyReason.UNAVAILABLE
+        return _t("free_unavailable" if unavailable else "free_clarify", lang)
+    q = read_as(turn.query, world, lang)
+    if turn.repeat:
+        return _t("free_repeat", lang, q=q)
+    if not turn.cost:
+        return _t("free_no_facts", lang, q=q)
+    if turn.new_notes:
+        sep = "、" if lang is Lang.ZH else ", "
+        return _t("noted", lang, q=q, ids=sep.join(turn.new_notes))
+    return _t("nothing_new" if turn.stance is Stance.ANSWER else "answered", lang, q=q)
+
+
+def conflict_text(a: str, b: str, lang: Lang) -> str:
+    return _t("conflict", lang, a=a, b=b)
+
+
+def problem_text(err: AccusationError, names: Mapping[PersonId, str], lang: Lang) -> str:
+    return _t(err.key, lang, x=names.get(PersonId(err.detail), err.detail))
+
+
+def ending_lines(game: Game, lang: Lang) -> list[str]:
+    """After the accusation: the outcome, what could have exposed the lie, and the score."""
+    verdict = game.verdict
+    assert verdict is not None
+    names = {p.id: p.name.get(lang) for p in game.case.view.world.people}
+    a, b = verdict.pair
+    lines: list[str] = []
+    match verdict.outcome:
+        case Outcome.SOLVED:
+            lines.append(_t("solved", lang, stars="★" * verdict.stars))
+        case Outcome.HUNCH:
+            lines.append(_t("hunch", lang, a=a, b=b, name=names[verdict.accused]))
+        case Outcome.WRONG:
+            lines.append(_t("wrong", lang))
+    if verdict.outcome is not Outcome.SOLVED:
+        culprit = names[game.case.truth.culprit]
+        if pairs := game.exposing_pairs():
+            zh = "、".join(f"{x} 与 {y}" for x, y in pairs)
+            en = " or ".join(f"{x}/{y}" for x, y in pairs)
+            text = zh if lang is Lang.ZH else en
+            lines.append(_t("could_expose", lang, name=culprit, pairs=text))
+        else:
+            lines.append(_t("none_expose", lang, name=culprit))
+    lines.append(
+        _t(
+            "summary",
+            lang,
+            used=verdict.questions_used,
+            budget=verdict.budget,
+            min=verdict.min_questions,
+        )
+    )
+    rule = verdict.star_rule
+    if rule.three >= verdict.budget:
+        lines.append(_t("stars_rule_all", lang, budget=verdict.budget))
+    else:
+        lines.append(_t("stars_rule", lang, three=rule.three, two=rule.two))
+    return lines
+
+
 class Session:
     """The terminal front end: reads lines, talks to a `Game`, writes text."""
 
@@ -275,18 +351,8 @@ class Session:
 
     # --- Questions -----------------------------------------------------------------------------
 
-    def _addressee(self, text: str) -> tuple[PersonId | None, str]:
-        norm = normalize(text)
-        at = norm.startswith("@")
-        body = norm[1:].lstrip() if at else norm
-        for alias, pid in self.game.lexicon.people_by_alias():
-            rest = body[len(alias) :]
-            if body.startswith(alias) and (at or rest[:1] in _SEPARATORS or _asks_after_name(rest)):
-                return PersonId(pid), rest.lstrip(_SEPARATORS + " ")
-        return None, text
-
     def question(self, text: str) -> None:
-        addressee, question = self._addressee(text)
+        addressee, question = addressee_of(self.game.lexicon, text)
         if addressee is not None:
             self.current = addressee
         if self.current is None:
@@ -303,22 +369,9 @@ class Session:
     def show(self, turn: Turn) -> None:
         colon = "：" if self.lang is Lang.ZH else ": "
         self.write("\n".join(hang(f"  {self.names[turn.addressee]}{colon}", turn.line)))
+        self.write(status_of(turn, self.game.case.view.world, self.lang))
         if turn.query is None:
-            unavailable = turn.reason is ClarifyReason.UNAVAILABLE
-            self.say("free_unavailable" if unavailable else "free_clarify")
             return
-        q = read_as(turn.query, self.game.case.view.world, self.lang)
-        if turn.repeat:
-            self.say("free_repeat", q=q)
-        elif not turn.cost:
-            self.say("free_no_facts", q=q)
-        elif turn.new_notes:
-            sep = "、" if self.lang is Lang.ZH else ", "
-            self.say("noted", q=q, ids=sep.join(turn.new_notes))
-        elif turn.stance is Stance.ANSWER:
-            self.say("nothing_new", q=q)
-        else:
-            self.say("answered", q=q)
         if self.hints:
             for a, b in turn.new_conflicts:
                 self.say("conflict", a=a, b=b)
@@ -441,7 +494,7 @@ class Session:
         try:
             a, b = self.game.check_accusation(suspect, first, second)
         except AccusationError as err:
-            self.say(err.key, x=self.names.get(PersonId(err.detail), err.detail))
+            self.write(problem_text(err, self.names, self.lang))
             return
         # In normal mode, warn using the same contradiction hints the player already sees.
         warn = self.hints and not self.game.notebook.in_conflict(a, b)
@@ -456,41 +509,8 @@ class Session:
     # --- End -----------------------------------------------------------------------------------
 
     def reveal(self) -> None:
-        verdict = self.game.verdict
-        assert verdict is not None
-        a, b = verdict.pair
-        lines = [""]
-        match verdict.outcome:
-            case Outcome.SOLVED:
-                lines.append(_t("solved", self.lang, stars="★" * verdict.stars))
-            case Outcome.HUNCH:
-                lines.append(_t("hunch", self.lang, a=a, b=b, name=self.names[verdict.accused]))
-            case Outcome.WRONG:
-                lines.append(_t("wrong", self.lang))
-        if verdict.outcome is not Outcome.SOLVED:
-            culprit = self.names[self.game.case.truth.culprit]
-            if pairs := self.game.exposing_pairs():
-                zh = "、".join(f"{x} 与 {y}" for x, y in pairs)
-                en = " or ".join(f"{x}/{y}" for x, y in pairs)
-                text = zh if self.lang is Lang.ZH else en
-                lines.append(_t("could_expose", self.lang, name=culprit, pairs=text))
-            else:
-                lines.append(_t("none_expose", self.lang, name=culprit))
-        lines.append(
-            _t(
-                "summary",
-                self.lang,
-                used=verdict.questions_used,
-                budget=verdict.budget,
-                min=verdict.min_questions,
-            )
-        )
-        rule = verdict.star_rule
-        if rule.three >= verdict.budget:
-            lines.append(_t("stars_rule_all", self.lang, budget=verdict.budget))
-        else:
-            lines.append(_t("stars_rule", self.lang, three=rule.three, two=rule.two))
-        lines += ["", *render_truth(self.game.case, self.lang)]
+        lines = ["", *ending_lines(self.game, self.lang), ""]
+        lines += render_truth(self.game.case, self.lang)
         self.write("\n".join(lines))
 
 

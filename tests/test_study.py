@@ -11,7 +11,7 @@ import pytest
 from loosethread.case import render_case
 from loosethread.generator import SHAPE_PARAMS, AlibiStyle, daily_setup
 from loosethread.lexicon import Lexicon
-from loosethread.llm.client import Completion
+from loosethread.llm.chat import Completion
 from loosethread.lookup import AnswerBook
 from loosethread.model import Lang, LieReason, Occupants, PersonAt, PersonId, QueryKind
 from loosethread.npc import Usage

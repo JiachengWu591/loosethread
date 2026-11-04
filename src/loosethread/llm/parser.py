@@ -25,7 +25,7 @@ import re
 from dataclasses import dataclass
 
 from loosethread.lexicon import EntityKind, Entry, Lexicon
-from loosethread.llm.client import ChatModel
+from loosethread.llm.chat import ChatModel
 from loosethread.model import (
     ItemId,
     LocationId,

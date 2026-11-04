@@ -59,7 +59,7 @@ from loosethread.study.metered import (
 from loosethread.study.script import ScriptTurn, interrogation
 
 if TYPE_CHECKING:
-    from loosethread.llm.client import ChatModel
+    from loosethread.llm.chat import ChatModel
 
 # Opened by CP-9 option A (D-037), with `CAP_CNY` raised.
 HELD_OUT_OPEN = True

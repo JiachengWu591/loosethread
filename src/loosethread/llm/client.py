@@ -7,32 +7,17 @@ exception type, because provider error messages may echo part of the key.
 
 import os
 import time
-from dataclasses import dataclass
-from typing import Protocol
 
 from openai import APIConnectionError, InternalServerError, OpenAI, RateLimitError
 from openai.types.chat import ChatCompletionMessageParam
 from openai.types.shared_params import ResponseFormatJSONObject, ResponseFormatText
 
+from loosethread.llm.chat import Completion
 from loosethread.llm.config import Backend, load_backends
 from loosethread.npc import BackendUnavailable, Usage
 
 # Failures to reach the model, after the client's own retries (timeouts are connection errors).
 _UNREACHABLE = (APIConnectionError, RateLimitError, InternalServerError)
-
-
-@dataclass(frozen=True)
-class Completion:
-    text: str
-    usage: Usage
-    finish_reason: str  # "stop", "length", ...
-
-
-class ChatModel(Protocol):
-    def complete(self, system: str, user: str, *, json_mode: bool, max_tokens: int) -> Completion:
-        """One chat turn. Raises `BackendUnavailable` if the model cannot be reached, and other
-        exceptions on other provider errors."""
-        ...
 
 
 class MissingKey(RuntimeError):

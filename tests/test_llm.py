@@ -11,7 +11,8 @@ from loosethread.game import Game
 from loosethread.generator import DAILY, generate
 from loosethread.lexicon import Lexicon
 from loosethread.lines import TemplateWriter, line_payload
-from loosethread.llm.client import Completion, MissingKey, OpenAIChat
+from loosethread.llm.chat import Completion
+from loosethread.llm.client import MissingKey, OpenAIChat
 from loosethread.llm.config import Backend, load_backends
 from loosethread.llm.parser import (
     LLMParser,

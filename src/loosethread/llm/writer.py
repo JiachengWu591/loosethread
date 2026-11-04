@@ -8,7 +8,7 @@ tone, repeat flag and the fact sentences the answer table allows. The game post-
 from dataclasses import dataclass
 
 from loosethread.lines import line_payload
-from loosethread.llm.client import ChatModel
+from loosethread.llm.chat import ChatModel
 from loosethread.model import Lang
 from loosethread.npc import BackendError, LineRequest, LineResult
 

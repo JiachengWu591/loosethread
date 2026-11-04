@@ -1180,3 +1180,37 @@ directly.
   - I do not type a real key into a page, so interface tests use a fake one on a local host, and the owner enters the
     real one for the game played with a model. Cost comes from scripted sessions with the key from the environment.
 - **Left for P5**: whether itch.io and GitHub Pages can be reached quickly from mainland China has not been measured.
+
+## D-044 — The spike passed, and the page runs: what was checked, and how
+
+- **Date**: 2026-11-04 · **Type**: tactical, inside CP-11 and D-043.
+- **Spike** (Pyodide 314.0.7, Python 3.14.2, in a module worker, on this laptop, served locally)
+  - 300 daily cases and 20 scripted games gave the same digests as CPython 3.12 under two hash seeds. 300 cases took
+    46 s, against 27 to 30 s in CPython, so about 1.6 times slower.
+  - The runtime is ready in 2.0 s with no network delay, and the tab was hidden, so this is a rough figure. One case took
+    0.36 s and one star rule 1.35 s, both off the page's thread.
+  - The site is 13.0 MiB, 6.1 MiB with gzip. Whether a host compresses it is not known yet.
+  - A blocking request from Python in the worker reached DeepSeek with no key and got its 401, so the browser's
+    cross-origin rule lets the adapter work.
+- **What was built**: `loosethread.web`, no third-party package. `session` holds one game as data, with truth only after
+  the accusation. A save records how each question was read and what was said, and replays through `Game`, so a refresh
+  costs no model call and a save cannot claim a score. A save that does not replay is dropped, with a notice. `share`
+  builds the card from the case number, mark, count and squares only. `browser_chat` reaches the model. `build` pins the
+  runtime by hash, and it is not committed. Run it with `python -m loosethread.web`.
+- **Tactical**: `ChatModel` and `Completion` move to `llm/chat.py`, so the page needs no `openai`. `case.py` and `play.py`
+  gain data forms of what they render; 118 cases rendered byte for byte the same before and after. The optional share
+  image is not built: the text card is what the design asks for.
+- **Checks, and what each can detect**
+  - `tests/test_web.py`: state, saves, the card against every outcome, the adapter against a fake network. A text check
+    of the page's code finds no `innerHTML`, `console.` or cookie. It reads code, and cannot see another route out.
+  - `tests/test_web_build.py`, in CI too: the built runtime and package give the same 40 cases and 10 whole games as
+    CPython, through the page's bridge. It runs in node, so it cannot see the page or the worker.
+  - By hand in a browser, on a local fake model with a fake key: the key appeared only in the Authorization header in
+    the server's log of 4 requests, and not in the URL, the body, storage, the page or the console. A refresh dropped it
+    and kept the game. A line holding an `<img onerror>` showed as text and did not run. The network pane does not show a
+    worker's requests, so the log comes from the server. One run, by me, and it does not repeat in CI.
+  - By hand on the real DeepSeek, with an invented key that cannot work: "refused", with the field cleared. **No call with
+    a valid key has been made from a browser yet**; that waits for the owner's game.
+  - By hand: a whole game on the desktop layout, part of one at 375 px wide with no sideways page scroll. It has not been
+    tried on a real phone.
+- **Found by playing it**: a stray `null` in the confirmation, and the stars printed twice. Both fixed.
