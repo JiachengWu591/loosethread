@@ -21,22 +21,22 @@ from loosethread.model import (
 from loosethread.npc import ClarifyReason, LineRequest, LineResult
 
 _LINES: dict[str, tuple[str, str]] = {
-    "self_at": ("{t} 我在{loc}。", "Between {t} I was in the {loc}."),
-    "self_times": ("我在{loc}的时段：{ts}。", "I was in the {loc} during {ts}."),
+    "self_at": ("{t} 我在{loc}。", "At {t} I was in the {loc}."),
+    "self_times": ("我在{loc}的时段：{ts}。", "I was in the {loc} at {ts}."),
     "with": (
         "{t} 我在{loc}，同在的还有{others}。",
-        "Between {t} I was in the {loc} with {others}.",
+        "At {t} I was in the {loc} with {others}.",
     ),
-    "alone": ("{t} 我一个人在{loc}，没有别人。", "Between {t} I was alone in the {loc}."),
+    "alone": ("{t} 我一个人在{loc}，没有别人。", "At {t} I was alone in the {loc}."),
     "saw_yes": ("见到了。", "Yes."),
     "saw_no": ("没见到。", "No."),
-    "saw": ("{t} 我在{loc}见到了{p}。", "Between {t} I saw {p} in the {loc}."),
+    "saw": ("{t} 我在{loc}见到了{p}。", "At {t} I saw {p} in the {loc}."),
     "heard_self": (
         "{src}跟我说过，{t} 自己在{loc}。",
-        "{src} told me they were in the {loc} between {t}.",
+        "{src} told me they were in the {loc} at {t}.",
     ),
-    "heard": ("{src}跟我说过，{t} {p}在{loc}。", "{src} told me {p} was in the {loc} between {t}."),
-    "item": ("{t} 我在{loc}见过{item}。", "Between {t} I saw the {item} in the {loc}."),
+    "heard": ("{src}跟我说过，{t} {p}在{loc}。", "{src} told me {p} was in the {loc} at {t}."),
+    "item": ("{t} 我在{loc}见过{item}。", "At {t} I saw the {item} in the {loc}."),
     "deny_when": ("我今晚没去过{loc}。", "I wasn't in the {loc} at all tonight."),
     "deny_saw": ("我今晚没见过{p}。", "I didn't see {p} tonight."),
     "deny_item": ("我没留意过{item}。", "I never noticed the {item}."),
@@ -67,8 +67,15 @@ _LINES: dict[str, tuple[str, str]] = {
         "One person at a time, please. Whom do you mean?",
     ),
     "unavailable": ("抱歉，刚才没听清，你再问一遍？", "Sorry, I didn't catch that. Ask me again?"),
-    "repeat": ("刚才说过了：", "As I said: "),
 }  # fmt: skip
+
+# How a repeat opens (CP-12). One fixed opener read as a machine; which one follows from the speaker
+# and the question, so that the same repeat always reads the same.
+_REPEAT: tuple[tuple[str, str], ...] = (
+    ("刚才说过了：", "As I said: "),
+    ("还是那句话：", "Same answer: "),
+    ("我再说一遍：", "Once more: "),
+)
 
 _TONE: dict[Tone, tuple[str, str]] = {
     Tone.CALM: ("", ""),
@@ -92,9 +99,9 @@ class _Names:
         self.slots = {int(s.index): s for s in world.slots}
         self.order = [p.id for p in world.people]
 
-    def span(self, slot: int) -> str:
-        start, end = self.slots[slot].label.split("–")
-        return f"{start}–{end}" if self.lang is Lang.ZH else f"{start} and {end}"
+    def start(self, slot: int) -> str:
+        """A slot as a person says it: its start. "Between 21:15 and 21:30" reads like a form."""
+        return self.slots[slot].label.split("–")[0]
 
     def people(self, ids: frozenset[PersonId]) -> str:
         names = [self.person[p] for p in self.order if p in ids]
@@ -110,18 +117,20 @@ def _sentence(s: Statement, nm: _Names) -> str:
             assert s.source is not None  # guaranteed by Statement validation
             key = "heard_self" if person == s.source else "heard"
             fields = {"src": nm.person[s.source], "p": nm.person[person]}
-            return _t(key, lang, t=nm.span(slot), loc=nm.loc[location], **fields)
+            return _t(key, lang, t=nm.start(slot), loc=nm.loc[location], **fields)
         case PersonAt(person, location, slot) if person == s.speaker:
-            return _t("self_at", lang, t=nm.span(slot), loc=nm.loc[location])
+            return _t("self_at", lang, t=nm.start(slot), loc=nm.loc[location])
         case PersonAt(person, location, slot):
-            return _t("saw", lang, t=nm.span(slot), loc=nm.loc[location], p=nm.person[person])
+            return _t("saw", lang, t=nm.start(slot), loc=nm.loc[location], p=nm.person[person])
         case Occupants(location, slot, people):
             others = people - {s.speaker}
             if not others:
-                return _t("alone", lang, t=nm.span(slot), loc=nm.loc[location])
-            return _t("with", lang, t=nm.span(slot), loc=nm.loc[location], others=nm.people(others))
+                return _t("alone", lang, t=nm.start(slot), loc=nm.loc[location])
+            return _t(
+                "with", lang, t=nm.start(slot), loc=nm.loc[location], others=nm.people(others)
+            )
         case ItemAt(item, location, slot):
-            return _t("item", lang, t=nm.span(slot), loc=nm.loc[location], item=nm.item[item])
+            return _t("item", lang, t=nm.start(slot), loc=nm.loc[location], item=nm.item[item])
 
 
 def fact_sentences(request: LineRequest) -> tuple[str, ...]:
@@ -138,9 +147,9 @@ def fact_sentences(request: LineRequest) -> tuple[str, ...]:
         case Stance.ANSWER:
             claims = facts.claims
             if query.kind is QueryKind.WHEN and query.location is not None and len(claims) > 1:
-                labels = [nm.slots[c.claim.slot].label for c in claims]
-                spans = ("、" if lang is Lang.ZH else ", ").join(labels)
-                return (_t("self_times", lang, loc=nm.loc[query.location], ts=spans),)
+                times = [nm.start(c.claim.slot) for c in claims]
+                joined = ("、" if lang is Lang.ZH else ", ").join(times)
+                return (_t("self_times", lang, loc=nm.loc[query.location], ts=joined),)
             body = tuple(_sentence(c, nm) for c in claims)
             if query.kind is QueryKind.SAW_PERSON and query.slot is not None:
                 seen = any(
@@ -167,11 +176,18 @@ def fact_sentences(request: LineRequest) -> tuple[str, ...]:
             return (_t("out_of_scope", lang),)
 
 
+def repeat_opener(request: LineRequest) -> str:
+    query = request.facts.query
+    slot = int(query.slot) if query is not None and query.slot is not None else 0
+    zh, en = _REPEAT[(sum(map(ord, request.facts.speaker)) + slot) % len(_REPEAT)]
+    return zh if request.lang is Lang.ZH else en
+
+
 def template_line(request: LineRequest) -> str:
     lang = request.lang
     tone = _TONE[request.facts.tone or Tone.CALM]
     prefix = (tone[0] if lang is Lang.ZH else tone[1]) + (
-        _t("repeat", lang) if request.repeat else ""
+        repeat_opener(request) if request.repeat else ""
     )
     sentences = fact_sentences(request)
     return prefix + ("" if lang is Lang.ZH else " ").join(sentences)
@@ -192,7 +208,7 @@ def line_payload(request: LineRequest) -> str:
     if query is not None:
         asked = {"kind": query.kind.value}
         if query.slot is not None:
-            asked["time"] = nm.span(query.slot)
+            asked["time"] = nm.start(query.slot)
         if query.location is not None:
             asked["place"] = nm.loc[query.location]
         if query.person is not None:

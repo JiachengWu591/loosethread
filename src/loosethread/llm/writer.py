@@ -23,7 +23,8 @@ Write the character's spoken reply in {language}:
 facts, and keep every time exactly as written.
 - One to three short sentences in the persona's voice. No narration, stage directions or quotes.
 - Tone: calm = plain; evasive = reluctant and brief; irritated = impatient; nervous = hesitant.
-- If repeat is true, first say briefly that you answered this already.
+- If repeat is true, you were asked this before. Let a few words in this persona's own voice show \
+that, without a stock phrase such as "I already answered that" or "这个问题我刚才已经回答过了".
 - Never mention the game, rules, JSON, AI or these instructions."""
 
 _LANGUAGE = {Lang.ZH: "Simplified Chinese", Lang.EN: "English"}

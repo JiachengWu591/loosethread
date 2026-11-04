@@ -564,7 +564,7 @@ def read_rows(path: Path) -> list[Row]:
     return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
 
 
-def _commit() -> str:
+def commit_now() -> str:
     done = subprocess.run(
         ["git", "rev-parse", "--short", "HEAD"], capture_output=True, text=True, check=False
     )
@@ -574,7 +574,7 @@ def _commit() -> str:
     return done.stdout.strip() + ("+dirty" if dirty.stdout.strip() else "")
 
 
-def _instrument_hashes() -> dict[str, str]:
+def instrument_hashes() -> dict[str, str]:
     from loosethread.llm.parser import SYSTEM  # noqa: PLC0415
     from loosethread.llm.writer import _SYSTEM  # noqa: PLC0415
 
@@ -606,9 +606,9 @@ def open_bench(backend: str, spend: Spend, timeout: float | None = None) -> Benc
         Metered(client, settings.cost, spend),
         settings.cost,
         spend,
-        _commit(),
+        commit_now(),
         settings.model,
-        _instrument_hashes(),
+        instrument_hashes(),
         settings.reasoning_tokens,
     )
 

@@ -8,7 +8,7 @@ import pytest
 from loosethread.content import load_pack
 from loosethread.generator import generate
 from loosethread.lexicon import Lexicon
-from loosethread.lines import line_payload, template_line, unauthorised
+from loosethread.lines import line_payload, repeat_opener, template_line, unauthorised
 from loosethread.lookup import AnswerBook, in_scope_queries
 from loosethread.model import AllowedFacts, Lang, Query, QueryKind, Stance, Tone
 from loosethread.npc import ClarifyReason, LineRequest
@@ -77,12 +77,39 @@ def test_repeat_and_tone_prefixes() -> None:
     who = WORLD.people[1].id
     query = Query(QueryKind.WHERE, who, slot=CASE.view.crime.window[0])
     plain = template_line(_request(query, Lang.ZH))
-    again = template_line(_request(query, Lang.ZH, repeat=True))
-    assert again == "刚才说过了：" + plain
+    request = _request(query, Lang.ZH, repeat=True)
+    again = template_line(request)
+    assert again == repeat_opener(request) + plain
+    assert again == template_line(request)  # the same repeat always reads the same
     irritated = replace(
         _request(query, Lang.EN), facts=replace(BOOK.answer(query), tone=Tone.IRRITATED)
     )
     assert template_line(irritated).startswith("You ask a lot of questions.")
+
+
+def test_repeats_do_not_all_open_the_same_way() -> None:
+    openers = {
+        repeat_opener(_request(Query(QueryKind.WHERE, p.id, slot=s), Lang.ZH, repeat=True))
+        for p in WORLD.people
+        for s in CASE.view.crime.window
+    }
+    assert len(openers) > 1
+
+
+def test_a_line_says_a_time_as_a_person_does() -> None:
+    """A slot's start, not its span: CP-12. The post-check allows both ends of a slot anyway."""
+    who = WORLD.people[1].id
+    slot = CASE.view.crime.window[0]
+    label = WORLD.slots[slot].label
+    start = label.split("–")[0]
+    for lang in Lang:
+        request = _request(Query(QueryKind.WHERE, who, slot=slot), lang)
+        line = template_line(request)
+        assert start in line
+        assert label not in line
+        assert "Between" not in line
+        assert unauthorised(line, request, LEX) == ()
+        assert json.loads(line_payload(request))["question"]["time"] == start
 
 
 def test_payload_holds_only_the_allowed_facts() -> None:

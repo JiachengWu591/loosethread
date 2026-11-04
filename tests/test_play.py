@@ -154,7 +154,7 @@ def test_en_session_and_quit() -> None:
         ["--seed", "213", "--lang", "en", "--hard"],
         ["﻿@Lin where were you at 9:15?", "/notes", "/quit", "y"],  # BOM from a pipe
     )
-    assert "Lin Xiaoyu: Between 21:15 and 21:30 I was in the" in text
+    assert "Lin Xiaoyu: At 21:15 I was in the" in text
     assert "→ read as “where Lin Xiaoyu was at 21:15–21:30, and with whom”; noted: S1" in text
     assert "(hard mode: no contradiction hints)" in text
     assert "Goodbye." in text

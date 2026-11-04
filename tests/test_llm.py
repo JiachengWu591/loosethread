@@ -311,7 +311,7 @@ def test_writer_payload_matches_the_template_request() -> None:
     game.ask(LIN, "Where were you at 9:15?")
     payload = json.loads(fake.prompts[0][1])
     assert payload["lang"] == "en"
-    assert payload["question"] == {"kind": "with_whom", "time": "21:15 and 21:30"}
+    assert payload["question"] == {"kind": "with_whom", "time": "21:15"}
 
 
 def test_the_writer_sends_exactly_the_line_payload() -> None:

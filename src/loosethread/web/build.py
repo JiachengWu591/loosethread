@@ -43,6 +43,7 @@ _LEFT_OUT_FILES = frozenset(
         "parser_eval.py",
         "llm/client.py",
         "web/build.py",
+        "web/measure.py",
         "web/__main__.py",
         "py.typed",
     }

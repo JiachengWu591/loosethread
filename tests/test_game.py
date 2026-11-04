@@ -135,7 +135,8 @@ def test_clarifications_and_repeats_are_free() -> None:
     query = Query(QueryKind.WHERE, INNOCENT, slot=VIEW.crime.window[0])
     first, again = _ask(game, query), _ask(game, query)
     assert (first.cost, again.cost, again.repeat) == (1, 0, True)
-    assert again.line == "刚才说过了：" + first.line
+    assert again.line != first.line
+    assert again.line.endswith(first.line)
     assert first.new_notes == ("S1",)
     assert again.new_notes == ()
     assert game.used == 1
