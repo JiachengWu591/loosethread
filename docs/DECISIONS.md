@@ -1155,3 +1155,5 @@ directly.
   counting as Y.
 - **What this cannot detect**: any other rater's view, and whether players mind. The rater commissioned the system and
   has played B's lines, and those lines have a recognisable form, so hiding the arm may not have hidden it.
+- **Sign-off**: the owner passed P3 in chat ("通过，推送合并") after seeing the results and four open items: few checks by
+  a person, no real players, B's stiff lines left unhandled, and `verify` not yet run on CI.

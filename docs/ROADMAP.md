@@ -9,7 +9,7 @@ All numeric thresholds are provisional and may only change through the process i
 | P0 | Skeleton and design | done |
 | P1 | Case generator and solver | done |
 | P2 | NPC pipeline and CLI playable | done |
-| P3 | Evaluation study | in progress |
+| P3 | Evaluation study | done |
 | P4 | Web version, daily case, sharing | planned |
 | P5 | Release v0.1.0 | planned |
 
@@ -169,9 +169,10 @@ Commands below use the package name `loosethread` (originally `alibi`; renamed b
     zh and en through; offline tests pass; parser 93.2% [88.0%, 96.3%] against ≥ 85%. No friends have
     played, and "ideally 2–3 friends" stays undone; D-033 lists what this verdict does not settle.
 
-## P3 — Evaluation study · `in progress`
+## P3 — Evaluation study · `done`
 
-- **Progress (2026-11-02, branch `p3-evaluation`)**: plan approved with deviations and CNY 5 for tuning and
+- **Done (2026-11-03)**: signed off by the owner (D-042). Results and limits: `docs/REPORT.md`.
+- **History (branch `p3-evaluation`)**: plan approved with deviations and CNY 5 for tuning and
   the pilot (D-034, CP-7). `docs/STUDY_PLAN.md` and CP-8 approved (D-035). Instruments built, tuned and
   piloted on dev seeds (D-036). The pilot put H1 and H3 in doubt. CP-9 option A approved: full run, cap CNY
   80 (D-037). RQ1, RQ2 and three adaptive campaigns are measured. The attack set is frozen after a review the
@@ -179,7 +180,7 @@ Commands below use the package name `loosethread` (originally `alibi`; renamed b
   at CNY 78.32. H1 and H3 fail; CP-10 option B added a control, and an unhardened prompt does leak under the same
   attacks (D-040). Four of the owner's sheets went to delegated review (D-041). `verify` and a draft of
   `docs/REPORT.md` are done. The owner's blind rating is in: A 20, B 10 of 30, p = 0.099, one rater (D-042). Both exit
-  criteria are met. Left: the owner's sign-off.
+  criteria are met. The stiffness of B's lines is left for P4's planning.
 - **Goal**: answer three research questions with data, as a reproducible report.
 - **Pre-registration first**: `docs/STUDY_PLAN.md` (questions, hypotheses, metrics, sample sizes,
   analysis, stopping rules). Experiments start only after owner approval.

@@ -1,6 +1,6 @@
 # Loose Thread: evaluation report (P3)
 
-**Status: complete, awaiting the owner's sign-off.** Every number here is recomputed from the raw rows by
+**Status: complete, signed off by the owner on 2026-11-03.** Every number here is recomputed from the raw rows by
 `python -m loosethread.verify` and appears in `results/*.md`. Plan: `docs/STUDY_PLAN.md`. Changes to it: §15 there, and
 `docs/DECISIONS.md` D-035 to D-042.
 
