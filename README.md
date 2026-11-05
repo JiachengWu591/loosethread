@@ -3,7 +3,7 @@
 一款中英双语的推理游戏：用自己的话审问嫌疑人，从证词的破绽里找出犯人。
 A bilingual deduction game: question suspects in your own words, and find the culprit through the loose threads in their testimony.
 
-**[▶ 在浏览器里玩 / Play in your browser](https://jiachengwu591.github.io/loosethread/)** · 不用安装，不用 key / nothing to install, no key · [评估报告 / The evaluation](docs/REPORT.md)
+**[▶ 在浏览器里玩 / Play in your browser](https://jiachengwu591.github.io/loosethread/)** · [itch.io](https://jiachengwu591.itch.io/loosethread) · 不用安装，不用 key / nothing to install, no key · [评估报告 / The evaluation](docs/REPORT.md)
 
 **中文**
 - **问题**：让大模型扮演 NPC 时，把真相写进提示词，它就可能说漏，也可能编造；而推理游戏靠事实站住脚。
@@ -42,8 +42,8 @@ uv run python -m loosethread.verify
 
 ## Play / 玩
 
-The [play page](https://jiachengwu591.github.io/loosethread/) needs nothing installed, and about 6 MB to download the first time. To run it yourself, with [uv](https://docs.astral.sh/uv/):
-[试玩页](https://jiachengwu591.github.io/loosethread/)不用安装，首次要下载约 6 MB。也可以用 [uv](https://docs.astral.sh/uv/) 在本机运行：
+The [play page](https://jiachengwu591.github.io/loosethread/), also [on itch.io](https://jiachengwu591.itch.io/loosethread), needs nothing installed, and about 6 MB to download the first time. To run it yourself, with [uv](https://docs.astral.sh/uv/):
+[试玩页](https://jiachengwu591.github.io/loosethread/)（[itch.io](https://jiachengwu591.itch.io/loosethread) 上也有）不用安装，首次要下载约 6 MB。也可以用 [uv](https://docs.astral.sh/uv/) 在本机运行：
 
 ```bash
 uv run python -m loosethread.web

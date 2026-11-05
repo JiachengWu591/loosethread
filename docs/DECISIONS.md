@@ -1396,3 +1396,22 @@ directly.
   the same case. Two players in different time zones may be on different cases, and their share cards then compare different cases.
 - **So that it does not surprise anyone**: the copy now says the date is the player's own, and narrow screens show the case number in the top bar, where
   it was hidden and could not be compared once scrolled away.
+
+## D-053 — What went online for v0.1.0, and what was checked
+
+- **Date**: 2026-11-05 · **Type**: a record of the release, inside D-049 and CP-14.
+- **Tag**: `v0.1.0` on `f4990e4`, pushed after CI passed on both systems.
+- **GitHub Pages**: the tag's own deployment was refused, because the `github-pages` environment allowed only `main`. The owner ran the workflow by hand on
+  `main`, the same commit, and it succeeded. The environment now also allows the tag `v0.1.0`, so a later tag needs the rule `v*` or another run by hand. The live
+  files match a local build: 13 of 14 byte for byte, and `loosethread.zip` differs only as a zip, its 32 files being identical (as in D-052).
+- **GitHub Release**: published with the notes file unchanged, and an attached zip whose sha256 matches the local build (`725874bf…`).
+- **itch.io**: public at https://jiachengwu591.itch.io/loosethread.
+  - The owner's report on the draft: "测完了没问题". It does not say whether that covered a phone or a key.
+  - My check on the public page, in the app's browser on this machine, with no key: Run game loads the page in a 1024 × 768 frame, one Chinese question was
+    answered and reached the notebook, and a reload brought it back. The console reader showed no errors, and it may not see inside the frame. I did not check a
+    phone, a key on itch.io, or a game played to its end there.
+  - The description first went up with `**` and `[text](url)` showing, as itch.io's editor does not read Markdown. `docs/release/itch-page.md` now says to copy the
+    rendered text, and replacing it on the page is on the owner's checklist.
+  - The page waits for a click on Run game, so a visitor downloads nothing until they ask to play. I recommend leaving it that way.
+- **Still open**: no name search result has been reported (D-050), and the repository's topics are empty. No stranger's opinion has come in, so the questions D-048 left
+  open stay open.

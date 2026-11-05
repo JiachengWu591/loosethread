@@ -225,7 +225,8 @@ Commands below use the package name `loosethread` (originally `alibi`; renamed b
 - **Progress (2026-11-04, branch `p5-release`)**: plan and CP-14 option A approved (D-049). Related work re-searched, name checked (D-050).
   Licenses, notices, CHANGELOG, CITATION, privacy note, README, Pages workflow, a clean-run check and the release materials are done
   (D-051). Merged and deployed by hand; the owner's checks on the live page passed, and the daily case stays on the local date (CP-15, D-052).
-  Left: the tag and the uploads (`docs/release/upload-checklist.md`).
+- **Progress (2026-11-05, branch `p5-done`)**: tag `v0.1.0` on `f4990e4`, the page redeployed by hand, and the GitHub Release and the
+  [itch.io page](https://jiachengwu591.itch.io/loosethread) public (D-053). Left: the owner's sign-off.
 - **Play link (CP-14)**: GitHub Pages, deployed on a tag or by hand, beside itch.io.
 - **Work**: bilingual README (first-screen GIF, one-command run, problem–method–evidence–limitations);
   LICENSE with code and content licenses explained separately — **vendor the full CC BY 4.0 legal

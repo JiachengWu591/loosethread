@@ -1,6 +1,6 @@
 # itch.io page copy
 
-Everything here can be pasted as it stands. It makes no claim about other games (`docs/RELATED_WORK.md`, CLAUDE.md).
+The fields can be pasted as they stand. Copy the description from this file's rendered page on GitHub, not from its source: itch.io's editor shows Markdown marks as typed (D-053). The copy makes no claim about other games (`docs/RELATED_WORK.md`, CLAUDE.md).
 
 ## Fields
 
