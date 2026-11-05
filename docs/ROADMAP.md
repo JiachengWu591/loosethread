@@ -11,7 +11,7 @@ All numeric thresholds are provisional and may only change through the process i
 | P2 | NPC pipeline and CLI playable | done |
 | P3 | Evaluation study | done |
 | P4 | Web version, daily case, sharing | done |
-| P5 | Release v0.1.0 | in progress |
+| P5 | Release v0.1.0 | done |
 
 Commands below use the package name `loosethread` (originally `alibi`; renamed by D-001).
 
@@ -220,13 +220,15 @@ Commands below use the package name `loosethread` (originally `alibi`; renamed b
 - **Exit criteria**: a full session playable in a local browser; per-session cost measured; the owner
   signs off on the feel.
 
-## P5 — Release v0.1.0 · `in progress`
+## P5 — Release v0.1.0 · `done`
 
-- **Progress (2026-11-04, branch `p5-release`)**: plan and CP-14 option A approved (D-049). Related work re-searched, name checked (D-050).
+- **Done (2026-11-05)**: signed off by the owner (D-053). v0.1.0 is on GitHub Pages, GitHub Releases and
+  [itch.io](https://jiachengwu591.itch.io/loosethread). What it leaves open is listed in D-053.
+- **History (branch `p5-release`, 2026-11-04)**: plan and CP-14 option A approved (D-049). Related work re-searched, name checked (D-050).
   Licenses, notices, CHANGELOG, CITATION, privacy note, README, Pages workflow, a clean-run check and the release materials are done
   (D-051). Merged and deployed by hand; the owner's checks on the live page passed, and the daily case stays on the local date (CP-15, D-052).
-- **Progress (2026-11-05, branch `p5-done`)**: tag `v0.1.0` on `f4990e4`, the page redeployed by hand, and the GitHub Release and the
-  [itch.io page](https://jiachengwu591.itch.io/loosethread) public (D-053). Left: the owner's sign-off.
+- **History (branch `p5-done`, 2026-11-05)**: tag `v0.1.0` on `f4990e4`, the page redeployed by hand, and the GitHub Release and the
+  itch.io page public (D-053).
 - **Play link (CP-14)**: GitHub Pages, deployed on a tag or by hand, beside itch.io.
 - **Work**: bilingual README (first-screen GIF, one-command run, problem–method–evidence–limitations);
   LICENSE with code and content licenses explained separately — **vendor the full CC BY 4.0 legal

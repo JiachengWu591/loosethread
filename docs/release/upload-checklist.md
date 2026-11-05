@@ -38,7 +38,7 @@ Tell me what you find. If something fails, it gets fixed before the tag.
 - [x] Embed options: click to launch in fullscreen off; viewport 1024 × 768; **Mobile friendly** on; **Fullscreen button** on. Leave SharedArrayBuffer support off.
 - [x] Open the draft's page and play a few questions. Try a key too, if you are willing to enter one there: itch.io serves many games from one web address, so prefer a spending-limited key.
 - [x] Answer the AI disclosure, add the screenshots and cover, and set the page to **Public**.
-- [ ] Replace the description with the text copied from the rendered page, so that no `**` or `[text](url)` shows.
+- [x] Replace the description with the plain text now in `docs/release/itch-page.md`, so that no `**` or `[text](url)` shows.
 
 ## 7. Repository page
 

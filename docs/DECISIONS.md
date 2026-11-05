@@ -1399,7 +1399,7 @@ directly.
 
 ## D-053 — What went online for v0.1.0, and what was checked
 
-- **Date**: 2026-11-05 · **Type**: a record of the release, inside D-049 and CP-14.
+- **Date**: 2026-11-05 · **Type**: a record of the release, inside D-049 and CP-14, and the owner's sign-off in chat ("已保存，通过合并").
 - **Tag**: `v0.1.0` on `f4990e4`, pushed after CI passed on both systems.
 - **GitHub Pages**: the tag's own deployment was refused, because the `github-pages` environment allowed only `main`. The owner ran the workflow by hand on
   `main`, the same commit, and it succeeded. The environment now also allows the tag `v0.1.0`, so a later tag needs the rule `v*` or another run by hand. The live
@@ -1410,8 +1410,9 @@ directly.
   - My check on the public page, in the app's browser on this machine, with no key: Run game loads the page in a 1024 × 768 frame, one Chinese question was
     answered and reached the notebook, and a reload brought it back. The console reader showed no errors, and it may not see inside the frame. I did not check a
     phone, a key on itch.io, or a game played to its end there.
-  - The description first went up with `**` and `[text](url)` showing, as itch.io's editor does not read Markdown. `docs/release/itch-page.md` now says to copy the
-    rendered text, and replacing it on the page is on the owner's checklist.
+  - The description first went up with `**` and `[text](url)` showing, as itch.io's editor does not read Markdown. Copying the rendered text was my advice, and the page
+    saved at 09:30 UTC still showed them. `docs/release/itch-page.md` now holds plain text with bare addresses, and the page saved from it at 09:33 UTC shows no marks,
+    with its six addresses as links.
   - The page waits for a click on Run game, so a visitor downloads nothing until they ask to play. I recommend leaving it that way.
 - **Still open**: no name search result has been reported (D-050), and the repository's topics are empty. No stranger's opinion has come in, so the questions D-048 left
   open stay open.
